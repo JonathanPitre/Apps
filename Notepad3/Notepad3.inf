@@ -1,0 +1,6 @@
+[Setup]
+Lang=en
+Dir=C:\Program Files\Notepad3
+Group=(Default)
+NoIcons=0
+Tasks=reset_settings,set_default

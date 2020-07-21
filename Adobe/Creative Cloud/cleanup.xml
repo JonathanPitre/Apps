@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Products>
+<Properties>
+	<Property name="eulaAccepted">1</Property>
+	<!--<Property name="removeFlashPlayer">1</Property>-->
+</Properties>
+<CreativeCloud>
+	<Product productName="Adobe Creative Cloud" version="2.0"/>
+	<Product productName="CCX Process (32 Bit)" version="3.6.3"/>
+	<Product productName="CoreSync (32 Bit)" version="4.3.45"/>
+	<Product productName="Adobe Notification Client (32 Bit)" version="1.0.1"/>
+	<Product productName="CC Library (32 Bit)" version="3.8.26"/>
+</CreativeCloud>
+<AdobeIdCredentials>
+	<Product productName="Adobe Id Credentials" version="1.0"/>
+</AdobeIdCredentials>
+</Products>

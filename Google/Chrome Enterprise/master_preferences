@@ -1,0 +1,19 @@
+{
+  "browser" : { 
+    "show_home_button" : true,
+    "check_default_browser" : false
+  },
+  "distribution": {
+    "msi": true,
+    "suppress_first_run_bubble": true,
+    "allow_downgrade": false,
+    "create_all_shortcuts": false,
+    "do_not_create_desktop_shortcut": true,
+    "do_not_create_quick_launch_shortcut": true,
+    "do_not_launch_chrome": true,
+    "do_not_register_for_update_launch": true,
+    "suppress_first_run_default_browser_prompt": true,
+    "system_level": true,
+    "verbose_logging": true
+  }
+}

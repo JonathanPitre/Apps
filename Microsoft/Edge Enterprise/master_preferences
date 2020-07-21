@@ -1,0 +1,16 @@
+{
+  "browser" : { 
+    "show_home_button" : true,
+    "check_default_browser" : false
+  },
+  "distribution": {
+   "skip_first_run_ui": true, 
+   "show_welcome_page": false, 
+   "import_search_engine": false, 
+   "import_history": false, 
+   "do_not_create_any_shortcuts" : true,
+   "do_not_create_taskbar_shortcut" :true,
+   "create_all_shortcuts": false, 
+   "make_chrome_default": false,
+  }
+}

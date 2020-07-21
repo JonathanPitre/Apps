@@ -1,0 +1,6 @@
+[Setup]
+Lang=en
+Dir=C:\Program Files\ShareX
+Group=ShareX
+NoIcons=0
+Tasks=createsendtoicon,createstartupicon
