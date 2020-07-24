@@ -1,4 +1,4 @@
-# PowerShell Wrapper for MDT, Standalone and Chocolatey Installation - (C)2020 Jonathan Pitre, inspired by xenappblog.com 
+# PowerShell Wrapper for MDT, Standalone and Chocolatey Installation - (C)2020 Jonathan Pitre, inspired by xenappblog.com
 # Example 1 Install EXE:
 # Execute-Process -Path .\appName.exe -Parameters "/silent"
 # Example 2 Install MSI:
@@ -97,8 +97,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Remove User Install
     $TeamsUsers = Get-ChildItem -Path "$($env:SystemDrive)\Users"
     $TeamsUsers | ForEach-Object {
-        Try { 
-            If (Test-Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName") {
+        Try {
+            If (Test-Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName\Update.exe") {
                 Execute-Process -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName\Update.exe" -Parameters "-uninstall -s" -WaitForMsiExec
                 Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName" -ContinueOnError $True
                 Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\$appVendor\$appName" -ContinueOnError $True
@@ -106,7 +106,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
                 Remove-File -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\$appVendor\Windows\Start Menu\Programmes\$appVendor Corporation\$appVendor $appName.lnk" -Recurse -ContinueOnError $True
                 Remove-File -Path "$($env:SystemDrive)\Users\$($_.Name)\Desktop\$appVendor $appName.lnk" -Recurse -ContinueOnError $True
             }
-        } Catch { 
+        } Catch {
             Out-Null
         }
     }
@@ -125,7 +125,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Remove-Folder -Path "$envCommonStartMenuPrograms\$appVendor Corporation" -ContinueOnError $True
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
-    
+
 }
 Else {
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
