@@ -5,45 +5,34 @@
 # Execute-MSI -Action Install -Path appName.msi -Parameters "/QB" -AddParameters "ALLUSERS=1"
 # Example 3 Uninstall MSI:
 # Remove-MSIApplications -Name "appName" -Parameters "/QB"
-
-Clear-Host
-Set-ExecutionPolicy -ExecutionPolicy Bypass -Force -Scope Process
-
 # Custom package providers list
-$PackageProviders = @("PowerShellGet","Nuget")
+$PackageProviders = @("PowerShellGet", "Nuget")
 # Custom modules list
-$Modules = @("Evergreen","InstallModuleFromGitHub")
+$Modules = @("PSADT", "Evergreen")
 
 # Checking for elevated permissions...
 If (-not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-	Write-Warning -Message "Insufficient permissions to continue! PowerShell must be run with admin rights."
-	Break
+    Write-Warning -Message "Insufficient permissions to continue! PowerShell must be run with admin rights."
+    Break
 }
 Else {
-	Write-Verbose -Message "Importing custom modules..." -Verbose
+    Write-Verbose -Message "Importing custom modules..." -Verbose
 
-	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    [System.Net.WebRequest]::DefaultWebProxy.Credentials =  [System.Net.CredentialCache]::DefaultCredentials
-	Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
+    Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
 
-	# Install custom package providers list
-	Foreach ($PackageProvider in $PackageProviders) {
-		If (-not(Get-PackageProvider -Name $PackageProvider)) {Find-PackageProvider -Name $PackageProvider -ForceBootstrap -IncludeDependencies | Install-PackageProvider -Force -Confirm:$False}
+    # Install custom package providers list
+    Foreach ($PackageProvider in $PackageProviders) {
+        If (-not(Get-PackageProvider -Name $PackageProvider)) {Find-PackageProvider -Name $PackageProvider -ForceBootstrap -IncludeDependencies | Install-PackageProvider -Force -Confirm:$False}
     }
 
-	# Install and import custom modules list
-	Foreach ($Module in $Modules) {
-		If (-not(Get-Module -ListAvailable -Name $Module)) {Install-Module -Name $Module -Force | Import-Module -Name $Module}
+    # Install and import custom modules list
+    Foreach ($Module in $Modules) {
+        If (-not(Get-Module -ListAvailable -Name $Module)) {Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module}
         Else {Update-Module -Name $Module -Force}
     }
-
-    # Install custom PSAppDeployToolkit module from a GitHub repo
-	$GitHubUser = "JonathanPitre"
-	$GitHubRepo = "PSAppDeployToolkit"
-	If (-not(Test-Path -Path $env:ProgramFiles\WindowsPowerShell\Modules\$GitHubRepo)) {Install-ModuleFromGitHub -GitHubRepo $GitHubUser/$GitHubRepo | Import-Module -Name $GitHubRepo}
-	Else {Import-Module -Name $env:ProgramFiles\WindowsPowerShell\Modules\$GitHubRepo}
-
-	Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
+    Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
 Function Get-ScriptDirectory {
@@ -64,10 +53,10 @@ $appName = "Java"
 $appMajorVersion = "8"
 $appProcess = @("java", "javaw", "javaws", "javacpl", "jp2launcher")
 $appInstallParameters = "INSTALL_SILENT=1 STATIC=0 AUTO_UPDATE=0 WEB_JAVA=1 WEB_JAVA_SECURITY_LEVEL=H WEB_ANALYTICS=0 EULA=0 REBOOT=0 NOSTARTMENU=1 SPONSORS=0"
-$Evergreen = Get-OracleJava8 | Where-Object { $_.Architecture -eq "x64" } 
-$appVersion = $Evergreen.Version.Replace("-b","0.").Replace("_",".").Substring(2)
-$appMajorVersion =  $appVersion.Split(".")[0]
-$appMinorVersion = $appVersion.Split(".")[2].Substring(3,3)
+$Evergreen = Get-OracleJava8 | Where-Object { $_.Architecture -eq "x64" }
+$appVersion = $Evergreen.Version.Replace("-b", "0.").Replace("_", ".").Substring(2)
+$appMajorVersion = $appVersion.Split(".")[0]
+$appMinorVersion = $appVersion.Split(".")[2].Substring(3, 3)
 $appURL = $Evergreen.URI
 $appSetup = $appUrl.split("/")[9]
 $appSource = $appVersion
@@ -129,11 +118,5 @@ Write-Verbose -Message "Uninstalling custom modules..." -Verbose
 Foreach ($Module in $Modules) {
     If ((Get-Module -ListAvailable -Name $Module)) {Uninstall-Module -Name $Module -Force}
 }
-
-If ((Test-Path -Path $env:ProgramFiles\WindowsPowerShell\Modules\$GitHubRepo)) {
-Remove-Module -Name $GitHubRepo -Force
-#Remove-Item -Path $env:ProgramFiles\WindowsPowerShell\Modules\$GitHubRepo -Recurse -Force
-}
-
 Write-Verbose -Message "Custom modules were succesfully uninstalled!" -Verbose
 #>

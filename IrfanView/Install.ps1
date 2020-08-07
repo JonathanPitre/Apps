@@ -5,14 +5,10 @@
 # Execute-MSI -Action Install -Path appName.msi -Parameters "/QB" -AddParameters "ALLUSERS=1"
 # Example 3 Uninstall MSI:
 # Remove-MSIApplications -Name "appName" -Parameters "/QB"
-
-Clear-Host
-Set-ExecutionPolicy -ExecutionPolicy Bypass -Force -Scope Process
-
 # Custom package providers list
 $PackageProviders = @("PowerShellGet","Nuget")
 # Custom modules list
-$Modules = @("Evergreen","InstallModuleFromGitHub")
+$Modules = @("PSADT","Evergreen")
 
 # Checking for elevated permissions...
 If (-not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
@@ -33,16 +29,9 @@ Else {
 
 	# Install and import custom modules list
 	Foreach ($Module in $Modules) {
-		If (-not(Get-Module -ListAvailable -Name $Module)) {Install-Module -Name $Module -Force | Import-Module -Name $Module}
+		If (-not(Get-Module -ListAvailable -Name $Module)) {Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module}
         Else {Update-Module -Name $Module -Force}
     }
-
-    # Install custom PSAppDeployToolkit module from a GitHub repo
-	$GitHubUser = "JonathanPitre"
-	$GitHubRepo = "PSAppDeployToolkit"
-	If (-not(Test-Path -Path $env:ProgramFiles\WindowsPowerShell\Modules\$GitHubRepo)) {Install-ModuleFromGitHub -GitHubRepo $GitHubUser/$GitHubRepo | Import-Module -Name $GitHubRepo}
-	Else {Import-Module -Name $env:ProgramFiles\WindowsPowerShell\Modules\$GitHubRepo}
-
 	Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
@@ -180,8 +169,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 	Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
     Remove-Folder -Path $envUserStartMenuPrograms\$appName
     New-Shortcut -Path $envCommonStartMenuPrograms\$appName.lnk -TargetPath $appDestination\$appProcess.exe -IconLocation $appDestination\$appProcess.exe -Description $appName -WorkingDirectory $appDestination
-
-
     Write-Log -Message "$appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }
@@ -194,11 +181,5 @@ Write-Verbose -Message "Uninstalling custom modules..." -Verbose
 Foreach ($Module in $Modules) {
     If ((Get-Module -ListAvailable -Name $Module)) {Uninstall-Module -Name $Module -Force}
 }
-
-If ((Test-Path -Path $env:ProgramFiles\WindowsPowerShell\Modules\$GitHubRepo)) {
-Remove-Module -Name $GitHubRepo -Force
-#Remove-Item -Path $env:ProgramFiles\WindowsPowerShell\Modules\$GitHubRepo -Recurse -Force
-}
-
 Write-Verbose -Message "Custom modules were succesfully uninstalled!" -Verbose
 #>
