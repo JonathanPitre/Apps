@@ -5,10 +5,14 @@
 # Execute-MSI -Action Install -Path appName.msi -Parameters "/QB" -AddParameters "ALLUSERS=1"
 # Example 3 Uninstall MSI:
 # Remove-MSIApplications -Name "appName" -Parameters "/QB"
+
 # Custom package providers list
-$PackageProviders = @("PowerShellGet", "Nuget")
+$PackageProviders = @("Nuget")
+
 # Custom modules list
 $Modules = @("PSADT", "Evergreen")
+
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Force
 
 # Checking for elevated permissions...
 If (-not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
@@ -20,18 +24,35 @@ Else {
 
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-    Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
 
     # Install custom package providers list
     Foreach ($PackageProvider in $PackageProviders) {
-        If (-not(Get-PackageProvider -Name $PackageProvider)) {Find-PackageProvider -Name $PackageProvider -ForceBootstrap -IncludeDependencies | Install-PackageProvider -Force -Confirm:$False}
+        If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) {Install-PackageProvider -Name $PackageProvider -Force}
     }
+
+    # Add the Powershell Gallery as trusted repository
+    Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+
+    # Update PowerShellGet
+    $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
+    $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
+    If ($PSGetVersion -gt $InstalledPSGetVersion) {Install-PackageProvider -Name PowerShellGet -Force}
 
     # Install and import custom modules list
     Foreach ($Module in $Modules) {
-        If (-not(Get-Module -ListAvailable -Name $Module)) {Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module}
-        Else {Update-Module -Name $Module -Force}
+        If (-not(Get-Module -ListAvailable -Name $Module)) {Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force}
+        Else {
+            $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
+            $ModuleVersion = (Find-Module -Name $Module).Version
+            $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
+            $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
+            If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+                Update-Module -Name $Module -Force
+                Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
+            }
+        }
     }
+
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 

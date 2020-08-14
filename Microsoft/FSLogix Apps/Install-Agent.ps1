@@ -5,34 +5,55 @@
 # Execute-MSI -Action Install -Path appName.msi -Parameters "/QB" -AddParameters "ALLUSERS=1"
 # Example 3 Uninstall MSI:
 # Remove-MSIApplications -Name "appName" -Parameters "/QB"
+
 # Custom package providers list
-$PackageProviders = @("PowerShellGet","Nuget")
+$PackageProviders = @("Nuget")
+
 # Custom modules list
-$Modules = @("PSADT","Evergreen")
+$Modules = @("PSADT", "Evergreen")
+
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Force
 
 # Checking for elevated permissions...
 If (-not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-	Write-Warning -Message "Insufficient permissions to continue! PowerShell must be run with admin rights."
-	Break
+    Write-Warning -Message "Insufficient permissions to continue! PowerShell must be run with admin rights."
+    Break
 }
 Else {
-	Write-Verbose -Message "Importing custom modules..." -Verbose
+    Write-Verbose -Message "Importing custom modules..." -Verbose
 
-	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    [System.Net.WebRequest]::DefaultWebProxy.Credentials =  [System.Net.CredentialCache]::DefaultCredentials
-	Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 
-	# Install custom package providers list
-	Foreach ($PackageProvider in $PackageProviders) {
-		If (-not(Get-PackageProvider -Name $PackageProvider)) {Find-PackageProvider -Name $PackageProvider -ForceBootstrap -IncludeDependencies | Install-PackageProvider -Force -Confirm:$False}
+    # Install custom package providers list
+    Foreach ($PackageProvider in $PackageProviders) {
+        If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) {Install-PackageProvider -Name $PackageProvider -Force}
     }
 
-	# Install and import custom modules list
-	Foreach ($Module in $Modules) {
-		If (-not(Get-Module -ListAvailable -Name $Module)) {Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module}
-        ElseIf (Get-Module -ListAvailable -Name $Module) {Update-Module -Name $Module -Force}
+    # Add the Powershell Gallery as trusted repository
+    Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+
+    # Update PowerShellGet
+    $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
+    $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
+    If ($PSGetVersion -gt $InstalledPSGetVersion) {Install-PackageProvider -Name PowerShellGet -Force}
+
+    # Install and import custom modules list
+    Foreach ($Module in $Modules) {
+        If (-not(Get-Module -ListAvailable -Name $Module)) {Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force}
+        Else {
+            $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
+            $ModuleVersion = (Find-Module -Name $Module).Version
+            $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
+            $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
+            If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+                Update-Module -Name $Module -Force
+                Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
+            }
+        }
     }
-	Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
+
+    Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
 Function Get-ScriptDirectory {
@@ -58,7 +79,7 @@ $appVersion = $Evergreen.Version
 $appURL = $Evergreen.uri
 $appZip = "FSLogix Apps.zip"
 $appSource = "$appVersion\x64\Release"
-$appDesination = "$envProgramFiles\FSLogix\Apps"
+$appDestination = "$envProgramFiles\FSLogix\Apps"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
 ##*===============================================
