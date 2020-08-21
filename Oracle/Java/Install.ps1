@@ -6,6 +6,8 @@
 # Example 3 Uninstall MSI:
 # Remove-MSIApplications -Name "appName" -Parameters "/QB"
 
+#Requires -Version 5.1
+
 # Custom package providers list
 $PackageProviders = @("Nuget")
 
@@ -27,7 +29,7 @@ Else {
 
     # Install custom package providers list
     Foreach ($PackageProvider in $PackageProviders) {
-        If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) {Install-PackageProvider -Name $PackageProvider -Force}
+        If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
     }
 
     # Add the Powershell Gallery as trusted repository
@@ -36,11 +38,11 @@ Else {
     # Update PowerShellGet
     $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
     $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
-    If ($PSGetVersion -gt $InstalledPSGetVersion) {Install-PackageProvider -Name PowerShellGet -Force}
+    If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
 
     # Install and import custom modules list
     Foreach ($Module in $Modules) {
-        If (-not(Get-Module -ListAvailable -Name $Module)) {Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force}
+        If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
         Else {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -57,16 +59,18 @@ Else {
 }
 
 Function Get-ScriptDirectory {
-    If ($psISE) {Split-Path $psISE.CurrentFile.FullPath}
-    Else {$Global:PSScriptRoot}
+    If ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+    ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
+    ElseIf ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
 }
 
 # Variables Declaration
 # Generic
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
-$appScriptDirectory = Get-ScriptDirectory
 $env:SEE_MASK_NOZONECHECKS = 1
+$appScriptDirectory = Get-ScriptDirectory
+
 # Application related
 ##*===============================================
 $appVendor = "Oracle"
@@ -77,7 +81,7 @@ $appInstallParameters = "INSTALL_SILENT=1 STATIC=0 AUTO_UPDATE=0 WEB_JAVA=1 WEB_
 $Evergreen = Get-OracleJava8 | Where-Object { $_.Architecture -eq "x64" }
 $appVersion = $Evergreen.Version.Replace("-b", "0.").Replace("_", ".").Substring(2)
 $appMajorVersion = $appVersion.Split(".")[0]
-$appMinorVersion = $appVersion.Split(".")[2].Substring(3, 3)
+$appMinorVersion = $appVersion.Split(".")[2].Substring(0, 3)
 $appURL = $Evergreen.URI
 $appSetup = $appUrl.split("/")[9]
 $appSource = $appVersion
@@ -91,8 +95,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-    Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
