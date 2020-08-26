@@ -76,14 +76,14 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "IGEL"
 $appName = "Universal Management Suite"
 $appProcess = @("RMClient")
-$appInstallParameters = "/loadinf=$appScriptDirectory\ums.inf /verysilent"
+$appInstallParameters = "/LOADINF=$appScriptDirectory\ums.inf /SILENT"
 $webRequest = Invoke-WebRequest -UseBasicParsing -Uri ("https://www.igel.com/software-downloads/workspace-edition") -SessionVariable websession
-$regex = "setup-igel-ums-windows_\d.\d{2}.\d{3}"
+$regex = "https\:\/\/.+\/files\/IGEL_UNIVERSAL_MANAGEMENT_SUITE\/WINDOWS\/setup-igel-ums-windows_\d.\d{2}.\d{3}.exe"
 $webResponse = $webRequest.RawContent | Select-String -Pattern $regex -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
-$appVersion = $webResponse.Trim("setup-igel-ums-windows_")
-$appMajorVersion = $appVersion.Substring(0,1)
-$appURL = "https://az743625.vo.msecnd.net/files/IGEL_UNIVERSAL_MANAGEMENT_SUITE/WINDOWS/setup-igel-ums-windows_$appVersion.exe"
-$appSetup = $webResponse + ".exe"
+$appURL = $webResponse
+$appSetup = $appURL.Split("/")[6]
+$appVersion = $appSetup.Trim("setup-igel-ums-windows_").Trim(".exe")
+$appMajorVersion = $appVersion.Substring(0, 1)
 $appSource = $appVersion
 $appDestination = "$envProgramFiles\IGEL\RemoteManager"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
@@ -106,11 +106,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Get-Process -Name $appProcess | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-Process -Path "$appDestination\unins000.exe" -Parameters "/VERYSILENT" -PassThru
+        Execute-Process -Path "$appDestination\unins000.exe" -Parameters "/SILENT" -PassThru
     }
     Remove-Folder -Path "$envProgramFiles\IGEL" -ContinueOnError $True
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    #Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
+
     Execute-Process -Path .\$appSetup -NoWait
     Start-Sleep -Seconds 2
     Send-Keys -WindowTitle "Setup - Universal Management Suite 6" -Keys {ENTER}
