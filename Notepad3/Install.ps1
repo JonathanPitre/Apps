@@ -6,6 +6,8 @@
 # Example 3 Uninstall MSI:
 # Remove-MSIApplications -Name "appName" -Parameters "/QB"
 
+#Requires -Version 5.1
+
 # Custom package providers list
 $PackageProviders = @("Nuget")
 
@@ -27,7 +29,7 @@ Else {
 
     # Install custom package providers list
     Foreach ($PackageProvider in $PackageProviders) {
-        If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) {Install-PackageProvider -Name $PackageProvider -Force}
+        If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
     }
 
     # Add the Powershell Gallery as trusted repository
@@ -36,11 +38,11 @@ Else {
     # Update PowerShellGet
     $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
     $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
-    If ($PSGetVersion -gt $InstalledPSGetVersion) {Install-PackageProvider -Name PowerShellGet -Force}
+    If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
 
     # Install and import custom modules list
     Foreach ($Module in $Modules) {
-        If (-not(Get-Module -ListAvailable -Name $Module)) {Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force}
+        If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
         Else {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -57,30 +59,44 @@ Else {
 }
 
 Function Get-ScriptDirectory {
-    If ($psISE) {Split-Path $psISE.CurrentFile.FullPath}
-    Else {$Global:PSScriptRoot}
+    Remove-Variable appScriptDirectory
+    Try {
+        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
+        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
+        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+        Else {
+            Write-Host -ForegroundColor Red "Cannot resolve script file's path"
+            Exit 1
+        }
+    }
+    Catch {
+        Write-Host -ForegroundColor Red "Caught Exception: $($Error[0].Exception.Message)"
+        Exit 2
+    }
 }
 
 # Variables Declaration
 # Generic
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
-$appScriptDirectory = Get-ScriptDirectory
 $env:SEE_MASK_NOZONECHECKS = 1
+$appScriptDirectory = Get-ScriptDirectory
+
 # Application related
 ##*===============================================
-
-#$webResponse = Invoke-WebRequest -UseBasicParsing -Uri ("https://www.rizonesoft.com/downloads/notepad3/") -SessionVariable websession
-#$webVersion = $webResponse.RawContent | Select-String 'Version' -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -Unique
 $appVendor = "Rizonesoft"
 $appName = "Notepad3"
 $appProcess = @("Notepad3","minipath","notepad")
-$appInstallParameters = "/SILENT /ALLUSERS /CLOSEAPPLICATIONS /LOADINF=Notepad3.inf"
-#$Evergreen = Get-Notepad3| Where-Object {$_.Architecture -eq "x64"}
-$appVersion = $appSetup.Split("_")[1] #$Evergreen.Version
-#$appURLSetup = $Evergreen.uri
-$appSetup = (Get-ChildItem $appScriptDirectory | Where-Object -Property Name -Match -Value ".*.exe$" | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
-$appSource = $appSetup
+$appInstallParameters = "/ALLUSERS /CLOSEAPPLICATIONS /LOADINF=`"$appScriptDirectory\Notepad3.inf`" /SILENT /LOG=`"$appScriptDirectory\$appName.log`""
+$appPreferredLanguage = "fr-FR"
+$webRequest = Invoke-WebRequest -UseBasicParsing -Uri ("https://www.rizonesoft.com/downloads/notepad3") -SessionVariable websession
+$regexURL = "https\:\/\/www\.rizonesoft\.com\/download\/\d.+/"
+$regexZip = "Notepad3_\d.\d{2}.\d{3}.\d_Setup.zip"
+$appURL = $webRequest.RawContent | Select-String -Pattern $regexURL -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
+$appZip = $webRequest.RawContent | Select-String -Pattern $regexZip -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
+$appVersion = $appZip.Split("_")[1]
+$appSetup = "Notepad3_$($appVersion)_Setup.exe"
+$appSource = $appVersion
 $appDestination = "$envProgramFiles\Notepad3"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersion
@@ -88,24 +104,33 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersio
 
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
-    #Set-Location -Path $appSource
+    If (-Not(Test-Path -Path $appSource)) { New-Folder -Path $appSource }
+    Set-Location -Path $appSource
 
-    #Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    #If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
-    #    Invoke-WebRequest -UseBasicParsing -Uri $appURLSetup -OutFile $appSetup
-    #}
-    #Else {
-    #    Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
-    #}
+    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
+        Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appSource
+        Remove-File -Path $appZip
+    }
+    Else {
+        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+    }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcess | Stop-Process -Force
 
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters
-	Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Copy-File -Path ".\$appname.ini" -Destination "$envProgramFiles\$appName"
+    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+    <#
+        If (Test-Path -Path $appDestination\Notepad3.ini) {
+        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings" -Key "SettingsVersion" -Value "4"
+        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings2" -Key "PreferredLanguageLocaleName" -Value "$appPreferredLanguage"
+        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings2" -Key "ReuseWindow" -Value "true"
+    }
+    #>
+    Copy-File -Path "$appScriptDirectory\$appname.ini" -Destination "$envProgramFiles\$appName"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
