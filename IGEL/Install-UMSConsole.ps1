@@ -86,7 +86,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "IGEL"
 $appName = "Universal Management Suite"
-$appProcess = @("RMClient", "igel-elasticsearch")
+$appProcess = @("RMClient", "elasticsearch-service-x64")
 $appInstallParameters = "/ALLUSERS /CLOSEAPPLICATIONS /LOADINF=`"$appScriptDirectory\UMSConsole.inf`" /SILENT /LOG=`"$appScriptDirectory\$appName.log`""
 $webRequest = Invoke-WebRequest -UseBasicParsing -Uri ("https://www.igel.com/software-downloads/workspace-edition") -SessionVariable websession
 $regex = "https\:\/\/.+\/files\/IGEL_UNIVERSAL_MANAGEMENT_SUITE\/WINDOWS\/setup-igel-ums-windows_\d.\d{2}.\d{3}.exe"
