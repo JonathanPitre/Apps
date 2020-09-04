@@ -1,18 +1,22 @@
-<Configuration ID="db6e8ad5-84d3-4256-9ce8-55ce762e8367">
+<Configuration ID="7dad9b9c-b133-48df-9ee1-fac7f92f0449">
   <Info Description="Office RDSH" />
-  <Add OfficeClientEdition="64" Channel="PerpetualVL2019">
-    <Product ID="ProPlus2019Volume" PIDKEY="NMMKJ-6RK4F-KMJVX-8D9MJ-6MWKP">
+  <Add OfficeClientEdition="64" Channel="Current">
+    <Product ID="O365ProPlusRetail">
       <Language ID="fr-fr" />
+      <Language ID="en-us" />
       <ExcludeApp ID="Groove" />
       <ExcludeApp ID="Lync" />
       <ExcludeApp ID="OneDrive" />
+      <ExcludeApp ID="Teams" />
+      <ExcludeApp ID="Bing" />
     </Product>
     <Product ID="LanguagePack">
       <Language ID="fr-fr" />
       <Language ID="en-us" />
+      <ExcludeApp ID="Bing" />
     </Product>
   </Add>
-  <Property Name="SharedComputerLicensing" Value="0" />
+  <Property Name="SharedComputerLicensing" Value="1" />
   <Property Name="PinIconsToTaskbar" Value="TRUE" />
   <Property Name="SCLCacheOverride" Value="0" />
   <Property Name="AUTOACTIVATE" Value="1" />

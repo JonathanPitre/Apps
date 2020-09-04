@@ -1,15 +1,11 @@
-<Configuration ID="db6e8ad5-84d3-4256-9ce8-55ce762e8367">
-  <Info Description="Office RDSH" />
+<Configuration ID="26c33c47-3c8c-4b8c-842d-91076a15caf2">
+  <Info Description="Visio RDSH" />
   <Add OfficeClientEdition="64" Channel="PerpetualVL2019">
-    <Product ID="ProPlus2019Volume" PIDKEY="NMMKJ-6RK4F-KMJVX-8D9MJ-6MWKP">
+    <Product ID="VisioPro2019Volume" PIDKEY="">
       <Language ID="fr-fr" />
       <ExcludeApp ID="Groove" />
-      <ExcludeApp ID="Lync" />
       <ExcludeApp ID="OneDrive" />
-    </Product>
-    <Product ID="LanguagePack">
-      <Language ID="fr-fr" />
-      <Language ID="en-us" />
+      <ExcludeApp ID="Lync" />
     </Product>
   </Add>
   <Property Name="SharedComputerLicensing" Value="0" />
