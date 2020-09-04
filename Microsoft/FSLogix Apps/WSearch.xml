@@ -2,7 +2,7 @@
 <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
     <Date>2020-06-20T07:20:40.654039</Date>
-    <Author>xenappblog\ad-trohav</Author>
+    <Author>Domain\Administrator</Author>
     <Description>https://jkindon.com/2020/03/15/windows-search-in-server-2019-and-multi-session-windows-10</Description>
     <URI>\Reset Windows Search at Logoff</URI>
   </RegistrationInfo>
