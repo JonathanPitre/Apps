@@ -121,7 +121,6 @@
     <Exclude Copy="0">AppData\Roaming\Grammarly\Updates</Exclude>
     <Exclude Copy="0">AppData\Roaming\ICAClient\Cache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Macromedia\Flash Player\#SharedObjects</Exclude>
-    <Exclude Copy="0">AppData\Roaming\Microsoft Teams\logs</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Edge\UserData\BrowserMetrics</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Edge\UserData\CertificateRevocation</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Edge\UserData\CertificateTransparency</Exclude>
@@ -147,8 +146,11 @@
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\DownloadedUpdate</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\GPUCache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Local Storage</Exclude>
+    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\logs</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\media-stack</Exclude>
+    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\meeting-addin\Cache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Service Worker\CacheStorage</Exclude>
+    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Service Worker\ScriptCache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\tmp</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Windows\Cookies</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Windows\DNTException</Exclude>
