@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current scrip path
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -87,7 +88,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Microsoft"
 $appName = "Teams"
 $appSetup = "Teams_windows_x64.msi"
-$appProcess = @("Teams")
+$appProcess = @("Teams", "Update", "Squirrel")
 $appTransform = "Teams_windows_x64_VDI.mst"
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
@@ -95,7 +96,7 @@ $Evergreen = Get-MicrosoftTeams | Where-Object {$_.Architecture -eq "x64"}
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.uri
 $appSource = $appVersion
-$appDestination = "$envProgramFilesX86\Microsoft\Teams\current"
+$appDestination = "${env:ProgramFiles(x86)}\Microsoft\Teams\current"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
 ##*===============================================
@@ -105,21 +106,21 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-    Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exist, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcess | Stop-Process -Force
-    # Removal Machine-Wide Installer
+    # Remoe machine-wide install
     Remove-MSIApplications -Name "$appVendor $appName" -Parameters $appInstallParameters
     Remove-MSIApplications -Name "$appName Machine-Wide Installer" -Parameters $appInstallParameters
 
-    # Remove User Install
+    # Remove user install
     $TeamsUsers = Get-ChildItem -Path "$($env:SystemDrive)\Users"
     $TeamsUsers | ForEach-Object {
         Try {
@@ -134,23 +135,33 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
                 Remove-File -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\$appVendor\Windows\Start Menu\Programmes\$appVendor Corporation\$appVendor $appName.lnk" -Recurse -ContinueOnError $True
                 Remove-File -Path "$($env:SystemDrive)\Users\$($_.Name)\Desktop\$appVendor $appName.lnk" -Recurse -ContinueOnError $True
             }
-        } Catch {
+        }
+        Catch {
             Out-Null
         }
     }
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-
-    #New-Item -Path "HKLM:\SOFTWARE\Citrix" -Name "PortICA" -Force
+    #New-Item -Path "HKLM:\SOFTWARE\Citrix" -Name "PortICA" -Force # #Reuired if not using the custom MST
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters -Transform "$appScriptDirectory\$appTransform"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Remove uneeded application from running at start-up
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "TeamsMachineUninstallerLocalAppData" -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "TeamsMachineUninstallerProgramData" -ContinueOnError $True
     #Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name $appName -ContinueOnError $True
+    # Fix application Start Menu shorcuts
     Copy-File -Path "$envCommonStartMenuPrograms\$appVendor $appName.lnk" -Destination "$envCommonStartMenuPrograms\$appName.lnk" -ContinueFileCopyOnError $True
     Remove-File -Path "$envCommonStartMenuPrograms\$appVendor $appName.lnk" -ContinueOnError $True
     Remove-Folder -Path "$envCommonStartMenuPrograms\$appVendor Corporation" -ContinueOnError $True
+    # Add Windows Defender exclusion(s) - https://docs.microsoft.com/en-us/microsoftteams/troubleshoot/teams-administration/include-exclude-teams-from-antivirus-dlp
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Microsoft\Teams\Update.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Microsoft\Teams\current\Squirrel.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Microsoft\Teams\current\Teams.exe" -Force
+    # Add Windows Firewall rule(s) - https://docs.microsoft.com/en-us/microsoftteams/get-clients#windows
+    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName")) {
+        New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\$($appProcess[0]).exe" -Profile 'Domain, Private, Public'
+    }
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
