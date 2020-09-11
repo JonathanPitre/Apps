@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -101,7 +102,7 @@ $appPatch3 = "Diff_Antidote_10_Module_E_10.4.msp"
 $appPatch4 = "Diff_Connectix_10_C_10.4.msp"
 $appInstallParameters = "/QB"
 $appProcess = @("Antidote", "AgentAntidote", "Connectix", "AgentConnectix", "OUTLOOK", "WINWORD", "EXCEL", "POWERPNT")
-$appDestination = "$envProgramFilesX86\$appVendor\$appName $appShortVersion\Application\Bin64"
+$appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\Application\Bin64"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName \d{2}" -RegEx) | Select-Object -First 1
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName \d{2}" -RegEx).DisplayVersion | Select-Object -First 1
 ##*===============================================
@@ -115,7 +116,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Break
     }
     Else {
-	    Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+	    Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
         Set-Location -Path $appSource
     }
 

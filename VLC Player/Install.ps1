@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -93,7 +94,7 @@ $appVersion = $Evergreen.Version + ".0"
 $appURL = $Evergreen.URI
 $appSetup = "vlc-$appVersion-win64.msi"
 $appSource = $appVersion
-$appDestination = "$envProgramFiles\VideoLAN\VLC"
+$appDestination = "$env:ProgramFiles\VideoLAN\VLC"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersion
 ##*===============================================
@@ -103,12 +104,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-    Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Get-Process -Name $appProcess | Stop-Process -Force

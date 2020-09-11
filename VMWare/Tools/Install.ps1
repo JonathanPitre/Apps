@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -93,7 +94,7 @@ $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = $appUrl.split("/")[8]
 $appSource = $appVersion
-$appDestination = "$envProgramFiles\VMware\VMware Tools"
+$appDestination = "$env:ProgramFiles\VMware\VMware Tools"
 [boolean]$IsAppInstalled = (Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion).Substring(0, 6)
 ##*===============================================
@@ -103,12 +104,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-    Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True

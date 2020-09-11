@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -171,7 +172,7 @@ $Evergreen = Get-IrfanView | Where-Object {$_.Language -eq "french"}
 $appURLSetupLang = $Evergreen.uri
 $appSetupLang = $appURLSetupLang.Split("/")[4]
 $appSource = $appVersion
-$appDestination = "$envProgramFiles\IrfanView"
+$appDestination = "$env:ProgramFiles\IrfanView"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersion
 ##*===============================================
@@ -181,14 +182,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-    Write-Log -Message "Downloading $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+
         Invoke-WebRequest -UseBasicParsing -Uri $appURLSetup -OutFile $appSetup
         Invoke-WebRequest -UseBasicParsing -Uri $appURLSetupPlugin -OutFile $appSetupPlugin
         Invoke-WebRequest -UseBasicParsing -Uri $appURLSetupLang -OutFile $appSetupLang
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True

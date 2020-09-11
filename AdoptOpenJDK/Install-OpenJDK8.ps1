@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -96,7 +97,7 @@ $appURL = "https://github.com" + ($webResponse.RawContent | Select-String -Patte
 $appSetup = $appURL.Split("/")[8]
 [string]$webVersion = [regex]::matches($appSetup, "\du\d{3}b\d+")
 $appVersion = $webVersion.Replace("u",".0.").Replace("b",".")
-$appDestination = "$envProgramFiles\$appVendor\jre-$appVersion-hotspot\bin"
+$appDestination = "$env:ProgramFiles\$appVendor\jre-$appVersion-hotspot\bin"
 $appSource = $appVersion
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
@@ -107,12 +108,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-    Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True

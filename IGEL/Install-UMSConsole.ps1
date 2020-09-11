@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -95,7 +96,7 @@ $appSetup = $appURL.Split("/")[6]
 $appVersion = $appSetup.Trim("setup-igel-ums-windows_").Trim(".exe")
 $appMajorVersion = $appVersion.Substring(0, 1)
 $appSource = $appVersion
-$appDestination = "$envProgramFiles\IGEL\RemoteManager"
+$appDestination = "$env:ProgramFiles\IGEL\RemoteManager"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersion
 ##*===============================================
@@ -110,7 +111,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Get-Process -Name $appProcess | Stop-Process -Force

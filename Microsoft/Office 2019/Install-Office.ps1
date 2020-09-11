@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -97,21 +98,20 @@ $Evergreen = Get-MicrosoftOffice | Where-Object {$_.Channel -eq "$appName $appMa
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.uri
 $appSource = $appVersion
-$appDestination = "$envProgramFiles\Microsoft Office\root\Office16"
+$appDestination = "$env:ProgramFiles\Microsoft Office\root\Office16"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName .+ $appMajorVersion" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName .* $appMajorVersion" -RegEx).DisplayVersion
 ##*===============================================
 
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
-
     Set-Location -Path $appScriptDirectory
-    Write-Log -Message "Downloading the latest version of $appVendor $appName 365 Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appSetup)) {
+        Write-Log -Message "Downloading the latest version of $appVendor $appName 365 Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-	    Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+	    Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     $appSetupVersion = (Get-Command .\$appSetup).FileVersionInfo.FileVersion
@@ -125,12 +125,12 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Copy-File .\$appConfig,$appSetup -Destination $appSetupVersion -ContinueFileCopyOnError $True
     Set-Location -Path .\$appSetupVersion
 
-    Write-Log -Message "Downloading $appVendor $appName $appMajorVersion $appBitness via ODT $appSetupVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    If (-not(Test-Path -Path .\Office\Data\v$appBitness.cab)) {
+    If (-Not(Test-Path -Path .\Office\Data\v$appBitness.cab)) {
+        Write-Log -Message "Downloading $appVendor $appName $appMajorVersion $appBitness via ODT $appSetupVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-Process -Path .\$appSetup -Parameters $appDownloadParameters -PassThru
     }
     Else {
-    	    Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+    	    Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Installing $appVendor $appName $appMajorVersion $appBitness..." -Severity 1 -LogType CMTrace -WriteHost $True

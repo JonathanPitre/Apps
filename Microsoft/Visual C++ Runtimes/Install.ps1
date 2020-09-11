@@ -84,14 +84,14 @@ $appSource = $appVersion
 #If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
 
-    Write-Log -Message "Downloading latest $appVendor $appName runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
     $appSetupVersion = (Get-Command $appScriptDirectory\2019\x64\RTM\$appSetup).FileVersionInfo.FileVersion
 
     If ([version]$appSetupVersion -ne [version]$appVersion) {
+        Write-Log -Message "Downloading latest $appVendor $appName runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
         Save-VcRedist -VcList $VcList -Path $appScriptDirectory
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Installing $appVendor $appName runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True

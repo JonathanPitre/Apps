@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -95,7 +96,7 @@ $appVersion = $webVersion.Substring($webVersion.Length-3)
 $appURL = "https://download.microsoft.com/download/C/7/A/C7AAD914-A8A6-4904-88A1-29E657445D03/LAPS.x64.msi"
 $appSetup = $appURL.Split("/")[8]
 $appSource = $appVersion
-$appDestination = "$envProgramFiles\LAPS\CSE"
+$appDestination = "$env:ProgramFiles\LAPS\CSE"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersion.Substring(0,$appInstalledVersion.Length-4)
 ##*===============================================
@@ -105,12 +106,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-    Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True

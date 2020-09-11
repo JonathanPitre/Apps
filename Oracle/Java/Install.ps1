@@ -85,7 +85,7 @@ $appMinorVersion = $appVersion.Split(".")[2].Substring(0, 3)
 $appURL = $Evergreen.URI
 $appSetup = $appUrl.split("/")[9]
 $appSource = $appVersion
-$appDestination = "$envProgramFiles\$appName\jre1.$appMajorVersion.0_$appMinorVersion\bin"
+$appDestination = "$env:ProgramFiles\$appName\jre1.$appMajorVersion.0_$appMinorVersion\bin"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName \d Update \d{3}" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName \d Update \d{3}" -RegEx).DisplayVersion | Select-Object -First 1
 ##*================================================
@@ -100,7 +100,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Get-Process -Name $appProcess | Stop-Process -Force

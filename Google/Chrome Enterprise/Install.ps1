@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -94,7 +95,7 @@ $Evergreen = Get-GoogleChrome | Where-Object {$_.Architecture -eq "x64"}
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.uri
 $appSource = $appVersion
-$appDestination = "$envProgramFilesX86\$appVendor\$appName\Application"
+$appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
 ##*===============================================
@@ -104,12 +105,12 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-    Write-Log -Message "Downloading $appVendor $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+        Write-Log -Message "Downloading $appVendor $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
     Get-Process -Name $appProcess | Stop-Process -Force
     # Delete machine policies to prevent issue during installation

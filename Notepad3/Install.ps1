@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -97,7 +98,7 @@ $appZip = $webRequest.RawContent | Select-String -Pattern $regexZip -AllMatches 
 $appVersion = $appZip.Split("_")[1]
 $appSetup = "Notepad3_$($appVersion)_Setup.exe"
 $appSource = $appVersion
-$appDestination = "$envProgramFiles\Notepad3"
+$appDestination = "$env:ProgramFiles\Notepad3"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersion
 ##*===============================================
@@ -114,7 +115,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Remove-File -Path $appZip
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True

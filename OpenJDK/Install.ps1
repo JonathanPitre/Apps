@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -96,7 +97,7 @@ $appSource = $appVersion
 $appMainVersion = $appVersion.Substring(0,5)
 $appShortVersion = $appVersion.Substring(0,11)
 $appDisplayVersion = $appVersion.Replace(".0","").Replace("-","").Replace("b0","")
-$appDestination = "$envProgramFiles\ojdkbuild\java-$appMainVersion-openjdk-$appShortVersion\bin"
+$appDestination = "$env:ProgramFiles\ojdkbuild\java-$appMainVersion-openjdk-$appShortVersion\bin"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersion
 ##*===============================================$
@@ -106,12 +107,11 @@ If ([version]$appDisplayVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-    Write-Log -Message "Downloading $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True

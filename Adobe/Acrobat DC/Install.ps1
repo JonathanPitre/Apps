@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -97,7 +98,7 @@ $appVersion = ("$appVersion").Insert(2, ".").Insert(6, ".")
 $appShortVersion = "DC"
 $appPatch = (Get-ChildItem $appScriptDirectory | Where-Object -Property Name -Match -Value "AcrobatDCUpd.*.msp$" | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 $appSource = $appVersion
-$appDestination = "$envProgramFilesX86\$appVendor\$appName $appShortVersion\$appName"
+$appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\$appName"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appShortVersion")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion").DisplayVersion
 ##*===============================================

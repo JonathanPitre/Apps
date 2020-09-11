@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -106,7 +107,7 @@ $appDic = ($appURLDic).Split("/")[9]
 $appURLADMX = "ftp://ftp.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/ReaderADMTemplate.zip"
 $appADMX = ($appURLADMX).Split("/")[9]
 $appSource = $appVersion
-$appDestination = "$envProgramFilesX86\$appVendor\$appName $appShortVersion\Reader"
+$appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\Reader"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appShortVersion MUI")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion MUI").DisplayVersion
 ##*===============================================
@@ -126,7 +127,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Remove-File -Path "$appScriptDirectory\$appMUI"
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appDIC)) {
@@ -134,7 +135,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURLDic -OutFile $appDic
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appFont)) {
@@ -142,7 +143,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURLFont -OutFile $appFont
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     If (-Not(Test-Path -Path $appScriptDirectory\PolicyDefinitions\*.admx)) {
@@ -153,7 +154,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Remove-File -Path $appADMX
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appPatch)) {
@@ -167,7 +168,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Get-Process -Name $appProcess | Stop-Process -Force

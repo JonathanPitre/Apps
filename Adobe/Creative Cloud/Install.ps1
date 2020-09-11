@@ -58,6 +58,7 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
     Remove-Variable appScriptDirectory
     Try {
@@ -92,7 +93,7 @@ $appInstallParameters = "--silent"
 $appCleanerToolParameters = "--cleanupXML=$appScriptDirectory\cleanup.xml"
 $appVersion = "5.1.0.407"
 $appSource = $appVersion
-$appDestination = "$envProgramFilesX86\Adobe\Adobe Creative Cloud\Utils"
+$appDestination = "${env:ProgramFiles(x86)}\Adobe\Adobe Creative Cloud\Utils"
 # https://helpx.adobe.com/ca/creative-cloud/kb/cc-cleaner-tool-installation-problems.html
 $appURLUninstaller = "http://download.macromedia.com/SupportTools/Cleaner/win/AdobeCreativeCloudCleanerTool.exe"
 $appSetupUninstaller = $appURLUninstaller.split("/")[6]
@@ -103,12 +104,12 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").Di
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
 
-    Write-Log -Message "Downloading $appName  Cleaner Tool..." -Severity 1 -LogType CMTrace -WriteHost $True
     If (-Not(Test-Path -Path $appScriptDirectory\$appSetupUninstaller)) {
+        Write-Log -Message "Downloading $appVendor $appName Cleaner Tool..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURLUninstaller -OutFile $appSetupUninstaller
     }
     Else {
-        Write-Log -Message "File already exists. Skipping Download" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -120,6 +121,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "Installing $appVendor $appName $appShortVersion $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
+
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-ScheduledTask -TaskName "$($appVendor)GCInvoker-1.0" | Stop-ScheduledTask
     Get-ScheduledTask -TaskName "$($appVendor)GCInvoker-1.0" | Disable-ScheduledTask
