@@ -94,10 +94,10 @@ $Evergreen = Get-MicrosoftFSLogixApps
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.uri
 $appZip = "FSLogix Apps.zip"
-$appSource = "$appVersion\x64\Release"
-$appDestination = "$env:ProgramFiles\FSLogix\Apps"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
+$appSource = "$appVersion"
+$appDestination = "$envProgramFiles\FSLogix\Apps"
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact) | Select-Object -Last 1
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -Last 1
 ##*===============================================
 
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
@@ -105,7 +105,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\x64\Release\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
         Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appSource
@@ -119,9 +119,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Get-Process -Name $appProcess | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
+    Execute-Process -Path .\x64\Release\$appSetup -Parameters $appInstallParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Configure Windows Search service auto-start
+    Set-ServiceStartMode -Name "WSearch" -StartMode "Automatic"
+    Start-ServiceAndDependencies -Name "WSearch"
+    # Windows Search CoreCount modification
+    Set-RegistryKey -Key "HKLM\SOFTWARE\Microsoft\Windows Search" -Name "CoreCount" -Type "Dword" -Value "1"
+
     Register-ScheduledTask -Xml (Get-Content $appScriptDirectory\WSearch.xml | Out-String) -TaskName "Reset Windows Search at Logoff" -Force
     New-Folder -Path "$envCommonStartMenuPrograms\Troubleshooting Tools" -ContinueOnError $True
     New-Shortcut -Path "$envCommonStartMenuPrograms\Troubleshooting Tools\FSLogix Tray Icon.lnk" -TargetPath "$appDestination\frxtray.exe" -IconLocation "$appDestination\frxtray.exe" -Description "FSLogix Tray Icon" -WorkingDirectory "$appDestination"
