@@ -87,6 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Microsoft"
 $appName = "OneDrive"
+$appLongName = "for Business"
 $appProcess = @("OneDrive")
 $appInstallParameters = "/allusers /silent"
 $Evergreen = Get-MicrosoftOneDrive | Where-Object {$_.Ring -eq "Insider"}
@@ -106,7 +107,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appSource
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
-        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
@@ -116,7 +117,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcess | Stop-Process -Force
 
-    Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
 
 	Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -139,11 +140,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 	#Remove PSDrive HKUDefaultHive
 	Remove-PSDrive HKUDefaultHive
 
-    Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appLongName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }
 Else {
-    Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appLongName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
 
 <#
