@@ -87,13 +87,15 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Microsoft"
 $appName = "Edge"
-$appLongName = "Edge Enterprise"
+$appLongName = "for Business"
 $appSetup = "MicrosoftEdgeEnterpriseX64.msi"
 $appProcess = @("msedge", "MicrosoftEdgeUpdate")
 $appInstallParameters = "/QB"
 $Evergreen = Get-MicrosoftEdge | Where-Object { $_.Architecture -eq "x64" -and $_.Channel -eq "Stable" -and $_.Platform -eq "Windows" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.uri
+$appURLADMX = "http://dl.delivery.mp.microsoft.com/filestreamingservice/files/86f3a874-888d-4db3-9a67-c2794e152139/MicrosoftEdgePolicyTemplates.cab"
+$appADMX = ($appURLADMX).Split("/")[6]
 $appSource = $appVersion
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
@@ -105,10 +107,22 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
-        Write-Log -Message "Downloading $appVendor $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
+    }
+    Else {
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    If (-Not(Test-Path -Path $appScriptDirectory\PolicyDefinitions\*.admx)) {
+        Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion ADMX template..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
+        New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
+        Execute-Process -Path "$envSystem32Directory\cmd.exe" -Parameters "/C $envSystem32Directory\expand.exe `"$appScriptDirectory\$appVersion\$appADMX`" -F:* `"$appScriptDirectory\PolicyDefinitions`""
+        Expand-Archive -Path $appScriptDirectory\PolicyDefinitions\$appADMX -DestinationPath $appScriptDirectory\PolicyDefinitions -Force
+        Move-Item -Path $appScriptDirectory\PolicyDefinitions\windows\admx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
+        Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "examples","html","mac","windows","$appADMX","VERSION" -Force -Recurse
     }
     Else {
         Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -128,7 +142,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Remove-MSIApplications -Name $($appName)Update -Parameters $appInstallParameters
     }
     If (Test-Path -Path "$envProgramFilesX86\$($appName)Update") {
-        Write-Log -Message "Removing previous $appVendor $appLongName folder to fix issues with new installation." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Removing previous $appVendor $appName $appLongName folder to fix issues with new installation." -Severity 1 -LogType CMTrace -WriteHost $True
         Set-Location -Path "$envProgramFilesX86\$appVendor\$($appName)Update"
         Execute-Process -Path ".\$appVendor$($appName)Update.exe" -Parameters "-uninstall" -IgnoreExitCodes 1606220281 -ContinueOnError $True
     }
@@ -137,7 +151,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Remove-Folder -Path "$envProgramFilesX86\$appVendor\$($appName)Update" -ContinueOnError $True
     Remove-Folder -Path "$envProgramFilesX86\$appVendor\Temp" -ContinueOnError $True
 
-    Write-Log -Message "Installing $appVendor $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -155,11 +169,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     #Remove-File "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
     Update-GroupPolicy
 
-    Write-Log -Message "$appVendor $appLongName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appLongName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }
 Else {
-    Write-Log -Message "$appVendor $appLongName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appLongName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
 
 <#
