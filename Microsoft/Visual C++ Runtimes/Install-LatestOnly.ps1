@@ -6,6 +6,8 @@
 # Example 3 Uninstall MSI:
 # Remove-MSIApplications -Name "appName" -Parameters "/QB"
 
+#Requires -Version 5.1
+
 # Custom package providers list
 $PackageProviders = @("Nuget")
 
@@ -27,7 +29,7 @@ Else {
 
     # Install custom package providers list
     Foreach ($PackageProvider in $PackageProviders) {
-        If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) {Install-PackageProvider -Name $PackageProvider -Force}
+        If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
     }
 
     # Add the Powershell Gallery as trusted repository
@@ -36,11 +38,11 @@ Else {
     # Update PowerShellGet
     $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
     $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
-    If ($PSGetVersion -gt $InstalledPSGetVersion) {Install-PackageProvider -Name PowerShellGet -Force}
+    If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
 
     # Install and import custom modules list
     Foreach ($Module in $Modules) {
-        If (-not(Get-Module -ListAvailable -Name $Module)) {Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force}
+        If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
         Else {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -56,55 +58,67 @@ Else {
     Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 }
 
+# Get the current script directory
 Function Get-ScriptDirectory {
-    If ($psISE) {Split-Path $psISE.CurrentFile.FullPath}
-    Else {$Global:PSScriptRoot}
+    Remove-Variable appScriptDirectory
+    Try {
+        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
+        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
+        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+        Else {
+            Write-Host -ForegroundColor Red "Cannot resolve script file's path"
+            Exit 1
+        }
+    }
+    Catch {
+        Write-Host -ForegroundColor Red "Caught Exception: $($Error[0].Exception.Message)"
+        Exit 2
+    }
 }
 
 # Variables Declaration
 # Generic
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
-$appScriptDirectory = Get-ScriptDirectory
 $env:SEE_MASK_NOZONECHECKS = 1
+$appScriptDirectory = Get-ScriptDirectory
+
 # Application related
 ##*===============================================
 $appVendor = "Microsoft"
-$appName = "VisualC++"
-$appInstallParameters = "/QB"
-$VcList = Get-VcList
-$appVersion = ($VcList | Where-Object {$_.Release -eq "2019" -and $_.Architecture -eq "x64" }).Version
-$appURL = $Evergreen.URI
-$appSetup = ($VcList | Where-Object {$_.Release -eq "2019" -and $_.Architecture -eq "x64" }).Download.Split("/")[6]
+$appName = "Visual C++"
+$appMajorVersion = "2019"
+$VcList = Get-VcList | Where-Object {$_.Release -eq $appMajorVersion}
+$appVersion = $VcList.Version | Select-Object -First 1
+$appVersion = $appVersion.Substring(0,$appVersion.Length-2)
+$appSetup = ($VcList).Download.Split("/")[6]
 $appSource = $appVersion
-#[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.*" -Wildcard)
-#$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Wildcard).DisplayVersion
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion")
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion").DisplayVersion | Select-Object -First 1
 ##*===============================================
 
-#If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
 
-    $appSetupVersion = (Get-Command $appScriptDirectory\2019\x64\RTM\$appSetup).FileVersionInfo.FileVersion
-
-    If ([version]$appSetupVersion -ne [version]$appVersion) {
-        Write-Log -Message "Downloading latest $appVendor $appName runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
+    If (-Not(Test-Path -Path $appScriptDirectory\$appMajorVersion\x64\RTM\$appSetup)) {
+        Write-Log -Message "Downloading $appVendor $appName $appMajorVersion $appVersion Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
         Save-VcRedist -VcList $VcList -Path $appScriptDirectory
     }
     Else {
         Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Write-Log -Message "Installing $appVendor $appName runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing $appVendor $appName $appMajorVersion $appVersion Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
     Install-VcRedist -Path $appScriptDirectory -VcList $VcList
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
-    Write-Log -Message "$appVendor $appName runtimes were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appMajorVersion $appVersion Runtimes were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
-#}
-#Else {
-#    Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
-#}
+}
+Else {
+    Write-Log -Message "$appVendor $appName $appMajorVersion $appInstalledVersion Runtimes are already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+}
 
 <#
 Write-Verbose -Message "Uninstalling custom modules..." -Verbose
