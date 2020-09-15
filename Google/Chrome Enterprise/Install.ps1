@@ -112,6 +112,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Else {
         Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
+
     Get-Process -Name $appProcess | Stop-Process -Force
     # Delete machine policies to prevent issue during installation
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\Update" -Recurse -ContinueOnError $True

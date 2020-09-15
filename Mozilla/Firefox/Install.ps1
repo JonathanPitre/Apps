@@ -106,12 +106,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-
+    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
         Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
+
     Get-Process -Name $appProcess | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True

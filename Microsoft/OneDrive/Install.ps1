@@ -105,7 +105,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-
+    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {

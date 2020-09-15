@@ -130,7 +130,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Execute-Process -Path .\$appSetup -Parameters $appDownloadParameters -PassThru
     }
     Else {
-    	    Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+            Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Installing $appVendor $appName $appMajorVersion $appBitness..." -Severity 1 -LogType CMTrace -WriteHost $True

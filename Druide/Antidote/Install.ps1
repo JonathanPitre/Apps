@@ -116,7 +116,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Break
     }
     Else {
-	    Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
         Set-Location -Path $appSource
     }
 
@@ -145,6 +145,5 @@ Write-Verbose -Message "Uninstalling custom modules..." -Verbose
 Foreach ($Module in $Modules) {
     If ((Get-Module -ListAvailable -Name $Module)) {Uninstall-Module -Name $Module -Force}
 }
-
 Write-Verbose -Message "Custom modules were succesfully uninstalled!" -Verbose
 #>

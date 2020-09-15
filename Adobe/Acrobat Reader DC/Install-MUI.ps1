@@ -202,6 +202,5 @@ Write-Verbose -Message "Uninstalling custom modules..." -Verbose
 Foreach ($Module in $Modules) {
     If ((Get-Module -ListAvailable -Name $Module)) {Uninstall-Module -Name $Module -Force}
 }
-
 Write-Verbose -Message "Custom modules were succesfully uninstalled!" -Verbose
 #>

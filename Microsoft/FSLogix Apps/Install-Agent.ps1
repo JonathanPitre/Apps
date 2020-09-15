@@ -105,7 +105,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-
+    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
         Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appSource
         Remove-File -Path $appZip
@@ -120,7 +121,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
 
-	Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
     Register-ScheduledTask -Xml (Get-Content $appScriptDirectory\WSearch.xml | Out-String) -TaskName "Reset Windows Search at Logoff" -Force
     New-Folder -Path "$envCommonStartMenuPrograms\Troubleshooting Tools" -ContinueOnError $True
     New-Shortcut -Path "$envCommonStartMenuPrograms\Troubleshooting Tools\FSLogix Tray Icon.lnk" -TargetPath "$appDestination\frxtray.exe" -IconLocation "$appDestination\frxtray.exe" -Description "FSLogix Tray Icon" -WorkingDirectory "$appDestination"
