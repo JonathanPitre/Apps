@@ -101,8 +101,8 @@ $appSetupPPAPI = $appURLPPAPI.split("/")[7]
 $appSetupPlugin = $appURLPlugin.split("/")[7]
 $appSetupUninstaller = $appURLUninstaller.split("/")[7]
 $appSource = $appVersion
-$appDestinationx86 = "$envSystem32Directory\Macromed\Flash"
-$appDestinationx64 = "$envSystemRoot\SysWOW64\Macromed\Flash"
+$appDestinationx86 = "$env:SystemRoot\System32\Macromed\Flash"
+$appDestinationx64 = "$env:SystemRoot\SysWOW64\Macromed\Flash"
 [boolean]$IsAppInstalled = (Get-InstalledApplication -Name "$appVendor $appName \d{2}" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName \d{2}" -RegEx).DisplayVersion | Select-Object -First 1
 ##*===============================================
