@@ -6,6 +6,9 @@
     <Exclude Copy="0">AppData\Local\Apps</Exclude>
     <Exclude Copy="0">AppData\Local\assembly</Exclude>
     <Exclude Copy="0">AppData\Local\CEF</Exclude>
+    <Exclude Copy="0">AppData\Local\Citrix\Citrix Files\PartCache</Exclude>
+    <Exclude Copy="0">AppData\Local\Citrix\SelfService\CitrixWebControlCache\Cache</Exclude>
+    <Exclude Copy="0">AppData\Local\Citrix\SelfService\CitrixWebControlCache\Service Worker\CacheStorage</Exclude>
     <Exclude Copy="0">AppData\Local\CrashDumps</Exclude>
     <Exclude Copy="0">AppData\Local\D3DSCache</Exclude>
     <Exclude Copy="0">AppData\Local\Deployment</Exclude>
@@ -78,6 +81,7 @@
     <Exclude Copy="0">AppData\Local\Packages\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\AC\MicrosoftEdge\IECompatCache</Exclude>
     <Exclude Copy="0">AppData\Local\Packages\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\AC\MicrosoftEdge\IECompatUaCache</Exclude>
     <Exclude Copy="0">AppData\Local\Packages\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\AC\Temp</Exclude>
+    <Exclude Copy="0">AppData\Local\paint.net</Exclude>
     <Exclude Copy="0">AppData\Local\SCOM\LOGS</Exclude>
     <Exclude Copy="0">AppData\Local\Spotify\Browser\Cache</Exclude>
     <Exclude Copy="0">AppData\Local\Spotify\Browser\GPUCache</Exclude>
@@ -86,6 +90,7 @@
     <Exclude Copy="0">AppData\Local\Symantec\Symantec Endpoint Protection\Logs</Exclude>
     <Exclude Copy="0">AppData\Local\VirtualStore</Exclude>
     <Exclude Copy="0">AppData\Local\WebEx\wbxcache</Exclude>
+    <Exclude Copy="0">AppData\Local\WebEx\WebEx\Meetings</Exclude>
     <Exclude Copy="0">AppData\LocalLow\Microsoft\Windows\AppCache</Exclude>
     <Exclude Copy="0">AppData\LocalLow</Exclude>
     <Exclude Copy="0">AppData\Roaming\Adobe\Common\Media Cache Files</Exclude>
