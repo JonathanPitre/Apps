@@ -93,7 +93,7 @@ $appInstallParameters = "/allusers /silent"
 $Evergreen = Get-MicrosoftOneDrive | Where-Object {$_.Ring -eq "Insider"}
 $Evergreen = $Evergreen[$Evergreen.Count-1]
 $appVersion = $Evergreen.Version
-$appURL = $Evergreen.uri
+$appURL = $Evergreen.URI
 $appSetup = $appURL.Split("/")[6]
 $appSource = $appVersion
 $appDestination = "${env:ProgramFiles(x86)}\Microsoft OneDrive"
@@ -111,7 +111,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True

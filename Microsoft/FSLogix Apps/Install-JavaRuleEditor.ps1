@@ -92,7 +92,7 @@ $appProcess = @("JavaRuleEditor")
 $appInstallParameters = "/install /quiet /norestart"
 $Evergreen = Get-MicrosoftFSLogixApps
 $appVersion = $Evergreen.Version
-$appURL = $Evergreen.uri
+$appURL = $Evergreen.URI
 $appZip = "FSLogix Apps.zip"
 $appSource = "$appVersion"
 $appDestination = "$env:ProgramFiles\FSLogix\Apps"
@@ -112,7 +112,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Remove-File -Path $appZip
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True

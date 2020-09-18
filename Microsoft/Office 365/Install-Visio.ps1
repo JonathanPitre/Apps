@@ -97,7 +97,7 @@ $appDownloadParameters = "/download .\$appConfig"
 $appInstallParameters = "/configure .\$appConfig"
 $Evergreen = Get-MicrosoftOffice | Where-Object {$_.Channel -eq "$appName $appMajorVersion Enterprise"}
 $appVersion = $Evergreen.Version
-$appURL = $Evergreen.uri
+$appURL = $Evergreen.URI
 $appSource = $appVersion
 $appDestination = "$env:ProgramFiles\Microsoft Office\root\Office16"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName2 .+$appMajorVersion" -RegEx)
@@ -112,7 +112,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
     $appSetupVersion = (Get-Command .\$appSetup).FileVersionInfo.FileVersion
 
@@ -130,7 +130,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Execute-Process -Path .\$appSetup -Parameters $appDownloadParameters -PassThru
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Installing $appVendor $appName2 $appMajorVersion $appBitness..." -Severity 1 -LogType CMTrace -WriteHost $True

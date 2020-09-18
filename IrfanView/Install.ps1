@@ -163,13 +163,13 @@ $appProcess = @("i_view64")
 $appInstallParameters = "/assoc=1 /group=1 /ini=%APPDATA%\IrfanView /silent"
 $Evergreen = Get-IrfanView | Where-Object {$_.Architecture -eq "x64"}
 $appVersion = $Evergreen.Version
-$appURLSetup = $Evergreen.uri
+$appURLSetup = $Evergreen.URI
 $appSetup = $appURLSetup.Split("/")[5]
 $Evergreen = Get-IrfanView | Where-Object {$_.Architecture -eq "x64 Plugin"}
-$appURLSetupPlugin = $Evergreen.uri
+$appURLSetupPlugin = $Evergreen.URI
 $appSetupPlugin = $appURLSetupPlugin.Split("/")[5]
 $Evergreen = Get-IrfanView | Where-Object {$_.Language -eq "french"}
-$appURLSetupLang = $Evergreen.uri
+$appURLSetupLang = $Evergreen.URI
 $appSetupLang = $appURLSetupLang.Split("/")[4]
 $appSource = $appVersion
 $appDestination = "$env:ProgramFiles\IrfanView"
@@ -189,7 +189,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURLSetupLang -OutFile $appSetupLang
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True

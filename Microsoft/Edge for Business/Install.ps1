@@ -93,7 +93,7 @@ $appProcess = @("msedge", "MicrosoftEdgeUpdate")
 $appInstallParameters = "/QB"
 $Evergreen = Get-MicrosoftEdge | Where-Object { $_.Architecture -eq "x64" -and $_.Channel -eq "Stable" -and $_.Platform -eq "Windows" }
 $appVersion = $Evergreen.Version
-$appURL = $Evergreen.uri
+$appURL = $Evergreen.URI
 $appURLADMX = "http://dl.delivery.mp.microsoft.com/filestreamingservice/files/86f3a874-888d-4db3-9a67-c2794e152139/MicrosoftEdgePolicyTemplates.cab"
 $appADMX = ($appURLADMX).Split("/")[6]
 $appSource = $appVersion
@@ -112,7 +112,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     If (-Not(Test-Path -Path $appScriptDirectory\PolicyDefinitions\*.admx)) {
@@ -125,7 +125,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "examples","html","mac","windows","$appADMX","VERSION" -Force -Recurse
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Get-Process -Name $appProcess | Stop-Process -Force

@@ -94,7 +94,7 @@ $appArchitecture = "x64"
 $Evergreen = Get-MicrosoftPowerShellCore | Where-Object {$_.Architecture -eq $appArchitecture -and $_.URI -match ".msi"}
 $appVersion = $Evergreen.Version
 $appMajorVersion = $appVersion.Substring(0,1)
-$appURL = $Evergreen.uri
+$appURL = $Evergreen.URI
 $appSetup = $appURL.Split("/")[8]
 $appSource = $appVersion
 $appDestination = "$env:ProgramFiles\PowerShell\$appMajorVersion"
@@ -112,7 +112,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True

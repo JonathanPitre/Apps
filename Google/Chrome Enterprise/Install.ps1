@@ -93,7 +93,8 @@ $appProcess = @("chrome","GoogleUpdate")
 $appInstallParameters = "/QB"
 $Evergreen = Get-GoogleChrome | Where-Object {$_.Architecture -eq "x64"}
 $appVersion = $Evergreen.Version
-$appURL = $Evergreen.uri
+$appURL = $Evergreen.URI
+$appURLADMX = "https://chromeenterprise.google/browser/download/thank-you/?platform=ADMADMX&channel=stable&usagestats=0#"
 $appSource = $appVersion
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
@@ -110,7 +111,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Get-Process -Name $appProcess | Stop-Process -Force

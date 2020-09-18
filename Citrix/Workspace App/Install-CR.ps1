@@ -93,7 +93,7 @@ $appProcess = @("wfica32", "wfcrun32", "redirector", "CDViewer", "HdxBrowser", "
 $appInstallParameters = "EnableCEIP=false EnableTracing=false /forceinstall /noreboot /silent /includeSSON /AutoUpdateCheck=disabled"
 $Evergreen = Get-CitrixWorkspaceApp | Where-Object {$_.Title -contains "Citrix Workspace - Current Release"}
 $appVersion = $Evergreen.Version
-$appURL = $Evergreen.uri
+$appURL = $Evergreen.URI
 $appSetup = $appURL.Split("/")[7]
 $appSource = $appVersion
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\ICA Client"
@@ -111,7 +111,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -119,6 +119,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec
+
+    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
     # Disable automatic updates service
     If (Test-ServiceExists -Name CWAUpdaterService) {
         Stop-ServiceAndDependencies -Name CWAUpdaterService
@@ -126,7 +129,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
     Get-Process -Name $appProcess | Stop-Process -Force
 
-    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\AuthManager\AuthManSvr.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\CDViewer.exe" -Force
@@ -136,13 +138,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\SelfServicePlugin\SelfServicePlugin.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\concentr.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\wfica32.exe" -Force
+
     # Add Windows Firewall rule(s) - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/multimedia/opt-ms-teams.html
     If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName")) {
         New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\HdxTeams.exe" -Profile 'Domain, Private, Public' -Protocol TCP
         New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\HdxTeams.exe" -Profile 'Domain, Private, Public' -Protocol UDP
     }
-    # Registry Optimizations
 
+    # Registry Optimizations
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 

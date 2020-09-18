@@ -96,7 +96,7 @@ $appAddParameters2 = "ALLUSERS=1"
 $Evergreen = Get-AdobeAcrobatReaderDC | Where-Object {$_.Language -eq "Multi"}
 $appVersion = $Evergreen.Version
 $appShortVersion = "DC"
-$appURLPatch = $Evergreen.uri
+$appURLPatch = $Evergreen.URI
 $appPatch = ($appURLPatch).Split("/")[9]
 $appURLMUI = "ftp://ftp.adobe.com/pub/adobe/reader/win/AcrobatDC/1500720033/AcroRdrDC1500720033_MUI.exe"
 $appMUI = ($appURLMUI).Split("/")[9]
@@ -127,7 +127,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Remove-File -Path "$appScriptDirectory\$appMUI"
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appDIC)) {
@@ -135,7 +135,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURLDic -OutFile $appDic
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appFont)) {
@@ -143,7 +143,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURLFont -OutFile $appFont
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     If (-Not(Test-Path -Path $appScriptDirectory\PolicyDefinitions\*.admx)) {
@@ -154,7 +154,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Remove-File -Path $appADMX
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appPatch)) {
@@ -168,7 +168,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Get-Process -Name $appProcess | Stop-Process -Force

@@ -91,7 +91,7 @@ $appInstallParameters = "/QB"
 $appAddParameters = "INSTALLLEVEL=3 UPDATE_NOTIFIER=0"
 $Evergreen = Get-OpenJDK | Where-Object { $_.Architecture -eq "x64" -and $_.URI -match ".msi" }
 $appVersion = $Evergreen.Version
-$appURL = $Evergreen.uri
+$appURL = $Evergreen.URI
 $appSetup = $appURL.Split("/")[8]
 $appSource = $appVersion
 $appMainVersion = $appVersion.Substring(0,5)
@@ -112,7 +112,7 @@ If ([version]$appDisplayVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True

@@ -116,7 +116,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Break
     }
     Else {
-        Write-Log -Message "File already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
         Set-Location -Path $appSource
     }
 
