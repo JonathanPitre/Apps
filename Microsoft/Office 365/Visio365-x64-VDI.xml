@@ -1,9 +1,11 @@
-<Co nfiguration ID="14ff4ba0-3c85-4b3e-8a96-541c0d6eb2d6">
-  <Info Description="Project 2019 Optimized for VDI" />
-  <Add OfficeClientEdition="64" Channel="SemiAnnual">
-    <Product ID="ProjectPro2019Volume" PIDKEY="B4NPR-3FKK7-T2MBV-FRQ4W-PKD2B">
+<Configuration ID="ec7fdd32-3d4c-4006-a88e-d8b908f34a90">
+  <Info Description="Visio 365 Optimized for VDI" />
+  <Add OfficeClientEdition="64" Channel="Current">
+    <Product ID="VisioProRetail">
       <Language ID="fr-fr" />
       <Language ID="en-us" />
+      <ExcludeApp ID="Groove" />
+      <ExcludeApp ID="OneDrive" />
     </Product>
   </Add>
   <Property Name="SharedComputerLicensing" Value="1" />
@@ -34,6 +36,7 @@
     <User Key="software\microsoft\office\16.0\common\general" Name="disableboottoofficestart" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableOfficeStartGlobal" />
     <User Key="software\microsoft\office\16.0\firstrun" Name="disablemovie" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableMovie" />
     <User Key="software\microsoft\office\16.0\firstrun" Name="bootedrtm" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableOfficeFirstrun" />
+    <User Key="software\microsoft\office\16.0\visio" Name="dontshowwhatsnew" Value="1" Type="REG_DWORD" App="office16" Id="L_DontShowWhatsNewInformationVisio" />
     <User Key="software\microsoft\office\16.0\common\general" Name="disablecomingsoon" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableComingSoon" />
   </AppSettings>
   <Display Level="Full" AcceptEULA="TRUE" />

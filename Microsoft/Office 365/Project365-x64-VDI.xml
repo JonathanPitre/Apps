@@ -1,7 +1,7 @@
-<Co nfiguration ID="14ff4ba0-3c85-4b3e-8a96-541c0d6eb2d6">
-  <Info Description="Project 2019 Optimized for VDI" />
-  <Add OfficeClientEdition="64" Channel="SemiAnnual">
-    <Product ID="ProjectPro2019Volume" PIDKEY="B4NPR-3FKK7-T2MBV-FRQ4W-PKD2B">
+<Configuration ID="fc53b730-0e59-45e2-8194-8db03ba97810">
+  <Info Description="Project 365 Optimized for VDI" />
+  <Add OfficeClientEdition="64" Channel="Current">
+    <Product ID="ProjectProRetail">
       <Language ID="fr-fr" />
       <Language ID="en-us" />
     </Product>

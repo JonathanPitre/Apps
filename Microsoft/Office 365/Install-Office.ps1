@@ -90,7 +90,7 @@ $appName = "Office"
 $appMajorVersion = "365"
 $appSetup = "setup.exe"
 $appProcess = @("OUTOOK","EXCEL","MSACCESS","WINPROJ","LYNC","VISIO","ONENOTE","POWERPNT","MSPUB")
-$appConfig = "configuration-Office365-x64-RDS.xml"
+$appConfig = "Office365-x64-VDI.xml"
 $appBitness = ([xml](Get-Content $appConfig)).SelectNodes("//Add/@OfficeClientEdition").Value
 $appDownloadParameters = "/download .\$appConfig"
 $appInstallParameters = "/configure .\$appConfig"
@@ -111,7 +111,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
-	    Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     $appSetupVersion = (Get-Command .\$appSetup).FileVersionInfo.FileVersion
@@ -130,7 +130,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Execute-Process -Path .\$appSetup -Parameters $appDownloadParameters -PassThru
     }
     Else {
-            Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    	    Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Installing $appVendor $appName $appMajorVersion $appBitness..." -Severity 1 -LogType CMTrace -WriteHost $True

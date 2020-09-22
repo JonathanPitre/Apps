@@ -32,6 +32,7 @@
     <User Key="software\microsoft\office\16.0\common\services\fax" Name="nofax" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableFaxOverInternetfeature" />
     <User Key="software\microsoft\office\16.0\common" Name="disablemissingcomponenthyperlinks" Value="1" Type="REG_DWORD" App="office16" Id="L_Hidemissingcomponentdownloadhyperlinks" />
     <User Key="software\microsoft\office\16.0\common\general" Name="optindisable" Value="1" Type="REG_DWORD" App="office16" Id="L_SuppressRecommendedSettingsDialog" />
+    <User Key="software\microsoft\office\16.0\common\graphics" Name="disablehardwareacceleration" Value="1" Type="REG_DWORD" App="office16" Id="L_DoNotUseHardwareAcceleration" />
     <User Key="software\microsoft\office\16.0\osm" Name="enablelogging" Value="0" Type="REG_DWORD" App="office16" Id="L_EnableLogging" />
     <User Key="software\microsoft\office\16.0\common\graphics" Name="disableanimations" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableAnimations" />
     <User Key="software\microsoft\office\16.0\common\feedback" Name="enabled" Value="0" Type="REG_DWORD" App="office16" Id="L_SendFeedback" />
@@ -56,6 +57,8 @@
     <User Key="software\microsoft\office\16.0\outlook\options\calendar" Name="workday" Value="124" Type="REG_DWORD" App="outlk16" Id="L_Workweek" />
     <User Key="software\microsoft\office\16.0\outlook\options\calendar" Name="firstdow" Value="1" Type="REG_DWORD" App="outlk16" Id="L_Firstdayoftheweek" />
     <User Key="software\microsoft\office\16.0\outlook\preferences" Name="disablemanualarchive" Value="1" Type="REG_DWORD" App="outlk16" Id="L_DisableFileArchive" />
+    <User Key="software\microsoft\office\16.0\outlook\autodiscover" Name="zeroconfigexchange" Value="1" Type="REG_DWORD" App="outlk16" Id="L_AutomaticallyConfigureProfileBasedOnActive" />
+    <User Key="software\microsoft\office\16.0\outlook\autodiscover" Name="zeroconfigexchangeonce" Value="1" Type="REG_DWORD" App="outlk16" Id="L_AutomaticallyConfigureProfileBasedOnActiveOnce" />
     <User Key="software\microsoft\office\outlook\socialconnector" Name="runosc" Value="0" Type="REG_DWORD" App="outlk16" Id="L_TurnOffOutlookSocialConnector" />
     <User Key="software\microsoft\office\outlook\socialconnector" Name="unmanagedinfobars" Value="1" Type="REG_DWORD" App="outlk16" Id="L_DoNotShowSocialNetworkInfoBars" />
     <User Key="software\microsoft\office\16.0\powerpoint\options" Name="defaultformat" Value="27" Type="REG_DWORD" App="ppt16" Id="L_SavePowerPointfilesas" />
