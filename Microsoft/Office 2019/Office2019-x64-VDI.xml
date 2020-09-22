@@ -1,20 +1,25 @@
-<Configuration ID="26c33c47-3c8c-4b8c-842d-91076a15caf2">
-  <Info Description="Project RDSH" />
+<Configuration ID="db6e8ad5-84d3-4256-9ce8-55ce762e8367">
+  <Info Description="Office 2019 Optimized for VDI" />
   <Add OfficeClientEdition="64" Channel="PerpetualVL2019">
-    <Product ID="ProjectPro2019Volume" PIDKEY="">
+    <Product ID="ProPlus2019Volume" PIDKEY="NMMKJ-6RK4F-KMJVX-8D9MJ-6MWKP">
       <Language ID="fr-fr" />
+      <Language ID="en-us" />
       <ExcludeApp ID="Groove" />
-      <ExcludeApp ID="OneDrive" />
       <ExcludeApp ID="Lync" />
+      <ExcludeApp ID="OneDrive" />
+    </Product>
+    <Product ID="LanguagePack">
+      <Language ID="fr-fr" />
+      <Language ID="en-us" />
     </Product>
   </Add>
-  <Property Name="SharedComputerLicensing" Value="0" />
+  <Property Name="SharedComputerLicensing" Value="1" />
   <Property Name="PinIconsToTaskbar" Value="TRUE" />
   <Property Name="SCLCacheOverride" Value="0" />
   <Property Name="AUTOACTIVATE" Value="1" />
   <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
   <Property Name="DeviceBasedLicensing" Value="0" />
-  <Updates Enabled="TRUE" />
+  <Updates Enabled="FALSE" />
   <RemoveMSI />
   <AppSettings>
     <Setup Name="Company" Value="" />
@@ -37,7 +42,6 @@
     <User Key="software\microsoft\office\16.0\firstrun" Name="bootedrtm" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableOfficeFirstrun" />
     <User Key="software\microsoft\office\16.0\excel" Name="dontshowwhatsnew" Value="1" Type="REG_DWORD" App="office16" Id="L_DontShowWhatsNewInformationExcel" />
     <User Key="software\microsoft\office\16.0\powerpoint" Name="dontshowwhatsnew" Value="1" Type="REG_DWORD" App="office16" Id="L_DontShowWhatsNewInformationPowerPoint" />
-    <User Key="software\microsoft\office\16.0\visio" Name="dontshowwhatsnew" Value="1" Type="REG_DWORD" App="office16" Id="L_DontShowWhatsNewInformationVisio" />
     <User Key="software\microsoft\office\16.0\outlook" Name="dontshowwhatsnew" Value="1" Type="REG_DWORD" App="office16" Id="L_DontShowWhatsNewInformationOutlook" />
     <User Key="software\microsoft\office\16.0\onenote" Name="dontshowwhatsnew" Value="1" Type="REG_DWORD" App="office16" Id="L_DontShowWhatsNewInformationOneNote" />
     <User Key="software\microsoft\office\16.0\word" Name="dontshowwhatsnew" Value="1" Type="REG_DWORD" App="office16" Id="L_DontShowWhatsNewInformationWord" />
@@ -59,6 +63,6 @@
     <User Key="software\microsoft\office\16.0\word\options" Name="defaultformat" Value="" Type="REG_SZ" App="word16" Id="L_SaveWordfilesas" />
     <User Key="software\microsoft\office\16.0\word\options" Name="animatescreenmove" Value="0" Type="REG_DWORD" App="word16" Id="L_Providefeedbackwithanimation" />
   </AppSettings>
-  <Display Level="None" AcceptEULA="TRUE" />
+  <Display Level="Full" AcceptEULA="TRUE" />
   <Logging Level="Standard" Path="%TEMP%" />
 </Configuration>
