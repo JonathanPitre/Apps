@@ -101,7 +101,7 @@ $appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
 $appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
 ##*===============================================
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ($appVersion -gt $appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
