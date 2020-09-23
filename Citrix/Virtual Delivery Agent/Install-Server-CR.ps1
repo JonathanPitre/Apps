@@ -122,7 +122,7 @@ If ($appVersion -gt $appInstalledVersion) {
     Get-Process -Name $appProcess | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec #-IgnoreExitCodes "3,0,3010"
+    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3,0,3010"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
@@ -134,6 +134,7 @@ If ($appVersion -gt $appInstalledVersion) {
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\HDX\bin\WebSocketService.exe" -Force
     #Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\HDX\bin\WebSocketAgent.exe" -Force
 
+    Set-Location -Path $appScriptDirectory
     Remove-Folder -Path "$env:SystemDrive\Installs"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
