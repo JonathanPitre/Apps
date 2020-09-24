@@ -107,7 +107,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appSource
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
-        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
@@ -117,7 +117,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcess | Stop-Process -Force
 
-    Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing $appVendor $appName $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -140,18 +140,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\wfica32.exe" -Force
 
     # Add Windows Firewall rule(s) - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/multimedia/opt-ms-teams.html
-    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName")) {
+    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2")) {
         New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\HdxTeams.exe" -Profile 'Domain, Private, Public' -Protocol TCP
         New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\HdxTeams.exe" -Profile 'Domain, Private, Public' -Protocol UDP
     }
 
     # Registry Optimizations
 
-    Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appName2 $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }
 Else {
-    Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appName2 $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
 
 <#
