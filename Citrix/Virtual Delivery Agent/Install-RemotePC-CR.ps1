@@ -90,7 +90,8 @@ $appName = "Virtual Apps and Desktops"
 $appName2 = "Virtual Delivery Agent"
 $appProcess = @("BrokerAgent", "picaSessionAgent")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
-$appInstallParameters = '/remotepc /noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /includeadditional "Citrix User Profile Manager","Citrix User Profile Manager WMI Plugin" /exclude "User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools" /components vda'
+# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
+$appInstallParameters = '/remotepc /noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /exclude "User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools" /components vda'
 #$Evergreen = Get-CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -contains "Citrix Virtual Apps and Desktops 7 2006, All Editions"}
 $appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 #$appURL = $Evergreen.URI
@@ -122,7 +123,7 @@ If ($appVersion -gt $appInstalledVersion) {
     Get-Process -Name $appProcess | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3,0,3010"
+    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
@@ -141,7 +142,7 @@ If ($appVersion -gt $appInstalledVersion) {
     Execute-Process -Path "$envSystem32Directory\powercfg.exe" -Parameters "/requestsoverride PROCESS GFXMGR.exe DISPLAY"
 
     # Registry optimizations
-    #https://www.carlstalhood.com/remote-pc/#deliverygroup
+    # https://www.carlstalhood.com/remote-pc/#deliverygroup
 
     Set-Location -Path $appScriptDirectory
     Remove-Folder -Path "$env:SystemDrive\Installs"
