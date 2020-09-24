@@ -187,8 +187,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Execute-MSI -Action Install -Path $appFont -Parameters $appInstallParameters -AddParameters $appAddParameters2
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Disable scheduled tasks
     Get-ScheduledTask -TaskName "$appVendor Acrobat*" | Stop-ScheduledTask
     Get-ScheduledTask -TaskName "$appVendor Acrobat*" | Disable-ScheduledTask
+
+    # Fix application Start Menu shorcut
+    Copy-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -Destination "$envCommonStartMenuPrograms\$appVendor $appName $appShortVersion .lnk" -ContinueFileCopyOnError $True
+    Remove-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -ContinueOnError $True
 
     Write-Verbose -Message "$appVendor $appName $appShortVersion $appVersion was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
 
