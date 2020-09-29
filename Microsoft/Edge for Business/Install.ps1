@@ -89,12 +89,13 @@ $appVendor = "Microsoft"
 $appName = "Edge"
 $appLongName = "for Business"
 $appSetup = "MicrosoftEdgeEnterpriseX64.msi"
-$appProcess = @("msedge", "MicrosoftEdgeUpdate")
+$appProcess = @("msedge", "MicrosoftEdgeUpdate", "elevation_service")
 $appInstallParameters = "/QB"
+$appAddParameters = "DONOTCREATEDESKTOPSHORTCUT=TRUE DONOTCREATETASKBARSHORTCUT=TRUE"
 $Evergreen = Get-MicrosoftEdge | Where-Object { $_.Architecture -eq "x64" -and $_.Channel -eq "Stable" -and $_.Platform -eq "Windows" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appURLADMX = "http://dl.delivery.mp.microsoft.com/filestreamingservice/files/86f3a874-888d-4db3-9a67-c2794e152139/MicrosoftEdgePolicyTemplates.cab"
+$appURLADMX = (Get-MicrosoftEdge | Where-Object { $_.Channel -eq "Policy" }).URI
 $appADMX = ($appURLADMX).Split("/")[6]
 $appSource = $appVersion
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName\Application"
@@ -152,7 +153,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Remove-Folder -Path "$envProgramFilesX86\$appVendor\Temp" -ContinueOnError $True
 
     Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
+    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
     Copy-File -Path "$appScriptDirectory\master_preferences" -Destination $appDestination
