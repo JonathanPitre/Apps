@@ -168,8 +168,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If ((Get-ServiceStartMode -Name $serviceName) -ne "Automatic (Delayed Start)") {Set-ServiceStartMode -Name $serviceName -StartMode "Automatic (Delayed Start)"}
     Start-ServiceAndDependencies -Name $serviceName
 
-    # Fix for Citrix App Layering and FSLogix integration, must be done in the platform layer - https://social.msdn.microsoft.com/Forums/windows/en-US/660959a4-f9a9-486b-8a0d-dec3eba549e3/using-citrix-app-layering-unidesk-with-fslogix?forum=FSLogix
-    # https://www.citrix.com/blogs/2020/01/07/citrix-app-layering-and-fslogix-profile-containers
+    # Fix for Citrix App Layering and FSLogix integration, must be done in the platform layer - https://support.citrix.com/article/CTX249873
+    # https://social.msdn.microsoft.com/Forums/windows/en-US/660959a4-f9a9-486b-8a0d-dec3eba549e3/using-citrix-app-layering-unidesk-with-fslogix?forum=FSLogix
     If ((Test-Path -Path "HKLM:\SYSTEM\CurrentControlSet\Services\unifltr") -and (Get-RegistryKey -Key "HKLM\SYSTEM\CurrentControlSet\Services\frxdrvvt\Instances\frxdrvvt" -Value "Altitude") -ne 138010) {
         Write-Log -Message "Modifying $appVendor $appName altitude setting to be compatible with Citrix App Layering..." -Severity 1 -LogType CMTrace -WriteHost $True
         Set-RegistryKey -Key "HKLM\SYSTEM\CurrentControlSet\Services\frxdrvvt\Instances\frxdrvvt" -Name "Altitude" -Value "138010" -Type "String"
