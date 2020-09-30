@@ -89,7 +89,7 @@ $appVendor = "Microsoft"
 $appName = "Edge"
 $appLongName = "for Business"
 $appSetup = "MicrosoftEdgeEnterpriseX64.msi"
-$appProcess = @("msedge", "MicrosoftEdgeUpdate", "elevation_service")
+$appProcess = @("msedge", "MicrosoftEdgeUpdate", "MicrosoftEdgeUpdateBroker", "MicrosoftEdgeUpdateCore", "msedgewebview2", "elevation_service")
 $appInstallParameters = "/QB"
 $appAddParameters = "DONOTCREATEDESKTOPSHORTCUT=TRUE DONOTCREATETASKBARSHORTCUT=TRUE"
 $Evergreen = Get-MicrosoftEdge | Where-Object { $_.Architecture -eq "x64" -and $_.Channel -eq "Stable" -and $_.Platform -eq "Windows" }
@@ -105,7 +105,7 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Ex
 
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
+    If (-Not(Test-Path -Path $appSource)) { New-Folder -Path $appSource }
     Set-Location -Path $appSource
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
@@ -116,20 +116,32 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Download latest policy definitions
     If (-Not(Test-Path -Path $appScriptDirectory\PolicyDefinitions\*.admx)) {
         Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion ADMX template..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
         New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-        Execute-Process -Path "$envSystem32Directory\cmd.exe" -Parameters "/C $envSystem32Directory\expand.exe `"$appScriptDirectory\$appVersion\$appADMX`" -F:* `"$appScriptDirectory\PolicyDefinitions`""
-        Expand-Archive -Path $appScriptDirectory\PolicyDefinitions\$appADMX -DestinationPath $appScriptDirectory\PolicyDefinitions -Force
+        If (Get-ChildItem -Path *.cab) {
+            Execute-Process -Path "$envSystem32Directory\cmd.exe" -Parameters "/C $envSystem32Directory\expand.exe `"$appScriptDirectory\$appVersion\$appADMX`" `"$appScriptDirectory\PolicyDefinitions\MicrosoftEdgePolicyTemplates.zip`""
+            Remove-File -Path $appADMX -ContinueOnError $True
+        }
+        If (Get-ChildItem -Path $appScriptDirectory\PolicyDefinitions\*.zip) {
+            Expand-Archive -Path $appScriptDirectory\PolicyDefinitions\*.zip -DestinationPath $appScriptDirectory\PolicyDefinitions -Force
+            Remove-File -Path $appScriptDirectory\PolicyDefinitions\*.zip -ContinueOnError $True
+        }
+        If (Get-ChildItem -Path *.zip) {
+            Expand-Archive -Path $appADMX -DestinationPath $appScriptDirectory\PolicyDefinitions -Force
+            Remove-File -Path $appADMX -ContinueOnError $True
+        }
         Move-Item -Path $appScriptDirectory\PolicyDefinitions\windows\admx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
-        Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "examples","html","mac","windows","$appADMX","VERSION" -Force -Recurse
+        Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "examples", "html", "mac", "windows", "$appADMX", "VERSION" -Force -Recurse
     }
     Else {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Get-Process -Name $appProcess | Stop-Process -Force
+
     # Delete machine policies to prevent issue during installation
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\Update" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\$appName" -Recurse -ContinueOnError $True
@@ -137,9 +149,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\Update" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\$appName" -Recurse -ContinueOnError $True
 
+    # Uninstall previous versions
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Remove-MSIApplications -Name $appName -Parameters $appInstallParameters
+        Remove-MSIApplications -Name "$appVendor $appName" -Parameters $appInstallParameters
         Remove-MSIApplications -Name $($appName)Update -Parameters $appInstallParameters
     }
     If (Test-Path -Path "$envProgramFilesX86\$($appName)Update") {
@@ -148,26 +161,50 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Execute-Process -Path ".\$appVendor$($appName)Update.exe" -Parameters "-uninstall" -IgnoreExitCodes 1606220281 -ContinueOnError $True
     }
 
+    # Remove previous install folders
     Remove-Folder -Path "$envProgramFilesX86\$appVendor\$appName" -ContinueOnError $True
     Remove-Folder -Path "$envProgramFilesX86\$appVendor\$($appName)Update" -ContinueOnError $True
     Remove-Folder -Path "$envProgramFilesX86\$appVendor\Temp" -ContinueOnError $True
 
     Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
+    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters #-AddParameters $appAddParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Copy preferences file
     Copy-File -Path "$appScriptDirectory\master_preferences" -Destination $appDestination
+
+    # Stop and disable uneeded scheduled tasks
     Get-ScheduledTask -TaskName "$appVendor$appName*" | Stop-ScheduledTask
     Get-ScheduledTask -TaskName "$appVendor$appName*" | Disable-ScheduledTask
+
+    # Stop and disable uneeded services
     Stop-ServiceAndDependencies -Name "$($appName)update"
     Set-ServiceStartMode -Name "$($appName)update" -StartMode "Disabled"
     Stop-ServiceAndDependencies -Name "$($appName)updatem"
     Set-ServiceStartMode -Name "$($appName)updatem" -StartMode "Disabled"
+    Stop-ServiceAndDependencies -Name "$appVendor$($appName)ElevationService"
+    Set-ServiceStartMode -Name "$appVendor$($appName)ElevationService" -StartMode "Disabled"
+
     # Creates a pinned taskbar icons for all users
-    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcess[0]).exe"  -IconLocation "$appDestination\$($appProcess[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
+    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcess[0]).exe" -IconLocation "$appDestination\$($appProcess[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
+
     # Remove Active Setup
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{9459C573-B17A-45AE-9F64-1857B5D58CEE}" -Name "StubPath"
+
+    # Remove desktop shortcut for all users
     #Remove-File "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
+
+    # Disable Citrix API hook - https://discussions.citrix.com/topic/406494-microsoft-new-edge-ready-for-citrix-terminal-serves
+    # https://blog.vermeerschconsulting.be/index.php/2020/04/23/edge-chromium-in-citrix-virtual-apps-server-2016-or-2019-with-a-working-smart-card-reader
+    $regKey = "HKLM:\SOFTWARE\Citrix\CtxHook\AppInit_Dlls\SfrHook"
+    $regKeyProcess = "$($appProcess[0]).exe"
+    If ((Test-Path -Path $regKey) -and (-Not(Test-Path -Path $regKey\$regKeyProcess))) {
+        Write-Log -Message "Fixing Citrix API Hook..." -Severity 1 -LogType CMTrace -WriteHost $True
+        # Add the msedge.exe key
+        Set-RegistryKey -Key $regKey\$regKeyProcess -Value "(Default)"
+    }
+
     Update-GroupPolicy
 
     Write-Log -Message "$appVendor $appName $appLongName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
