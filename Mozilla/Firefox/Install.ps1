@@ -88,13 +88,17 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Mozilla"
 $appName = "Firefox"
 $appProcess = @("firefox", "maintenanceservice")
-$appInstallParameters = "/qb"
-$appAddParameters = "INSTALL_MAINTENANCE_SERVICE=false PREVENT_REBOOT_REQUIRED=true"
-$Evergreen = Get-MozillaFirefox | Where-Object { $_.Architecture -eq "x64" -and $_.Version -NotLike "*esr*" }
+$appInstallParameters = "/TaskbarShortcut=true /DesktopShortcut=true /StartMenuShortcut=true /MaintenanceService=false /PreventRebootRequired=true /RegisterDefaultAgent=false"
+[string]$currentUILanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2).ToUpper()
+If ($currentUILanguage -eq "EN") { $appLanguage = "en-us" } Else { $appLanguage = $currentUILanguage } #EN is not a valid language
+$Evergreen = Get-MozillaFirefox -Language $appLanguage | Where-Object { $_.Architecture -eq "x64" -and $_.Version -NotLike "*esr*" }
 $appVersion = $Evergreen.Version
-# Force the french MSI download, Evergreen only expose the English version
-$appURL = "https://download.mozilla.org/?product=firefox-msi-latest-ssl&os=win64&lang=fr"
-$appSetup = "Firefox Setup $appVersion.msi"
+$appURL = $Evergreen.URI
+$appRepo = "https://api.github.com/repos/mozilla/policy-templates/releases/latest"
+$EvergreenADMX = Get-GitHubRelease -Uri $appRepo
+$appURLADMX = $EvergreenADMX.URI
+$appADMX = ($appURLADMX).Split("/")[8]
+$appSetup = ($appURL).Split("/")[9].replace("%20", " ")
 $appSource = $appVersion
 $appDestination = "$env:ProgramFiles\Mozilla Firefox"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
@@ -114,6 +118,23 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Download latest policy definitions
+    If (-Not(Test-Path -Path $appScriptDirectory\PolicyDefinitions\*.admx)) {
+        Write-Log -Message "Downloading $appVendor $appName $appVersion ADMX template..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
+        New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
+        If (Get-ChildItem -Path $appScriptDirectory\*.zip) {
+            Expand-Archive -Path $appScriptDirectory\*.zip -DestinationPath $appScriptDirectory\PolicyDefinitions -Force
+            Remove-File -Path $appScriptDirectory\*.zip -ContinueOnError $True
+        }
+        Move-Item -Path $appScriptDirectory\PolicyDefinitions\windows\* -Destination $appScriptDirectory\PolicyDefinitions -Force
+        Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "mac", "windows", "LICENSE", "README.md" -Force -Recurse
+    }
+    Else {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    # Uninstall previous versions
     Get-Process -Name $appProcess | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -121,11 +142,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
-
-    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-ScheduledTask -TaskName "$appName*" | Stop-ScheduledTask
-    Get-ScheduledTask -TaskName "$appName*" | Disable-ScheduledTask
+    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
 
     # Creates a pinned taskbar icons for all users
     New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcess[0]).exe"  -IconLocation "$appDestination\$($appProcess[0]).exe" -Description "$$appName" -WorkingDirectory "$appDestination"
