@@ -91,7 +91,7 @@ $appLongName = "for Business"
 $appProcesses = @("OneDrive")
 $appInstallParameters = "/allusers /silent"
 $Evergreen = Get-MicrosoftOneDrive | Where-Object {$_.Ring -eq "Insider"}
-$Evergreen = $Evergreen[$Evergreen.Count-1]
+$Evergreen = $Evergreen[$Evergreen.Count - 1]
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = $appURL.Split("/")[6]
@@ -106,6 +106,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
+    # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
@@ -114,33 +115,44 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
+
+    # Uninstall previous versions
+    If ($IsAppInstalled) {
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-Process -Path $appDestination\$appInstalledVersion\$appSetup -Parameters "/uninstall  /allusers"
+    }
 
     Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
 
-	Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
-	# https://byteben.com/bb/installing-the-onedrive-sync-client-in-per-machine-mode-during-your-task-sequence-for-a-lightening-fast-first-logon-experience
-	#Create PSDrive for HKU
-	New-PSDrive -PSProvider Registry -Name HKUDefaultHive -Root HKEY_USERS
+    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
-	#Load Default User Hive
-	Execute-Process -Path CMD.EXE -Parameters "/C REG.EXE LOAD HKU\DefaultHive C:\Users\Default\NTUser.dat" -WindowStyle Hidden
+    # Create PSDrive for HKU - https://byteben.com/bb/installing-the-onedrive-sync-client-in-per-machine-mode-during-your-task-sequence-for-a-lightening-fast-first-logon-experience
+    New-PSDrive -PSProvider Registry -Name HKUDefaultHive -Root HKEY_USERS
 
-	#Set OneDriveSetup Variable
-	$OneDriveSetup = Get-ItemProperty "HKUDefaultHive:\DefaultHive\Software\Microsoft\Windows\CurrentVersion\Run" | Select-Objetct -ExpandProperty "OneDriveSetup"
+    # Load Default User Hive
+    Execute-Process -Path CMD.EXE -Parameters "/C REG.EXE LOAD HKU\DefaultHive C:\Users\Default\NTUSER.DAT" -WindowStyle Hidden
 
-	#If Variable returns True, remove the OneDriveSetup Value
-	If ($OneDriveSetup) { Remove-ItemProperty -Path "HKUDefaultHive:\DefaultHive\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDriveSetup" }
+    # Set OneDriveSetup Variable
+    $OneDriveSetup = Get-ItemProperty "HKUDefaultHive:\DefaultHive\Software\Microsoft\Windows\CurrentVersion\Run" | Select-Object -ExpandProperty "OneDriveSetup"
 
-	#Unload Hive
-	Execute-Process -Path CMD.EXE -Parameters "/C REG.EXE UNLOAD HKU\DefaultHive" -Wait -WindowStyle Hidden
+    # If Variable returns True, remove the OneDriveSetup Value
+    If ($OneDriveSetup) { Remove-ItemProperty -Path "HKUDefaultHive:\DefaultHive\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDriveSetup" }
 
-	#Remove PSDrive HKUDefaultHive
-	Remove-PSDrive HKUDefaultHive
+    # Unload Hive
+    Execute-Process -Path CMD.EXE -Parameters "/C REG.EXE UNLOAD HKU\DefaultHive" -Wait -WindowStyle Hidden
 
-    Write-Log -Message "$appVendor $appName $appLongName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    # Remove PSDrive HKUDefaultHive
+    Remove-PSDrive HKUDefaultHive
+
+    # Get latest policy definitions
+    If (Test-Path -Path "$appDestination\$appVersion\adm\$appName.admx") {
+        Write-Log -Message "Copying $appVendor $appName $appLongName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Copy-File -Path "$appDestination\$appVersion\adm\$appName.admx" -Destination "$appScriptDirectory\PolicyDefinitions" -ContinueOnError $True
+        Copy-File -Path "$appDestination\$appVersion\adm\$appName.adml" -Destination "$appScriptDirectory\PolicyDefinitions\en-US" -ContinueOnError $True
+        Copy-File -Path "$appDestination\$appVersion\adm\fr\$appName.adml" -Destination "$appScriptDirectory\PolicyDefinitions\fr-FR" -ContinueOnError $True
+    }
 
 }
 Else {
