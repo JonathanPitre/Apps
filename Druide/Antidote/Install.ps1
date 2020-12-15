@@ -101,7 +101,7 @@ $appPatch2 = "Diff_Antidote_10_Module_F_10.4.msp"
 $appPatch3 = "Diff_Antidote_10_Module_E_10.4.msp"
 $appPatch4 = "Diff_Connectix_10_C_10.4.msp"
 $appInstallParameters = "/QB"
-$appProcess = @("Antidote", "AgentAntidote", "Connectix", "AgentConnectix", "OUTLOOK", "WINWORD", "EXCEL", "POWERPNT")
+$appProcesses = @("Antidote", "AgentAntidote", "Connectix", "AgentConnectix", "OUTLOOK", "WINWORD", "EXCEL", "POWERPNT")
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\Application\Bin64"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName \d{2}" -RegEx) | Select-Object -First 1
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName \d{2}" -RegEx).DisplayVersion | Select-Object -First 1
@@ -120,7 +120,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Set-Location -Path $appSource
     }
 
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Remove-MSIApplications -Name $appName -Parameters $appInstallParameters

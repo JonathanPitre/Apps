@@ -159,7 +159,7 @@ Function Get-IrfanView {
  }
 
 $appName = "IrfanView"
-$appProcess = @("i_view64")
+$appProcesses = @("i_view64")
 $appInstallParameters = "/assoc=1 /group=1 /ini=%APPDATA%\IrfanView /silent"
 $Evergreen = Get-IrfanView | Where-Object {$_.Architecture -eq "x64"}
 $appVersion = $Evergreen.Version
@@ -193,7 +193,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
@@ -205,7 +205,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
 	Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
     Remove-Folder -Path $envUserStartMenuPrograms\$appName
-    New-Shortcut -Path $envCommonStartMenuPrograms\$appName.lnk -TargetPath $appDestination\$appProcess.exe -IconLocation $appDestination\$appProcess.exe -Description $appName -WorkingDirectory $appDestination
+    New-Shortcut -Path $envCommonStartMenuPrograms\$appName.lnk -TargetPath $appDestination\$appProcesses.exe -IconLocation $appDestination\$appProcesses.exe -Description $appName -WorkingDirectory $appDestination
     Write-Log -Message "$appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }

@@ -88,7 +88,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Microsoft"
 $appName = "OneDrive"
 $appLongName = "for Business"
-$appProcess = @("OneDrive")
+$appProcesses = @("OneDrive")
 $appInstallParameters = "/allusers /silent"
 $Evergreen = Get-MicrosoftOneDrive | Where-Object {$_.Ring -eq "Insider"}
 $Evergreen = $Evergreen[$Evergreen.Count-1]
@@ -115,7 +115,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters

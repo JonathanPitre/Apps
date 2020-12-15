@@ -87,7 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Rizonesoft"
 $appName = "Notepad3"
-$appProcess = @("Notepad3","minipath","notepad")
+$appProcesses = @("Notepad3","minipath","notepad")
 $appInstallParameters = "/ALLUSERS /CLOSEAPPLICATIONS /LOADINF=`"$appScriptDirectory\Notepad3.inf`" /SILENT /LOG=`"$appScriptDirectory\$appName.log`""
 $appPreferredLanguage = "fr-FR"
 $webRequest = Invoke-WebRequest -UseBasicParsing -Uri ("https://www.rizonesoft.com/downloads/notepad3") -SessionVariable websession
@@ -119,7 +119,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters

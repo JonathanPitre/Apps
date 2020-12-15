@@ -88,7 +88,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Microsoft"
 $appName = "FSLogix Apps"
 $appSetup = "FSLogixAppsSetup.exe"
-$appProcess = @("frxsvc", "frxtray", "frxshell", "frxccds")
+$appProcesses = @("frxsvc", "frxtray", "frxshell", "frxccds")
 $appInstallParameters = "/install /quiet /norestart"
 $Evergreen = Get-MicrosoftFSLogixApps
 $appVersion = $Evergreen.Version
@@ -125,7 +125,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Invoke-WebRequest -UseBasicParsing -Uri $appURLScript -OutFile "$appScriptDirectory\FileServer Maintenance\Invoke-FslShrinkDisk.ps1"
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\x64\Release\$appSetup -Parameters $appInstallParameters

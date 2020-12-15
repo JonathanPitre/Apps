@@ -88,7 +88,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Microsoft"
 $appName = "Powershell"
 $appName2 = "Core"
-$appProcess = @("pwsh")
+$appProcesses = @("pwsh")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
 $Evergreen = Get-MicrosoftPowerShellCore | Where-Object {$_.Architecture -eq $appArchitecture -and $_.URI -match ".msi"}
@@ -116,7 +116,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters

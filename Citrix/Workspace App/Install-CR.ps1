@@ -88,7 +88,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Citrix"
 $appName = "Workspace"
 $appName2 = "App"
-$appProcess = @("wfica32", "wfcrun32", "redirector", "CDViewer", "HdxBrowser", "HdxTeams", "HdxBrowserCef", "concentr", "cpviewer", "PseudoContainer2", "PseudoContainer", "CtxCFRUI", "ssonsvr", "WebHelper", "SelfServicePlugin", "SelfService", "Receiver", "Ceip", "AuthManSvr", "CWAUpdaterService")
+$appProcesses = @("wfica32", "wfcrun32", "redirector", "CDViewer", "HdxBrowser", "HdxTeams", "HdxBrowserCef", "concentr", "cpviewer", "PseudoContainer2", "PseudoContainer", "CtxCFRUI", "ssonsvr", "WebHelper", "SelfServicePlugin", "SelfService", "Receiver", "Ceip", "AuthManSvr", "CWAUpdaterService")
 # https://docs.citrix.com/en-us/citrix-workspace-app-for-windows/install.html
 $appInstallParameters = "EnableCEIP=false EnableTracing=false /forceinstall /noreboot /silent /includeSSON /AutoUpdateCheck=disabled"
 $Evergreen = Get-CitrixWorkspaceApp | Where-Object {$_.Title -contains "Citrix Workspace - Current Release"}
@@ -115,7 +115,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec
@@ -127,7 +127,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Stop-ServiceAndDependencies -Name CWAUpdaterService
         Set-ServiceStartMode -Name CWAUpdaterService -StartMode "Disabled"
     }
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\AuthManager\AuthManSvr.exe" -Force

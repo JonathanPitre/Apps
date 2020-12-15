@@ -89,7 +89,7 @@ $appVendor = "Microsoft"
 $appName = "Office"
 $appMajorVersion = "2019"
 $appSetup = "setup.exe"
-$appProcess = @("OUTOOK","EXCEL","MSACCESS","WINPROJ","LYNC","VISIO","ONENOTE","POWERPNT","MSPUB")
+$appProcesses = @("OUTOOK","EXCEL","MSACCESS","WINPROJ","LYNC","VISIO","ONENOTE","POWERPNT","MSPUB")
 $appConfig = "Office2019-x64-VDI.xml"
 $appBitness = ([xml](Get-Content $appConfig)).SelectNodes("//Add/@OfficeClientEdition").Value
 $appDownloadParameters = "/download .\$appConfig"
@@ -117,7 +117,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     $appSetupVersion = (Get-Command .\$appSetup).FileVersionInfo.FileVersion
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     # https://github.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/blob/master/Office-ProPlus-Deployment/Remove-PreviousOfficeInstalls/Remove-PreviousOfficeInstalls.ps1
     .\Remove-PreviousOfficeInstalls\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true
 

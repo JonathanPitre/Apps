@@ -88,7 +88,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Microsoft"
 $appName = "FSLogix Apps RuleEditor"
 $appSetup = "FSLogixAppsRuleEditorSetup.exe"
-$appProcess = @("RuleEditor")
+$appProcesses = @("RuleEditor")
 $appInstallParameters = "/install /quiet /norestart"
 $Evergreen = Get-MicrosoftFSLogixApps
 $appVersion = $Evergreen.Version
@@ -116,7 +116,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\x64\Release\$appSetup -Parameters $appInstallParameters

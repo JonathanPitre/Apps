@@ -86,7 +86,7 @@ $appScriptDirectory = Get-ScriptDirectory
 # Application related
 ##*===============================================
 $appName = "7-Zip"
-$appProcess = @("7z", "7zFM", "7zG")
+$appProcesses = @("7z", "7zFM", "7zG")
 $appInstallParameters = "/QB"
 $Evergreen = Get-7zip | Where-Object { $_.Architecture -eq "x64" -and $_.URI -match ".msi" }
 $appVersion = $Evergreen.Version
@@ -112,7 +112,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Get-Process explorer | Stop-Process -Force

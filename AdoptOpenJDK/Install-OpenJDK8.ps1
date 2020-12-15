@@ -88,7 +88,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "AdoptOpenJDK"
 $appName = "JRE"
 $appMajorVersion = "8"
-$appProcess = @("java","javaw","javaws")
+$appProcesses = @("java","javaw","javaws")
 $appInstallParameters = "/QB"
 $appAddParameters = "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome,FeatureIcedTeaWeb,FeatureJNLPFileRunWith"
 $webResponse = Invoke-WebRequest -UseBasicParsing -Uri ("https://github.com/AdoptOpenJDK/openjdk$appMajorVersion-binaries/releases") -SessionVariable websession
@@ -117,7 +117,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     Remove-MSIApplications -Name "$appVendor $appName"
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True

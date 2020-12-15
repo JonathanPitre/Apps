@@ -87,7 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Citrix"
 $appName = "Workspace Environment Management Agent"
-$appProcess = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
+$appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
 $appInstallParameters = "/quiet Cloud=1"  # OnPrem 0 Cloud 1
 #$Evergreen = Get-CitrixWorkspaceApp | Where-Object {$_.Title -contains "Citrix Workspace - Current Release"}
 $appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
@@ -115,7 +115,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     #>
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters

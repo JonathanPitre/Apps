@@ -87,7 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Citrix"
 $appName = "Connection Quality Indicator"
-$appProcess = @("Citrix.CQI")
+$appProcesses = @("Citrix.CQI")
 $appInstallParameters = "/quiet DISABLE_CEIP=1"
 #$Evergreen = Get-CitrixWorkspaceApp | Where-Object {$_.Title -contains "Citrix Workspace - Current Release"}
 $appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
@@ -115,7 +115,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     #>
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters

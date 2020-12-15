@@ -88,7 +88,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Citrix"
 $appName = "Virtual Apps and Desktops"
 $appName2 = "Virtual Delivery Agent"
-$appProcess = @("BrokerAgent", "picaSessionAgent")
+$appProcesses = @("BrokerAgent", "picaSessionAgent")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
 $appInstallParameters = '/baseimage /noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /virtualmachine /INSTALL_MCSIO_DRIVER /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /exclude "User Personalization layer", "Citrix Files for Outlook", "Citrix Files for Windows", "Citrix Supportability Tools", "Citrix Telemetry Service", "Citrix Personalization for App-V - VDA", "Personal vDisk" /components vda /mastermcsimage'
@@ -120,7 +120,7 @@ If ($appVersion -gt $appInstalledVersion) {
     #>
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"

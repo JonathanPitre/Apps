@@ -87,7 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "VMware"
 $appName = "Tools"
-$appProcess = @("vmtoolsd", "VGAuthService", "vm3dservice")
+$appProcesses = @("vmtoolsd", "VGAuthService", "vm3dservice")
 $appInstallParameters = "/S /v /qn REBOOT=R"
 $Evergreen = Get-VMwareTools | Where-Object { $_.Architecture -eq "x64" }
 $appVersion = $Evergreen.Version

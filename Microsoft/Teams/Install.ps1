@@ -88,7 +88,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Microsoft"
 $appName = "Teams"
 $appSetup = "Teams_windows_x64.msi"
-$appProcess = @("Teams", "Update", "Squirrel")
+$appProcesses = @("Teams", "Update", "Squirrel")
 $appTransform = "Teams_windows_x64_VDI.mst"
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
@@ -115,7 +115,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     # Remoe machine-wide install
     Remove-MSIApplications -Name "$appVendor $appName" -Parameters $appInstallParameters
     Remove-MSIApplications -Name "$appName Machine-Wide Installer" -Parameters $appInstallParameters
@@ -147,7 +147,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
-    # Remove uneeded applications from running at start-up
+    # Remove unneeded applications from running at start-up
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "TeamsMachineUninstallerLocalAppData" -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "TeamsMachineUninstallerProgramData" -ContinueOnError $True
     #Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name $appName -ContinueOnError $True
@@ -164,7 +164,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Add Windows Firewall rule(s) - https://docs.microsoft.com/en-us/microsoftteams/get-clients#windows
     If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName")) {
-        New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\$($appProcess[0]).exe" -Profile 'Domain, Private, Public'
+        New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\$($appProcesses[0]).exe" -Profile 'Domain, Private, Public'
     }
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True

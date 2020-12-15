@@ -87,7 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Mozilla"
 $appName = "Firefox"
-$appProcess = @("firefox", "maintenanceservice")
+$appProcesses = @("firefox", "maintenanceservice")
 $appInstallParameters = "/TaskbarShortcut=true /DesktopShortcut=true /StartMenuShortcut=true /MaintenanceService=false /PreventRebootRequired=true /RegisterDefaultAgent=false"
 [string]$currentUILanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2).ToUpper()
 If ($currentUILanguage -eq "EN") { $appLanguage = "en-us" } Else { $appLanguage = $currentUILanguage } #EN is not a valid language
@@ -110,6 +110,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
+    # Download latest file installer
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
@@ -120,7 +121,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Download latest policy definitions
     If (-Not(Test-Path -Path $appScriptDirectory\PolicyDefinitions\*.admx)) {
-        Write-Log -Message "Downloading $appVendor $appName $appVersion ADMX template..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
         New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
         If (Get-ChildItem -Path $appScriptDirectory\*.zip) {
@@ -135,7 +136,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     # Uninstall previous versions
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-Process -Path "$appDestination\uninstall\helper.exe" -Parameters "/S" -WindowStyle Hidden -PassThru
@@ -145,7 +146,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
 
     # Creates a pinned taskbar icons for all users
-    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcess[0]).exe"  -IconLocation "$appDestination\$($appProcess[0]).exe" -Description "$$appName" -WorkingDirectory "$appDestination"
+    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe"  -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$$appName" -WorkingDirectory "$appDestination"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 

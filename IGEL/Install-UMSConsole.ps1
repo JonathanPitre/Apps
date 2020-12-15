@@ -87,7 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "IGEL"
 $appName = "Universal Management Suite"
-$appProcess = @("RMClient", "elasticsearch-service-x64")
+$appProcesses = @("RMClient", "elasticsearch-service-x64")
 $appInstallParameters = "/ALLUSERS /CLOSEAPPLICATIONS /LOADINF=`"$appScriptDirectory\UMSConsole.inf`" /SILENT /LOG=`"$appScriptDirectory\$appName.log`""
 $webRequest = Invoke-WebRequest -UseBasicParsing -Uri ("https://www.igel.com/software-downloads/workspace-edition") -SessionVariable websession
 $regex = "https\:\/\/.+\/files\/IGEL_UNIVERSAL_MANAGEMENT_SUITE\/WINDOWS\/setup-igel-ums-windows_\d.\d{2}.\d{3}.exe"
@@ -114,7 +114,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-Process -Path "$appDestination\unins000.exe" -Parameters "/SILENT" -PassThru

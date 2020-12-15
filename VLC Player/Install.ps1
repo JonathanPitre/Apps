@@ -87,7 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "VideoLAN"
 $appName = "VLC media player"
-$appProcess = @("vlc","vlc-cache-gen")
+$appProcesses = @("vlc","vlc-cache-gen")
 $appInstallParameters = "/QB"
 $Evergreen = Get-VideoLanVlcPlayer | Where-Object { $_.Architecture -eq "x64" -and $_.Type -eq "msi" }
 $appVersion = $Evergreen.Version + ".0"
@@ -112,7 +112,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Remove-MSIApplications -Name $appName -Parameters $appInstallParameters

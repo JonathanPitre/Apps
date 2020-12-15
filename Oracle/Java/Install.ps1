@@ -76,7 +76,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Oracle"
 $appName = "Java"
 $appMajorVersion = "8"
-$appProcess = @("java", "javaw", "javaws", "javacpl", "jp2launcher")
+$appProcesses = @("java", "javaw", "javaws", "javacpl", "jp2launcher")
 $appInstallParameters = "INSTALL_SILENT=1 STATIC=0 AUTO_UPDATE=0 WEB_JAVA=1 WEB_JAVA_SECURITY_LEVEL=H WEB_ANALYTICS=0 EULA=0 REBOOT=0 REMOVEOUTOFDATEJRES=1 NOSTARTMENU=1 SPONSORS=0"
 $Evergreen = Get-OracleJava8 | Where-Object { $_.Architecture -eq "x64" }
 $appVersion = $Evergreen.Version.Replace("-b", "0.").Replace("_", ".").Substring(2)
@@ -103,7 +103,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Remove-MSIApplications -Name $appName -Parameters $appInstallParameters

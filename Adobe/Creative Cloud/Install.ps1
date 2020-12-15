@@ -88,7 +88,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Adobe"
 $appName = "Creative Cloud"
 $appSetup = "setup.exe"
-$appProcess = @("ccxprocess", "Creative Cloud", "AdobeUpdateService", "AGMService", "AGSService", "AGCInvokerUtility")
+$appProcesses = @("ccxprocess", "Creative Cloud", "AdobeUpdateService", "AGMService", "AGSService", "AGCInvokerUtility")
 $appInstallParameters = "--silent"
 $appCleanerToolParameters = "--cleanupXML=$appScriptDirectory\cleanup.xml"
 $appVersion = "5.1.0.407"
@@ -113,7 +113,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
         #Execute-Process -Path .\$appSetupUninstaller -Parameters "$appCleanerToolParameters"
         Execute-Process -Path "$appDestination\Uninstaller.exe" -Parameters "-uninstall"

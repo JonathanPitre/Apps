@@ -87,7 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Microsoft"
 $appName = "Local Administrator Password Solution"
-$appProcess = @("")
+$appProcesses = @("")
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSERS=1"
 $webResponse = Invoke-WebRequest -UseBasicParsing -Uri ("https://www.microsoft.com/en-us/download/details.aspx?id=46899") -SessionVariable websession
@@ -115,7 +115,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters

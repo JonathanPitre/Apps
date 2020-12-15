@@ -87,7 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Adobe"
 $appName = "Flash Player"
-$appProcess = @("chrome", "iexplore", "firefox", "AdobeFlashPlayerUpdateSvc")
+$appProcesses = @("chrome", "iexplore", "firefox", "AdobeFlashPlayerUpdateSvc")
 $appInstallParameters = "/QB"
 $webResponse = Invoke-WebRequest -UseBasicParsing -Uri ("https://get.adobe.com/flashplayer/") -SessionVariable websession
 $webVersion = $webResponse.RawContent | Select-String '(Version\s{1}\d{2}.\d.\d.\d{3})' -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -Unique
@@ -123,7 +123,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-Process -Path .\$appSetupUninstaller -Parameters "-uninstall"

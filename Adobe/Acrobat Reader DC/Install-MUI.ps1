@@ -87,7 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Adobe"
 $appName = "Acrobat Reader"
-$appProcess = @("AcroRd32", "AcroBroker", "AcroTextExtractor", "ADelRCP", "AdobeCollabSync", "arh", "Eula", "FullTrustNotIfier", "LogTransport2", "reader_sl", "wow_helper")
+$appProcesses = @("AcroRd32", "AcroBroker", "AcroTextExtractor", "ADelRCP", "AdobeCollabSync", "arh", "Eula", "FullTrustNotIfier", "LogTransport2", "reader_sl", "wow_helper")
 $appTransform = "AcroRead.mst"
 $appSetup = "AcroRead.msi"
 $appInstallParameters = "/QB"
@@ -147,7 +147,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     If (-Not(Test-Path -Path $appScriptDirectory\PolicyDefinitions\*.admx)) {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX template..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
         New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
         Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
@@ -171,7 +171,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
         If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Remove-MSIApplications -Name "$appVendor $appName" -Parameters "/QB"

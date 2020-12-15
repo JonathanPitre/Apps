@@ -86,7 +86,7 @@ $appScriptDirectory = Get-ScriptDirectory
 # Application related
 ##*===============================================
 $appName = "OpenJDk"
-$appProcess = @("java","javaw")
+$appProcesses = @("java","javaw")
 $appInstallParameters = "/QB"
 $appAddParameters = "INSTALLLEVEL=3 UPDATE_NOTIFIER=0"
 $Evergreen = Get-OpenJDK | Where-Object { $_.Architecture -eq "x64" -and $_.URI -match ".msi" }
@@ -116,7 +116,7 @@ If ([version]$appDisplayVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcess | Stop-Process -Force
+    Get-Process -Name $appProcesses | Stop-Process -Force
     Remove-MSIApplications -Name $appName
 
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
