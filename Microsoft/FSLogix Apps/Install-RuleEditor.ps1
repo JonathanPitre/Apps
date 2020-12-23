@@ -86,6 +86,7 @@ $appScriptDirectory = Get-ScriptDirectory
 # Application related
 ##*===============================================
 $appVendor = "Microsoft"
+$appShortName = "FSLogix"
 $appName = "FSLogix Apps RuleEditor"
 $appSetup = "FSLogixAppsRuleEditorSetup.exe"
 $appProcesses = @("RuleEditor")
@@ -125,6 +126,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
+    # Fix application Start Menu shorcut
+    Copy-File -Path "$envCommonStartMenu\$appShortName\*" -Destination "$envCommonStartMenuPrograms\$appShortName" -ContinueFileCopyOnError $True
+    Remove-Folder -Path "$envCommonStartMenu\$appShortName" -ContinueOnError $True
 }
 Else {
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
