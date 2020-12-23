@@ -193,7 +193,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Get-ScheduledTask -TaskName "$appVendor Acrobat*" | Disable-ScheduledTask
 
     # Fix application Start Menu shorcut
-    Copy-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -Destination "$envCommonStartMenuPrograms\$appVendor $appName $appShortVersion .lnk" -ContinueFileCopyOnError $True
+    Copy-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -Destination "$envCommonStartMenuPrograms\$appVendor $appName $appShortVersion.lnk" -ContinueFileCopyOnError $True
     Remove-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -ContinueOnError $True
 
     Write-Verbose -Message "$appVendor $appName $appShortVersion $appVersion was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
