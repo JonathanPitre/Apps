@@ -110,7 +110,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
-    # Download latest file installer
+    # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
@@ -146,7 +146,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
 
     # Creates a pinned taskbar icons for all users
-    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe"  -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$$appName" -WorkingDirectory "$appDestination"
+    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$$appName" -WorkingDirectory "$appDestination"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
