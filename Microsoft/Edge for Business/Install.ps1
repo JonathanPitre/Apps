@@ -109,7 +109,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) { New-Folder -Path $appSource }
     Set-Location -Path $appSource
 
-    # Download latest file installer
+    # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
@@ -193,7 +193,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Stop-ServiceAndDependencies -Name $appServices[2]
     Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
     Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled"
-    Set-ServiceStartMode -Name $appServices[3] -StartMode "Disabled"
+    Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled"
 
     # Creates a pinned taskbar icons for all users
     New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
