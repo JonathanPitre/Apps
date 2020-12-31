@@ -87,54 +87,94 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Adobe"
 $appName = "Creative Cloud"
-$appSetup = "setup.exe"
-$appProcesses = @("ccxprocess", "Creative Cloud", "AdobeUpdateService", "AGMService", "AGSService", "AGCInvokerUtility")
-$appInstallParameters = "--silent"
+$appSetup = "Creative_Cloud_Set-Up.exe"
+$appProcesses = @("ccxprocess", "Creative Cloud", "Creative Cloud Helper", "CRWindowsClientService", "AdobeNotificationHelper", "Adobe Application Updater", "adobe_licensing_helper", "AdobeExtensionsService",
+    "HDHelper", "AdobeUpdateService", "Adobe Update Helper", "Adobe Desktop Service", "AdobeIPCBroker", "ACToolMain", "AdobeGCClient", "AGMService", "AGSService", "AGCInvokerUtility")
+$appServices = @("AdobeUpdateService", "AGMService", "AGSService")
+$appInstallParameters = "--silent" #--INSTALLLANGUAGE=<ProductInstallLanguage>
+$appURLSetup = "https://prod-rel-ffc-ccm.oobesaas.adobe.com/adobe-ffc-external/core/v1/wam/download?sapCode=KCCC&productName=Creative%20Cloud&os=win&environment=prod&api_key=CCHomeWeb1"
+$appURLVersion = "https://helpx.adobe.com/ie/creative-cloud/release-note/cc-release-notes.html"
+$webRequest = Invoke-WebRequest -UseBasicParsing -Uri ($appURLVersion) -SessionVariable websession
+$regexAppVersion = "Version \d.\d.\d.\d{3} .+mandatory release"
+$webVersion = $webRequest.RawContent | Select-String -Pattern $regexAppVersion -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
+$appVersion = ($webVersion).Split(" ")[1]
+# How to use the Creative Cloud Cleaner tool - https://helpx.adobe.com/ca/creative-cloud/kb/cc-cleaner-tool-installation-problems.html
+$appURLCleanerTool = "https://swupmf.adobe.com/webfeed/CleanerTool/win/AdobeCreativeCloudCleanerTool.exe"
+$appCleanerTool = $appURLCleanerTool.Split("/")[6]
 $appCleanerToolParameters = "--cleanupXML=$appScriptDirectory\cleanup.xml"
-$appVersion = "5.1.0.407"
 $appSource = $appVersion
 $appDestination = "${env:ProgramFiles(x86)}\Adobe\Adobe Creative Cloud\Utils"
-# https://helpx.adobe.com/ca/creative-cloud/kb/cc-cleaner-tool-installation-problems.html
-$appURLUninstaller = "http://download.macromedia.com/SupportTools/Cleaner/win/AdobeCreativeCloudCleanerTool.exe"
-$appSetupUninstaller = $appURLUninstaller.split("/")[6]
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
 ##*===============================================
 
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
+    If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
+    Set-Location -Path $appSource
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSetupUninstaller)) {
+    # Download latest cleaner tool
+    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appCleanerTool)) {
         Write-Log -Message "Downloading $appVendor $appName Cleaner Tool..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLUninstaller -OutFile $appSetupUninstaller
+        Invoke-WebRequest -UseBasicParsing -Uri $appURLCleanerTool -OutFile $appCleanerTool
     }
     Else {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
-        #Execute-Process -Path .\$appSetupUninstaller -Parameters "$appCleanerToolParameters"
-        Execute-Process -Path "$appDestination\Uninstaller.exe" -Parameters "-uninstall"
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        #Execute-Process -Path .\$appCleanerTool -Parameters "$appCleanerToolParameters"
+        Execute-Process -Path "$appDestination\Creative Cloud Uninstaller.exe" -Parameters "-uninstall"
+        Wait-Process -Name "Creative Cloud Uninstaller"
     }
 
-    Write-Log -Message "Installing $appVendor $appName $appShortVersion $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
+    # Download latest file installer
+    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appURLSetup -OutFile $appSetup
+    }
+    Else {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    # Install latest version
+    If (Test-Path -Path $appScriptDirectory\$appSource\$appSetup) {
+        Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Copy-File -Path .\$appSetup -Destination $envSystemDrive\ -ContinueOnError $True
+        Execute-Process -Path $envSystemDrive\$appSetup -Parameters $appInstallParameters
+        Get-Process -Name $appProcesses | Stop-Process -Force
+    }
+    Else {
+        Write-Log -Message "Setup file(s) are missing." -Severity 1 -LogType CMTrace -WriteHost $True
+        Exit-Script
+    }
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Stop and disable unneeded scheduled tasks
     Get-ScheduledTask -TaskName "$($appVendor)GCInvoker-1.0" | Stop-ScheduledTask
     Get-ScheduledTask -TaskName "$($appVendor)GCInvoker-1.0" | Disable-ScheduledTask
 
-    Stop-ServiceAndDependencies -Name "$($appVendor)UpdateService"
-    Set-ServiceStartMode -Name "$($appVendor)UpdateService" -StartMode "Disabled"
-    Stop-ServiceAndDependencies -Name "$($appVendor)AGMService"
-    Set-ServiceStartMode -Name "$($appVendor)AGMService" -StartMode "Disabled"
-    Stop-ServiceAndDependencies -Name "$($appVendor)AGSService"
-    Set-ServiceStartMode -Name "$($appVendor)AGSService" -StartMode "Disabled"
+    # Stop and disable unneeded services
+    Stop-ServiceAndDependencies -Name $appServices[0]
+    Stop-ServiceAndDependencies -Name $appServices[1]
+    Stop-ServiceAndDependencies -Name $appServices[2]
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
+    Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled"
+    Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled"
 
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "Adobe Creative Cloud" -ContinueOnError $True
+    # Remove unneeded applications from running at start-up
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "Adobe Creative Cloud" -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "Adobe CCXProcess" -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeGCInvoker-1.0" -ContinueOnError $True
+
+    # Fix application Start Menu shorcut
     Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
+
+    Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }
 Else {
