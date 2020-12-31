@@ -87,6 +87,7 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Adobe"
 $appName = "Acrobat Reader"
+$appShortVersion = "DC"
 $appProcesses = @("AcroRd32", "AcroBroker", "AcroTextExtractor", "ADelRCP", "AdobeCollabSync", "arh", "Eula", "FullTrustNotIfier", "LogTransport2", "reader_sl", "wow_helper")
 $appTransform = "AcroRead.mst"
 $appSetup = "AcroRead.msi"
@@ -95,7 +96,6 @@ $appAddParameters = "EULA_ACCEPT=YES DISABLE_CACHE=1 DISABLE_PDFMAKER=YES DISABL
 $appAddParameters2 = "ALLUSERS=1"
 $Evergreen = Get-AdobeAcrobatReaderDC | Where-Object {$_.Language -eq "Multi"}
 $appVersion = $Evergreen.Version
-$appShortVersion = "DC"
 $appURLPatch = $Evergreen.URI
 $appPatch = ($appURLPatch).Split("/")[9]
 $appURLMUI = "ftp://ftp.adobe.com/pub/adobe/reader/win/AcrobatDC/1500720033/AcroRdrDC1500720033_MUI.exe"
@@ -115,13 +115,16 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $app
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
 
+    # Uninstall previous versions
+    Get-Process -Name $appProcesses | Stop-Process -Force
+
+    # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appShortVersion MUI..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURLMUI -OutFile $appMUI
         Write-Log -Message "Extracting $appVendor $appName $appShortVersion MSI..." -Severity 1 -LogType CMTrace -WriteHost $True
         New-Folder -Path "$appScriptDirectory\MSI"
         Execute-Process -Path .\$appMUI -Parameters "-sfx_o`"$appScriptDirectory\MSI`" -sfx_ne"
-
         Copy-File -Path "$appScriptDirectory\MSI\*" -Destination $appScriptDirectory -Recurse
         Remove-Folder -Path "$appScriptDirectory\MSI"
         Remove-File -Path "$appScriptDirectory\$appMUI"
@@ -146,39 +149,36 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    If (-Not(Test-Path -Path $appScriptDirectory\PolicyDefinitions\*.admx)) {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
-        New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-        Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
-        Remove-File -Path $appADMX
-    }
-    Else {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
+    # Download latest policy definitions
+    Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
+    New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
+    Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
+    Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\*.adm
 
+    # Download latest patch file
     If (-Not(Test-Path -Path $appScriptDirectory\$appPatch)) {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appVersion Patch..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURLPatch -OutFile $appPatch
         If (Test-Path -Path $appScriptDirectory\$appPatch) {
             Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Startup" -Key "CmdLine" -Value "/sPB /rs"
             Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Product" -Key "CmdLine" -Value "TRANSFORMS=`"$appTransform`""
             Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Product" -Key "PATCH" -Value $appPatch
-            }
-
+        }
     }
     Else {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Get-Process -Name $appProcesses | Stop-Process -Force
-        If ($IsAppInstalled) {
-        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Remove-MSIApplications -Name "$appVendor $appName" -Parameters "/QB"
+    # Install latest version
+    If ((Test-Path -Path $appScriptDirectory\$appSetup) -and (Test-Path -Path $appScriptDirectory\$appTransform)) {
+        Write-Log -Message "Installing $appVendor $appName $appShortVersion $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-MSI -Action Install -Path $appSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -Patch $appPatch -SkipMSIAlreadyInstalledCheck
     }
-
-    Write-Log -Message "Installing $appVendor $appName $appShortVersion $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-MSI -Action Install -Path $appSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -Patch $appPatch -SkipMSIAlreadyInstalledCheck
+    Else {
+        Write-Log -Message "Setup file(s) are missing." -Severity 1 -LogType CMTrace -WriteHost $True
+        Exit-Script
+    }
 
     Write-Log -Message "Installing $appVendor $appName $appShortVersion Spelling Dictionaries..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appDic -Parameters $appInstallParameters -AddParameters $appAddParameters2
@@ -188,15 +188,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
-    # Disable scheduled tasks
-    Get-ScheduledTask -TaskName "$appVendor Acrobat*" | Stop-ScheduledTask
-    Get-ScheduledTask -TaskName "$appVendor Acrobat*" | Disable-ScheduledTask
+    # Stop and disable unneeded scheduled tasks
+    Get-ScheduledTask -TaskName "$appVendor Acrobat Update Task" | Stop-ScheduledTask
+    Get-ScheduledTask -TaskName "$appVendor Acrobat Update Task" | Disable-ScheduledTask
 
     # Fix application Start Menu shorcut
     Copy-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -Destination "$envCommonStartMenuPrograms\$appVendor $appName $appShortVersion.lnk" -ContinueFileCopyOnError $True
     Remove-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -ContinueOnError $True
 
-    Write-Verbose -Message "$appVendor $appName $appShortVersion $appVersion was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appShortVersion $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }
 Else {
