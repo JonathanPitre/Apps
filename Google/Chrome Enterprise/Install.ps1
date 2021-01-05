@@ -110,35 +110,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) { New-Folder -Path $appSource }
     Set-Location -Path $appSource
 
-    # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
-        Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
-    }
-    Else {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
-
-    # Download latest policy definitions
-    If (-Not(Test-Path -Path $appScriptDirectory\PolicyDefinitions\*.admx)) {
-        Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appScriptDirectory\$appADMX
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX2 -OutFile $appScriptDirectory\$appADMX2
-        New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-        If (Get-ChildItem -Path $appScriptDirectory -Filter *.zip) {
-            Get-ChildItem -Path $appScriptDirectory -Filter *.zip | Expand-Archive -DestinationPath $appScriptDirectory\PolicyDefinitions -Force
-            Remove-File -Path $appScriptDirectory\*.zip -ContinueOnError $True
-        }
-        Move-Item -Path $appScriptDirectory\PolicyDefinitions\GoogleUpdateAdmx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
-        Move-Item -Path $appScriptDirectory\PolicyDefinitions\windows\admx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
-        Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "GoogleUpdateAdmx", "chromeos", "common", "windows", "VERSION" -Force -Recurse
-    }
-    Else {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
-
-    Get-Process -Name $appProcesses | Stop-Process -Force
-
     # Delete machine policies to prevent issue during installation
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\Update" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\$appName" -Recurse -ContinueOnError $True
@@ -147,6 +118,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\$appName" -Recurse -ContinueOnError $True
 
     # Uninstall previous versions
+    Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Remove-MSIApplications -Name "$appVendor $appName" -Parameters $appInstallParameters
@@ -176,6 +148,29 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Remove-Folder -Path "$envProgramFilesX86\$appVendor\Temp" -ContinueOnError $True
     Remove-Folder -Path "$envProgramFilesX86\$appVendor\CrashReports" -ContinueOnError $True
 
+    # Download latest setup file(s)
+    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+        Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
+    }
+    Else {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    # Download latest policy definitions
+    Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appScriptDirectory\$appADMX
+    Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX2 -OutFile $appScriptDirectory\$appADMX2
+    New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
+    If (Get-ChildItem -Path $appScriptDirectory -Filter *.zip) {
+        Get-ChildItem -Path $appScriptDirectory -Filter *.zip | Expand-Archive -DestinationPath $appScriptDirectory\PolicyDefinitions -Force
+        Remove-File -Path $appScriptDirectory\*.zip -ContinueOnError $True
+    }
+    Move-Item -Path $appScriptDirectory\PolicyDefinitions\GoogleUpdateAdmx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
+    Move-Item -Path $appScriptDirectory\PolicyDefinitions\windows\admx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
+    Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "GoogleUpdateAdmx", "chromeos", "common", "windows", "VERSION" -Force -Recurse
+
+    # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
 
