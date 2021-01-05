@@ -88,10 +88,11 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Mozilla"
 $appName = "Firefox"
 $appProcesses = @("firefox", "maintenanceservice")
-$appInstallParameters = "/TaskbarShortcut=true /DesktopShortcut=true /StartMenuShortcut=true /MaintenanceService=false /PreventRebootRequired=true /RegisterDefaultAgent=false"
-[string]$currentUILanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2).ToUpper()
-If ($currentUILanguage -eq "EN") { $appLanguage = "en-us" } Else { $appLanguage = $currentUILanguage } #EN is not a valid language
-$Evergreen = Get-MozillaFirefox -Language $appLanguage | Where-Object { $_.Architecture -eq "x64" -and $_.Version -NotLike "*esr*" }
+$appInstallParameters = "/QB"
+$appAddParameters = "TASKBAR_SHORTCUT=true DESKTOP_SHORTCUT=true START_MENU_SHORTCUT=true INSTALL_MAINTENANCE_SERVICE=false PREVENT_REBOOT_REQUIRED=true REGISTER_DEFAULT_AGENT=false"
+[string]$currentUILanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2)
+If ($currentUILanguage -eq "EN") { $appLanguage = "en-US" } Else { $appLanguage = $currentUILanguage} #EN is not a valid language
+$Evergreen = Get-MozillaFirefox -Language $appLanguage | Where-Object { $_.Architecture -eq "x64" -and $_.Channel -match "LATEST" -and $_.Type -eq "msi" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appRepo = "https://api.github.com/repos/mozilla/policy-templates/releases/latest"
@@ -110,6 +111,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
+    # Uninstall previous versions
+    Get-Process -Name $appProcesses | Stop-Process -Force
+    If ($IsAppInstalled) {
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Remove-MSIApplications -Name "$appVendor $appName" -Parameters $appInstallParameters
+        Execute-Process -Path "$appDestination\uninstall\helper.exe" -Parameters "/S" -WindowStyle Hidden -PassThru
+    }
+
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -120,33 +129,22 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     # Download latest policy definitions
-    If (-Not(Test-Path -Path $appScriptDirectory\PolicyDefinitions\*.admx)) {
-        Write-Log -Message "Downloading $appVendor $appName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
-        New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-        If (Get-ChildItem -Path $appScriptDirectory\*.zip) {
-            Expand-Archive -Path $appScriptDirectory\*.zip -DestinationPath $appScriptDirectory\PolicyDefinitions -Force
-            Remove-File -Path $appScriptDirectory\*.zip -ContinueOnError $True
-        }
-        Move-Item -Path $appScriptDirectory\PolicyDefinitions\windows\* -Destination $appScriptDirectory\PolicyDefinitions -Force
-        Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "mac", "windows", "LICENSE", "README.md" -Force -Recurse
+    Write-Log -Message "Downloading $appVendor $appName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
+    New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
+    If (Get-ChildItem -Path $appScriptDirectory\*.zip) {
+        Expand-Archive -Path $appScriptDirectory\*.zip -DestinationPath $appScriptDirectory\PolicyDefinitions -Force
+        Remove-File -Path $appScriptDirectory\*.zip -ContinueOnError $True
     }
-    Else {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
+    Move-Item -Path $appScriptDirectory\PolicyDefinitions\windows\* -Destination $appScriptDirectory\PolicyDefinitions -Force
+    Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "mac", "windows", "LICENSE", "README.md" -Force -Recurse
 
-    # Uninstall previous versions
-    Get-Process -Name $appProcesses | Stop-Process -Force
-    If ($IsAppInstalled) {
-        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-Process -Path "$appDestination\uninstall\helper.exe" -Parameters "/S" -WindowStyle Hidden -PassThru
-    }
-
+    # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
+    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
     # Creates a pinned taskbar icons for all users
-    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$$appName" -WorkingDirectory "$appDestination"
+    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appName" -WorkingDirectory "$appDestination"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
