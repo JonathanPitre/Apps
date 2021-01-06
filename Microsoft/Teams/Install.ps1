@@ -125,7 +125,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     $TeamsUsers | ForEach-Object {
         Try {
             If (Test-Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName\Update.exe") {
-                Execute-Process -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName\Update.exe" -Parameters "-uninstall -s" -ContinueOnError $True
+                Execute-Process -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName\Update.exe" -Parameters "-uninstall -s" -ContinueOnError $True -ErrorAction SilentlyContinue
                 Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName" -ContinueOnError $True
                 Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\SquirrelTemp" -ContinueOnError $True
                 Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$($appName)MeetingAddin" -ContinueOnError $True
