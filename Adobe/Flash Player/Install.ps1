@@ -89,9 +89,7 @@ $appVendor = "Adobe"
 $appName = "Flash Player"
 $appProcesses = @("chrome", "iexplore", "firefox", "AdobeFlashPlayerUpdateSvc")
 $appInstallParameters = "/QB"
-$webResponse = Invoke-WebRequest -UseBasicParsing -Uri ("https://get.adobe.com/flashplayer/") -SessionVariable websession
-$webVersion = $webResponse.RawContent | Select-String '(Version\s{1}\d{2}.\d.\d.\d{3})' -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -Unique
-$appVersion = $webVersion.Split(" ")[1]
+$appVersion = "32.0.0.465" #Latest version
 $appURLActiveX = "https://download.macromedia.com/pub/flashplayer/pdc/$appVersion/install_flash_player_32_active_x.msi"
 $appURLPPAPI = "https://download.macromedia.com/pub/flashplayer/pdc/$appVersion/install_flash_player_32_ppapi.msi"
 $appURLPlugin = "https://download.macromedia.com/get/flashplayer/pdc/$appVersion/install_flash_player_32_plugin.msi"
@@ -112,6 +110,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
+    # Uninstall previous versions
+    Get-Process -Name $appProcesses | Stop-Process -Force
+    If ($IsAppInstalled) {
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-Process -Path .\$appSetupUninstaller -Parameters "-uninstall"
+    }
+
+    # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetupUninstaller)) {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURLActiveX -OutFile $appSetupActiveX
@@ -123,12 +129,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Get-Process -Name $appProcesses | Stop-Process -Force
-    If ($IsAppInstalled) {
-        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-Process -Path .\$appSetupUninstaller -Parameters "-uninstall"
-    }
-
+    # Install latest version
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     #Execute-MSI -Action Install -Path $appSetupActiveX -Parameters $appInstallParameters
     Execute-MSI -Action Install -Path $appSetupPlugin -Parameters $appInstallParameters
