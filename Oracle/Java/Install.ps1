@@ -75,7 +75,6 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Oracle"
 $appName = "Java"
-$appMajorVersion = "8"
 $appProcesses = @("java", "javaw", "javaws", "javacpl", "jp2launcher")
 $appInstallParameters = "INSTALL_SILENT=1 STATIC=0 AUTO_UPDATE=0 WEB_JAVA=1 WEB_JAVA_SECURITY_LEVEL=H WEB_ANALYTICS=0 EULA=0 REBOOT=0 REMOVEOUTOFDATEJRES=1 NOSTARTMENU=1 SPONSORS=0"
 $Evergreen = Get-OracleJava8 | Where-Object { $_.Architecture -eq "x64" }
@@ -95,6 +94,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
+    # Uninstall previous versions
+    Get-Process -Name $appProcesses | Stop-Process -Force
+    If ($IsAppInstalled) {
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Remove-MSIApplications -Name $appName -Parameters $appInstallParameters
+    }
+
+    # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
@@ -103,17 +110,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Get-Process -Name $appProcesses | Stop-Process -Force
-    If ($IsAppInstalled) {
-        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Remove-MSIApplications -Name $appName -Parameters $appInstallParameters
-    }
-
+    # Install latest version
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters -WaitForMsiExec
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Remove unneeded applications from running at start-up
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "SunJavaUpdateSched" -ContinueOnError $True
+
     # Associate .jnlp file extension
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\.jnlp" -Name "(Default)" -Value "JNLPFile" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\.jnlp" -Name "Content Type" -Value "application/x-java-jnlp-file" -Type String
@@ -121,14 +126,19 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\JNLPFile\Shell\Open\Command" -Name "(Default)" -Value "`"C:\Program Files\Java\jre1.$appMajorVersion.0_$appMinorVersion\bin\javaws.exe`" `"%1`"" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\Database\Content Type\application/x-java-jnlp-file" -Name "Extension" -Value ".jnlp" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\MIME\Database\Content Type\application/x-java-jnlp-file" -Name "Extension" -Value ".jnlp" -Type String
+
     # Copy configs to system wide location
     Copy-File -Path $appScriptDirectory\Config\* -Destination "$envSystemRoot\Sun\Java\Deployment" -Recurse
+
     # Copy trusted cert to system wide location
     Copy-File -Path "$($envLocalAppData)Low\Sun\Java\Deployment\security\trusted.certs" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+
     # Delete user configs so system wide configs can take over
     Remove-Folder "$($envLocalAppData)Low\Sun"
+
     # Fix javaws.exe performance over RDP/HDX https://communities.bmc.com/thread/111844?start=0&tstart=0 https://www.rgagnon.com/javadetails/java-set-java-properties-system-wide.html
     [System.Environment]::SetEnvironmentVariable('JAVAWS_VM_ARGS', '-Dsun.java2d.noddraw=true', [System.EnvironmentVariableTarget]::Machine)
+
     # Disable "Java version is out of date" message https://www.wincert.net/microsoft-windows/disable-java-version-is-out-of-date-message
     [System.Environment]::SetEnvironmentVariable('deployment.expiration.check.enabled', 'false', [System.EnvironmentVariableTarget]::Machine)
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
