@@ -88,7 +88,7 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "AdoptOpenJDK"
 $appName = "JRE"
 $appMajorVersion = "8"
-$appProcesses = @("java","javaw","javaws")
+$appProcesses = @("java", "javaw", "javaws")
 $appInstallParameters = "/QB"
 $appAddParameters = "ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJarFileRunWith,FeatureJavaHome,FeatureIcedTeaWeb,FeatureJNLPFileRunWith"
 $webResponse = Invoke-WebRequest -UseBasicParsing -Uri ("https://github.com/AdoptOpenJDK/openjdk$appMajorVersion-binaries/releases") -SessionVariable websession
@@ -96,8 +96,9 @@ $regex = "\/AdoptOpenJDK\/openjdk$appMajorVersion-binaries\/releases\/download\/
 $appURL = "https://github.com" + ($webResponse.RawContent | Select-String -Pattern $regex -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1)
 $appSetup = $appURL.Split("/")[8]
 [string]$webVersion = [regex]::matches($appSetup, "\du\d{3}b\d+")
-$appVersion = $webVersion.Replace("u",".0.").Replace("b",".")
-$appDestination = "$env:ProgramFiles\$appVendor\jre-$appVersion-hotspot\bin"
+$appVersion = $webVersion.Replace("u", ".0.").Replace("b", ".")
+$appMinorVersion = $appVersion.Split(".")[2].Substring(0, 3)
+$appDestination = "$env:ProgramFiles\$appVendor\jre-$appMajorVersion.0.$appMinorVersion.1-hotspot\bin"
 $appSource = $appVersion
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
@@ -108,6 +109,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
 
+    # Uninstall previous versions
+    Get-Process -Name $appProcesses | Stop-Process -Force
+    # Uninstall java
+    Remove-MSIApplications -Name "Java"
+    If ($IsAppInstalled) {
+        Remove-MSIApplications -Name "$appVendor $appName"
+    }
+
+    # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
@@ -116,14 +126,33 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcesses | Stop-Process -Force
-    Remove-MSIApplications -Name "$appVendor $appName"
-
+    # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Associate .jar file extension - https://github.com/AdoptOpenJDK/IcedTea-Web/issues/268
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\.jar" -Name "(Default)" -Value "AdoptOpenJDK.jarfile" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\.jar" -Name "Content Type" -Value "application/jar" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\AdoptOpenJDK.jarfile\shell\open\command" -Name "(Default)" -Value "`"C:\Program Files\AdoptOpenJDK\jre-$appMajorVersion.0.$appMinorVersion.1-hotspot\bin\javaw.exe`" -jar `"%1`" %*" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\MIME\Database\Content Type\application/jar" -Name "Extension" -Value ".jar" -Type String
+
+    # Associate .jnlp file extension- https://github.com/AdoptOpenJDK/IcedTea-Web/issues/268
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\.jnlp" -Name "(Default)" -Value "JNLPFile" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\.jnlp" -Name "Content Type" -Value "application/x-java-jnlp-file" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\jnlp" -Name "(Default)" -Value "URL:jnlp Protocol" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\jnlp" -Name "URL Protocol" -Value "" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\jnlp\shell\open\command" -Name "(Default)" -Value "`"C:\Program Files\AdoptOpenJDK\jre-$appMajorVersion.0.$appMinorVersion.1-hotspot\bin\javaws.exe`" `"%1`"" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\JNLPFile" -Name "(Default)" -Value "JNLP File" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\JNLPFile" -Name "EditFlags" -Value "65536" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\JNLPFile\DefaultIcon" -Name "(Default)" -Value "`"C:\Program Files\AdoptOpenJDK\jre-$appMajorVersion.0.$appMinorVersion.1-hotspot\share\pixmaps\javaws.ico`"" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\JNLPFile\shell\open\command" -Name "(Default)" -Value "`"C:\Program Files\AdoptOpenJDK\jre-$appMajorVersion.0.$appMinorVersion.1-hotspot\bin\javaws.exe`" `"%1`"" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\jnlps" -Name "(Default)" -Value "URL:jnlp Protocol" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\jnlps" -Name "URL Protocol" -Value "" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\jnlps\shell\open\command" -Name "(Default)" -Value "`"C:\Program Files\AdoptOpenJDK\jre-$appMajorVersion.0.$appMinorVersion.1-hotspot\bin\javaws.exe`" `"%1`"" -Type String
+    #Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\Database\Content Type\application/x-java-jnlp-file" -Name "Extension" -Value ".jnlp" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\MIME\Database\Content Type\application/x-java-jnlp-file" -Name "Extension" -Value ".jnlp" -Type String
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
