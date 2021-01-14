@@ -116,7 +116,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
-    # Remoe machine-wide install
+    # Remove machine-wide install
     Remove-MSIApplications -Name "$appVendor $appName" -Parameters $appInstallParameters
     Remove-MSIApplications -Name "$appName Machine-Wide Installer" -Parameters $appInstallParameters
 
@@ -125,7 +125,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     $TeamsUsers | ForEach-Object {
         Try {
             If (Test-Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName\Update.exe") {
-                Execute-Process -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName\Update.exe" -Parameters "-uninstall -s" -ContinueOnError $True -ErrorAction SilentlyContinue
                 Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName" -ContinueOnError $True
                 Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\SquirrelTemp" -ContinueOnError $True
                 Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$($appName)MeetingAddin" -ContinueOnError $True
