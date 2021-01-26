@@ -89,13 +89,14 @@ $appVendor = "Citrix"
 $appName = "Virtual Apps and Desktops"
 $appName2 = "Virtual Delivery Agent"
 $appProcesses = @("BrokerAgent", "picaSessionAgent")
+$appServices = @("CitrixTelemetryService")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/remotepc /noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /exclude "User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools" /components vda'
-#$Evergreen = Get-CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -contains "Citrix Virtual Apps and Desktops 7 2006, All Editions"}
-$appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
-#$appURL = $Evergreen.URI
-$appSetup = "VDAWorkstationSetup_$appVersion.exe"
+$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports'
+$Evergreen = Get-CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 *, All Editions"} | Select-Object -First 1
+$appVersion = $Evergreen.Version
+$appSetup = "VDAWorkstationCoreSetup_$appVersion.exe"
+$appURL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=18865&URL=https%3a%2f%2fdownloads.citrix.com%2f18865%2f$appSetup"
 $appSource = $appVersion
 $appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
@@ -106,26 +107,94 @@ If ($appVersion -gt $appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
     If (-Not(Test-Path -Path $appSource)) {New-Folder -Path $appSource}
     Set-Location -Path $appSource
-    Copy-File -Path ".\*" -Destination "$env:SystemDrive\Installs\VDA" -Recurse
-    Set-Location -Path "$env:SystemDrive\Installs\VDA"
 
-    <#
+    # Install Windows Server Media Foundation feature if missing
+    If ($envOSName -Like "*Windows Server *") {
+        If (!(Get-WindowsFeature -Name Server-Media-Foundation)) {Install-WindowsFeature Server-Media-Foundation}
+    }
+
+    # Enable Windows Media Player feature if missing
+    If ($envOSName -Like "*Windows 10*") {
+        If ((Get-WindowsOptionalFeature –FeatureName "WindowsMediaPlayer" -Online).State -ne "Enabled") {
+            Enable-WindowsOptionalFeature –FeatureName "WindowsMediaPlayer" -All -Online
+        }
+        Write-Log -Message "Windows Media Player is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
-        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
+
+        Write-Log -Message "MyCitrix credentials (for downloading the VDA)" -Severity 1 -LogType CMTrace -WriteHost $True
+        $MyCitrixUserName = Read-Host -Prompt "Please supply your MyCitrix username"
+        $MyCitrixPassword1 = Read-Host -Prompt "Please supply your MyCitrix password" -AsSecureString
+        $MyCitrixPassword2 = Read-Host -Prompt "Please supply your MyCitrix password once more" -AsSecureString
+        $MyCitrixPassword1Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($MyCitrixPassword1))
+        $MyCitrixPassword2Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($MyCitrixPassword2))
+
+        If ($MyCitrixPassword1Temp -ne $MyCitrixPassword2Temp) {
+            Write-Log -Message "The supplied MyCitrix passwords are not the same" -Severity 3 -LogType CMTrace -WriteHost $True
+            Return
+        }
+
+        Remove-Variable -Name MyCitrixPassword1Temp,MyCitrixPassword2Temp
+
+        $CitrixCredentials = New-Object System.Management.Automation.PSCredential ($MyCitrixUserName, $MyCitrixPassword1)
+        #$CitrixCredentials = Get-Credential -Message "Please supply your MyCitrix credentials (for downloading the VDA)"
+
+        # Verify Citrix credentials
+        # Ryan Butler TechDrabble.com @ryan_c_butler 07/19/2019
+        $CitrixUserName = $CitrixCredentials.UserName
+        $CitrixPassword = $CitrixCredentials.GetNetworkCredential().Password
+
+        Write-Log -Message "Downloading $appVendor $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        # Ryan Butler TechDrabble.com @ryan_c_butler 07/19/2019
+        $CitrixUserName = $CitrixCredentials.UserName
+        $CitrixPassword = $CitrixCredentials.GetNetworkCredential().Password
+
+        # Initialize Session
+        Invoke-WebRequest "https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response" -SessionVariable CTXWebSession -UseBasicParsing
+
+        # Authenticate
+        $WebFormAuth = @{
+            "persistent" = "on"
+            "userName"   = $CitrixUserName
+            "password"   = $CitrixPassword
+        }
+
+        Invoke-WebRequest -Uri ("https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response") -WebSession $CTXWebSession -Method POST -Body $WebFormAuth -ContentType "application/x-www-form-urlencoded" -UseBasicParsing
+
+        $DownloadVDA = Invoke-WebRequest -Uri $appURL -WebSession $CTXWebSession -UseBasicParsing -Verbose -Method GET
+
+        $WebFormDownload = @{
+            "chkAccept"         = "on"
+            "__EVENTTARGET"     = "clbAccept_0"
+            "__EVENTARGUMENT"   = "clbAccept_0_Click"
+            "__VIEWSTATE"       = ($DownloadVDA.InputFields | Where-Object { $_.id -eq "__VIEWSTATE" }).value
+            "__EVENTVALIDATION" = ($DownloadVDA.InputFields | Where-Object { $_.id -eq "__EVENTVALIDATION" }).value
+        }
+
+        # Download latest version
+        Invoke-WebRequest -Uri $appURL -WebSession $CTXWebSession -Method POST -Body $WebFormDownload -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -OutFile $appSetup -Verbose
+
     }
     Else {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
-    #>
 
+    Copy-File -Path ".\*" -Destination "$env:SystemDrive\Installs\VDA" -Recurse
+
+    # Uninstall previous versions
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
 
+    # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Stop and disable unneeded services
+    Stop-ServiceAndDependencies -Name $appServices[0]
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
 
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\User Profile Manager\UserProfileManager.exe" -Force
@@ -143,6 +212,26 @@ If ($appVersion -gt $appInstalledVersion) {
 
     # Registry optimizations
     # https://www.carlstalhood.com/remote-pc/#deliverygroup
+    # When a user connects to his physical VDA using Remote PC Access, the monitor layout order change - https://support.citrix.com/article/CTX256820
+    # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Graphics" -Name "UseSDCForLocalModes" -Type "DWord" -Value "1"
+
+    # The virtual machine 'Unknown' cannot accept additional sessions - https://discussions.citrix.com/topic/403211-remote-pc-solution-issue-the-virtual-machine-unknown-cannot-accept-additional-sessions/?source=email#comment-2045356
+    # Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Type "DWord" -Value "0"
+
+    # Session disconnects when you select Ctrl+Alt+Del on the machine that has session management notification enabled - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
+    # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA" -Name "ForceEnableRemotePC" -Type "DWord" -Value "1"
+
+    # Allow a Remote PC Access machine to go into a sleep state - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
+    # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA" -Name "DisableRemotePCSleepPreventer" -Type "DWord" -Value "1"
+
+    # Prevent automatic disconnection to the local user session when a remote user session is initiated (by pressing CTRL+ATL+DEL) - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
+    # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA\RemotePC" -Name "SasNotification" -Type "DWord" -Value "1"
+
+    # The local user has preference over the remote user when the connection message is not acknowledged within the timeout period - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
+    # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA\RemotePC" -Name "RpcaMode" -Type "DWord" -Value "1"
+
+    # The timeout for enforcing the Remote PC Access mode is 30 seconds (decimal) by default - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
+    # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA\RemotePC" -Name "RpcaTimeout" -Type "DWord" -Value "45"
 
     Set-Location -Path $appScriptDirectory
     Remove-Folder -Path "$env:SystemDrive\Installs"
@@ -152,6 +241,7 @@ If ($appVersion -gt $appInstalledVersion) {
     Write-Log -Message "$appVendor $appName2" -Text "A reboot required after $appVendor $appName2 $appVersion installation. The computer $envComputerName will reboot in 30 seconds!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-DialogBox -Title "$appVendor $appName2" -Text "A reboot required after $appVendor $appName2 $appVersion installation. The computer $envComputerName will reboot in 30 seconds!" -Timeout "10" -Icon "Exclamation"
     Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
+
 }
 Else {
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
