@@ -98,7 +98,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Remove-MSIApplications -Name $appName -Parameters $appInstallParameters
+        Remove-MSIApplications -Name $appName -Parameters "/QB"
     }
 
     # Download latest setup file(s)
@@ -122,8 +122,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Associate .jnlp file extension
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\.jnlp" -Name "(Default)" -Value "JNLPFile" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\.jnlp" -Name "Content Type" -Value "application/x-java-jnlp-file" -Type String
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\jnlp\Shell\Open\Command" -Name "Content Type" -Value "`"C:\Program Files\Java\jre1.$appMajorVersion.0_$appMinorVersion\bin\jp2launcher.exe`" -securejws `"%1`"" -Type String
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\JNLPFile\Shell\Open\Command" -Name "(Default)" -Value "`"C:\Program Files\Java\jre1.$appMajorVersion.0_$appMinorVersion\bin\javaws.exe`" `"%1`"" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\jnlp\shell\open\Command" -Name "Content Type" -Value "`"C:\Program Files\Java\jre1.$appMajorVersion.0_$appMinorVersion\bin\jp2launcher.exe`" -securejws `"%1`"" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\JNLPFile\shell\open\Command" -Name "(Default)" -Value "`"C:\Program Files\Java\jre1.$appMajorVersion.0_$appMinorVersion\bin\javaws.exe`" `"%1`"" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\Database\Content Type\application/x-java-jnlp-file" -Name "Extension" -Value ".jnlp" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\MIME\Database\Content Type\application/x-java-jnlp-file" -Name "Extension" -Value ".jnlp" -Type String
 
