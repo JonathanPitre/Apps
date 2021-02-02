@@ -92,7 +92,7 @@ $appInstallParameters = "/QB"
 $appAddParameters = "TASKBAR_SHORTCUT=true DESKTOP_SHORTCUT=true START_MENU_SHORTCUT=true INSTALL_MAINTENANCE_SERVICE=false PREVENT_REBOOT_REQUIRED=true REGISTER_DEFAULT_AGENT=false"
 [string]$currentUILanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2)
 If ($currentUILanguage -eq "EN") { $appLanguage = "en-US" } Else { $appLanguage = $currentUILanguage} #EN is not a valid language
-$Evergreen = Get-MozillaFirefox -Language $appLanguage | Where-Object { $_.Architecture -eq "x64" -and $_.Channel -match "LATEST" -and $_.Type -eq "msi" }
+$Evergreen = Get-MozillaFirefox | Where-Object { $_.Architecture -eq "x64" -and $_.Channel -match "LATEST" -and $_.Language -eq "$appLanguage" -and $_.Type -eq "msi"}
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appRepo = "https://api.github.com/repos/mozilla/policy-templates/releases/latest"
