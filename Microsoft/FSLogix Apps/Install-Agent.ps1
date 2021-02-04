@@ -179,6 +179,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
             Trigger     = $Trigger
         }
         Register-ScheduledTask @RegSchTaskParameters
+
+        Write-Log -Message "Scheduled Task to reset Windows Search was registered!" -Severity 1 -LogType CMTrace -WriteHost $True
     }
     If ($envOSName -Like "*Windows 10*" -and $envOSName -ne "Microsoft Windows 10 Enterprise for Virtual Desktops") {
         Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Type "DWord" -Value "1"
