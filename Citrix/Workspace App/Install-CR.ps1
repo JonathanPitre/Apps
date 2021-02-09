@@ -132,8 +132,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\AuthManager\AuthManSvr.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\CDViewer.exe" -Force
-    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\HdxTeams.exe" -Force
-    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\MediaEngineService.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\HdxRtcEngine.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\SelfServicePlugin\SelfService.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\SelfServicePlugin\SelfServicePlugin.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\concentr.exe" -Force
@@ -141,8 +140,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Add Windows Firewall rule(s) - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/multimedia/opt-ms-teams.html
     If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2")) {
-        New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\HdxTeams.exe" -Profile 'Domain, Private, Public' -Protocol TCP
-        New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\HdxTeams.exe" -Profile 'Domain, Private, Public' -Protocol UDP
+        New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\HdxRtcEngine.exe" -Profile 'Domain, Private, Public' -Protocol TCP
+        New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\HdxRtcEngine.exe" -Profile 'Domain, Private, Public' -Protocol UDP
     }
 
     # Registry Optimizations
