@@ -100,6 +100,11 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $app
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
 
+    # Uninstall previous versions
+    Remove-MSIApplications -Name "$appVendor $appName 2015" -ContinueOnError $True
+    Remove-MSIApplications -Name "$appVendor $appName 2017" -ContinueOnError $True
+
+    # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appMajorVersion\x64\RTM\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appMajorVersion $appVersion Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
         Save-VcRedist -VcList $VcList -Path $appScriptDirectory
@@ -108,6 +113,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appMajorVersion $appVersion Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
     Install-VcRedist -Path $appScriptDirectory -VcList $VcList
 
