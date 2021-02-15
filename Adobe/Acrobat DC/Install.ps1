@@ -95,7 +95,7 @@ $appSetup = "AcroPro.msi"
 $appInstallParameters = "/QB"
 #$appParameters = "--tool=VolumeSerialize --generate --serial=1016-1899-8440-6413-0576-7429 --leid=V7{}AcrobatCont-12-Win-GM --regsuppress=ss --eulasuppress --stream" #--provfile Optional; path of the folder where prov.xml is created. If this parameter is not specified, prov.xml is created in the folder in which APTEE resides.
 $appAddParameters = "IGNOREVCRT64=1 EULA_ACCEPT=YES UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1 ROAMIDENTITY=1 ROAMLICENSING=1"
-$Evergreen = Get-AdobeAcrobatProDC
+$Evergreen = Get-AdobeAcrobatProDC | Where-Object {$_.Track -eq "DC"}
 $appVersion = $Evergreen.Version
 $appURLPatch = $Evergreen.URI
 $appPatch = ($appURLPatch).Split("/")[9]
@@ -106,7 +106,7 @@ $appCustWiz = ($appURLCustWiz).Split("/")[9]
 $appCustWizVersion = $appCustWiz.Trim("CustWiz").Trim("_en_US_DC.exe")
 $appSource = $appVersion
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\$appName"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appShortVersion" -Exact)
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appShortVersion")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion").DisplayVersion
 ##*===============================================
 
@@ -115,6 +115,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
+    If ($IsAppInstalled) {
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Remove-MSIApplications -Name "$appVendor $appName $appShortVersion"
+    }
 
     # Download latest Adobe Acrobat Customization Wizard DC
     If (-Not(Test-Path -Path $appScriptDirectory\$appCustWiz)) {
@@ -130,7 +134,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
     New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
     Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
-    Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\*.adm
+    Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\$appName$($appShortVersion).adm
 
     # Download latest patch file
     If (-Not(Test-Path -Path $appScriptDirectory\$appPatch)) {
