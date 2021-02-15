@@ -181,10 +181,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Get-Process -Name $appProcesses | Stop-Process -Force
     #>
 
-    Write-Log -Message "$appVendor $appName $appShortVersion $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     If (-Not(Get-InstalledApplication -Name "Adobe Creative Cloud")) {
         Write-Log -Message "Adobe Creative Cloud must be installed in order for $appVendor $appName $appShortVersion licensing to work!" -Severity 2 -LogType CMTrace -WriteHost $True
     }
+    Write-Log -Message "$appVendor $appName $appShortVersion $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }
 Else {
