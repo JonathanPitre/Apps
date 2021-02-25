@@ -92,15 +92,15 @@ $appProcesses = @("Teams", "Update", "Squirrel", "Outlook")
 $appTransform = "Teams_windows_x64_VDI.mst"
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
-#$Evergreen = Get-MicrosoftTeams | Where-Object {$_.Architecture -eq "x64"}
-#$appVersion = $Evergreen.Version
-#$appURL = $Evergreen.URI
-$appURLVersion = "https://whatpulse.org/app/microsoft-teams#versions"
-$webRequest = Invoke-WebRequest -UseBasicParsing -Uri ($appURLVersion) -SessionVariable websession
-$regexAppVersion = "\<td\>\d.\d.\d{2}.\d+<\/td\>\n.+windows"
-$webVersion = $webRequest.RawContent | Select-String -Pattern $regexAppVersion -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
-$appVersion = $webVersion.Split()[0].Trim("</td>")
-$appURL = "https://statics.teams.cdn.office.net/production-windows-x64/$appVersion/Teams_windows_x64.msi"
+$Evergreen = Get-MicrosoftTeams | Where-Object {$_.Ring -eq "Preview" -and $_.Architecture -eq "x64"}
+$appVersion = $Evergreen.Version
+$appURL = $Evergreen.URI
+#$appURLVersion = "https://whatpulse.org/app/microsoft-teams#versions"
+#$webRequest = Invoke-WebRequest -UseBasicParsing -Uri ($appURLVersion) -SessionVariable websession
+#$regexAppVersion = "\<td\>\d.\d.\d{2}.\d+<\/td\>\n.+windows"
+#$webVersion = $webRequest.RawContent | Select-String -Pattern $regexAppVersion -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
+#$appVersion = $webVersion.Split()[0].Trim("</td>")
+#$appURL = "https://statics.teams.cdn.office.net/production-windows-x64/$appVersion/Teams_windows_x64.msi"
 $appSource = $appVersion
 $appDestination = "${env:ProgramFiles(x86)}\Microsoft\Teams\current"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
@@ -115,6 +115,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Uninstall previous versions
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
+
     # Remove machine-wide install
     Remove-MSIApplications -Name "$appVendor $appName" -Parameters $appInstallParameters -ContinueOnError $True
     Remove-MSIApplications -Name "$appName Machine-Wide Installer" -Parameters $appInstallParameters -ContinueOnError $True
@@ -143,6 +144,12 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
             Out-Null
         }
     }
+
+    # Remove Teams user uninstall entry from registry
+    [scriptblock]$HKCURegistrySettings = {
+        Remove-RegistryKey -Key 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Teams' -Recurse -ContinueOnError $True -SID $UserProfile.SID
+    }
+    Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
