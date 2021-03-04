@@ -85,6 +85,53 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
+Function Get-MicrosoftTeams {
+    <#
+            .NOTES
+                Author: Jonathan Pitre
+                Twitter: @PitreJonathan
+        #>
+    [OutputType([System.Management.Automation.PSObject])]
+    [CmdletBinding()]
+    Param()
+    $appURLVersion = "https://whatpulse.org/app/microsoft-teams#versions"
+    try {
+        $webRequest = Invoke-WebRequest -UseBasicParsing -Uri ($appURLVersion) -SessionVariable websession
+    }
+    catch {
+        Throw "Failed to connect to URL: $appURLVersion with error $_."
+        Break
+    }
+    finally {
+        $regexAppVersion = "\<td\>\d.\d.\d{2}.\d+<\/td\>\n.+windows"
+        $webVersion = $webRequest.RawContent | Select-String -Pattern $regexAppVersion -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
+        $appVersion = $webVersion.Split()[0].Trim("</td>")
+        $appx64URL = "https://statics.teams.cdn.office.net/production-windows-x64/$appVersion/Teams_windows_x64.msi"
+        $appx86URL = "https://statics.teams.cdn.office.net/production-windows-x86/$appVersion/Teams_windows_x86.msi"
+
+        $PSObject = Evergreen\Get-MicrosoftTeams
+
+        $PSObjectx86 = [PSCustomObject] @{
+            Version      = $appVersion
+            Ring         = "Developer"
+            Architecture = "x86"
+            URI          = $appx86URL
+        }
+
+        $PSObjectx64 = [PSCustomObject] @{
+            Version      = $appVersion
+            Ring         = "Developer"
+            Architecture = "x64"
+            URI          = $appx64URL
+        }
+
+        Write-Output -InputObject $PSObject
+        Write-Output -InputObject $PSObjectx86
+        Write-Output -InputObject $PSObjectx64
+    }
+}
+
+
 $appVendor = "Microsoft"
 $appName = "Teams"
 $appSetup = "Teams_windows_x64.msi"
@@ -92,15 +139,9 @@ $appProcesses = @("Teams", "Update", "Squirrel", "Outlook")
 $appTransform = "Teams_windows_x64_VDI.mst"
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
-$Evergreen = Get-MicrosoftTeams | Where-Object {$_.Ring -eq "Preview" -and $_.Architecture -eq "x64"}
+$Evergreen = Get-MicrosoftTeams | Where-Object {$_.Ring -eq "Developer" -and $_.Architecture -eq "x64"}
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-#$appURLVersion = "https://whatpulse.org/app/microsoft-teams#versions"
-#$webRequest = Invoke-WebRequest -UseBasicParsing -Uri ($appURLVersion) -SessionVariable websession
-#$regexAppVersion = "\<td\>\d.\d.\d{2}.\d+<\/td\>\n.+windows"
-#$webVersion = $webRequest.RawContent | Select-String -Pattern $regexAppVersion -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
-#$appVersion = $webVersion.Split()[0].Trim("</td>")
-#$appURL = "https://statics.teams.cdn.office.net/production-windows-x64/$appVersion/Teams_windows_x64.msi"
 $appSource = $appVersion
 $appDestination = "${env:ProgramFiles(x86)}\Microsoft\Teams\current"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
@@ -145,9 +186,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         }
     }
 
-    # Remove Teams user uninstall entry from registry
+    # Remove Teams registry entries from all user profiles - https://www.reddit.com/r/MicrosoftTeams/comments/gbq8rg/what_prevents_teams_from_reinstalling_or_how_to
     [scriptblock]$HKCURegistrySettings = {
-        Remove-RegistryKey -Key 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Teams' -Recurse -ContinueOnError $True -SID $UserProfile.SID
+        Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Teams" -Recurse -ContinueOnError $True -SID $UserProfile.SID
+        Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Microsoft\Office\Teams" -Recurse -ContinueOnError $True -SID $UserProfile.SID
     }
     Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings
 
@@ -170,6 +212,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Remove unneeded applications from running at start-up
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "TeamsMachineUninstallerLocalAppData" -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "TeamsMachineUninstallerProgramData" -ContinueOnError $True
+    # Uncomment to disable Teams auto-startup
     #Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name $appName -ContinueOnError $True
 
     # Fix application Start Menu shorcut
