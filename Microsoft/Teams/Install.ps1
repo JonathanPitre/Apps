@@ -131,12 +131,12 @@ Function Get-MicrosoftTeams {
     }
 }
 
-
 $appVendor = "Microsoft"
 $appName = "Teams"
 $appSetup = "Teams_windows_x64.msi"
 $appProcesses = @("Teams", "Update", "Squirrel", "Outlook")
-$appTransform = "Teams_windows_x64_VDI.mst"
+$appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/Teams.mst"
+$appTransform = $appTransformURL.Split("/")[9]
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
 $Evergreen = Get-MicrosoftTeams | Where-Object {$_.Ring -eq "Developer" -and $_.Architecture -eq "x64"}
@@ -197,6 +197,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
+    }
+    Else {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    # Download required transform file
+    If (-Not(Test-Path -Path $appScriptDirectory\$appTransform)) {
+        Write-Log -Message "Downloading $appVendor $appName Transfrom.." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptDirectory\$appTransform
     }
     Else {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
