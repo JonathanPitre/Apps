@@ -95,7 +95,7 @@ $appSetup = "AcroPro.msi"
 $appInstallParameters = "/QB"
 #$appParameters = "--tool=VolumeSerialize --generate --serial=1016-1899-8440-6413-0576-7429 --leid=V7{}AcrobatCont-12-Win-GM --regsuppress=ss --eulasuppress --stream" #--provfile Optional; path of the folder where prov.xml is created. If this parameter is not specified, prov.xml is created in the folder in which APTEE resides.
 $appAddParameters = "IGNOREVCRT64=1 EULA_ACCEPT=YES UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1 ROAMIDENTITY=1 ROAMLICENSING=1"
-$Evergreen = Get-AdobeAcrobatProDC | Where-Object {$_.Track -eq "DC"}
+$Evergreen = Get-AdobeAcrobat| Where-Object {$_.Track -eq "DC"}
 $appVersion = $Evergreen.Version
 $appURLPatch = $Evergreen.URI
 $appPatch = ($appURLPatch).Split("/")[9]
