@@ -145,9 +145,7 @@ $appURL = $Evergreen.URI
 $appSource = $appVersion
 $appDestination = "${env:ProgramFiles(x86)}\Microsoft\Teams\current"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
-# Fix Teams display version to match Evergreen versioning
-If ($appInstalledVersion) {$appInstalledVersion = $appInstalledVersion.Insert(5, '0')}
+$appInstalledVersion = (Get-FileVersion $appDestination\Teams.exe)
 ##*===============================================
 
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
