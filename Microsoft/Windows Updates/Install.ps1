@@ -91,28 +91,31 @@ $appService = "wuauserv"
 $appLog = "$env:ProgramData\Logs\Software\PSWindowsUpdate.log"
 ##*===============================================
 
+# Stop Windows Update service
 Stop-ServiceAndDependencies -Name $appService
 
 # Clear Windows Update policies
-Remove-Item -Path HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate -Force -Recurse -EA SilentlyContinue
+Remove-RegistryKey -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Recurse -ContinueOnError $True
 
 
-# Add ServiceID for Windows Update
+# Get updates for other Microsoft products
 Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d -Confirm:$false
+
 # Pause and give the service time to update
 Start-Sleep 30
 
+# Start Windows Update service
 Set-ServiceStartMode -Name $appService -StartMode "Automatic"
 Start-ServiceAndDependencies -Name $appService
 
 Write-Log -Message "Gettings available $appVendor $appName..." -Severity 1 -LogType CMTrace -WriteHost $True
-Get-WindowsUpdate -NotCategory "Drivers" -MicrosoftUpdate | Out-File $appLog -Append
+Get-WindowsUpdate -NotCategory "Drivers", "Upgrades" -NotTitle "Preview" -MicrosoftUpdate | Out-File $appLog -Append
+
 
 Write-Log -Message "Installing available $appVendor $appName..." -Severity 1 -LogType CMTrace -WriteHost $True
-Get-WindowsUpdate -NotCategory "Drivers" -MicrosoftUpdate -Install -AcceptAll -IgnoreReboot | Out-File $appLog -Append
+Get-WindowsUpdate -NotCategory "Drivers", "Upgrades" -NotTitle "Preview" -MicrosoftUpdate -Install -AcceptAll -IgnoreReboot | Out-File $appLog -Append
 
 Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
-Show-DialogBox -Title "$appVendor $appName" -Text "A reboot required after $appVendor$appName installation. The computer $envComputerName will reboot in 30 seconds!" -Timeout "10" -Icon "Exclamation"
 Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
 
 <#
