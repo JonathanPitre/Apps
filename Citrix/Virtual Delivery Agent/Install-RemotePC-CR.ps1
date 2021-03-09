@@ -113,12 +113,20 @@ If ($appVersion -gt $appInstalledVersion) {
         If (!(Get-WindowsFeature -Name Server-Media-Foundation)) {Install-WindowsFeature Server-Media-Foundation}
     }
 
-    # Enable Windows Media Player feature if missing
+    # Install Windows Media Player feature if missing
     If ($envOSName -Like "*Windows 10*") {
         If ((Get-WindowsOptionalFeature –FeatureName "WindowsMediaPlayer" -Online).State -ne "Enabled") {
             Enable-WindowsOptionalFeature –FeatureName "WindowsMediaPlayer" -All -Online
         }
-        Write-Log -Message "Windows Media Player is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    # Fix VDA install error - https://www.thewindowsclub.com/computer-missing-media-features-icloud-windows-error
+    If (Test-Path -Path "$envProgramFiles\Windows Media Player\wmplayer.exe") {
+        $WindowsMediaPlayerVersion = (Get-FileVersion -File "$envProgramFiles\Windows Media Player\setup_wm.exe" -ProductVersion)
+        If ((Test-Path -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\WindowsFeatures\WindowsMediaVersion") -and (Get-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\WindowsFeatures\WindowsMediaVersion" -Value "(Default)") -eq "") {
+            Write-Log -Message "Windows Media Player version is empty" -Severity 1 -LogType CMTrace -WriteHost $True
+            Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\WindowsFeatures\WindowsMediaVersion" -Name "(Default)" -Value $WindowsMediaPlayerVersion -Type "DWord"
+        }
     }
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
@@ -136,9 +144,7 @@ If ($appVersion -gt $appInstalledVersion) {
         }
 
         Remove-Variable -Name MyCitrixPassword1Temp,MyCitrixPassword2Temp
-
         $CitrixCredentials = New-Object System.Management.Automation.PSCredential ($MyCitrixUserName, $MyCitrixPassword1)
-        #$CitrixCredentials = Get-Credential -Message "Please supply your MyCitrix credentials (for downloading the VDA)"
 
         # Verify Citrix credentials
         # Ryan Butler TechDrabble.com @ryan_c_butler 07/19/2019
