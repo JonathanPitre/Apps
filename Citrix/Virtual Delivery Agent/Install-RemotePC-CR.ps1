@@ -96,7 +96,7 @@ $appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexpe
 $Evergreen = Get-CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 *, All Editions"} | Select-Object -First 1
 $appVersion = $Evergreen.Version
 $appSetup = "VDAWorkstationCoreSetup_$appVersion.exe"
-$appURL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=18865&URL=https://downloads.citrix.com/18865/$appSetup"
+$appURL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=19146&URL=https://downloads.citrix.com/19146/$appSetup"
 $appSource = $appVersion
 $appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
