@@ -12,6 +12,7 @@
     <Exclude Copy="0">AppData\Local\CrashDumps</Exclude>
     <Exclude Copy="0">AppData\Local\D3DSCache</Exclude>
     <Exclude Copy="0">AppData\Local\Deployment</Exclude>
+    <Exclude Copy="0">AppData\Local\Diagnostics</Exclude>
     <Exclude Copy="0">AppData\Local\Downloaded Installations</Exclude>
     <Exclude Copy="0">AppData\Local\Google\Chrome\User Data\BrowserMetrics</Exclude>
     <Exclude Copy="0">AppData\Local\Google\Chrome\User Data\CertificateRevocation</Exclude>
@@ -135,6 +136,7 @@
     <Exclude Copy="0">AppData\LocalLow</Exclude>
     <Exclude Copy="0">AppData\Roaming\Adobe\Common\Media Cache Files</Exclude>
     <Exclude Copy="0">AppData\Roaming\Adobe\SLData</Exclude>
+    <Exclude Copy="0">AppData\Roaming\Avaya\Avaya Agent\logs</Exclude>
     <Exclude Copy="0">AppData\Roaming\Citrix\PNAgent\AppCache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Citrix\PNAgent\IconCache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Citrix\PNAgent\ResourceCache</Exclude>
@@ -224,6 +226,8 @@
     <Exclude Copy="0">AppData\Roaming\Xink\Xink Client AD</Exclude>
     <Exclude Copy="0">AppData\Roaming\Yammer\Cache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Yammer\GPUCache</Exclude>
+    <Exclude Copy="0">AppData\Roaming\Zoom\ZoomDownload</Exclude>
+    <Exclude Copy="0">AppData\Roaming\Zoom\logs</Exclude>
     <Exclude Copy="0">Contacts</Exclude>
     <Exclude Copy="0">Desktop</Exclude>
     <Exclude Copy="0">Documents</Exclude>
