@@ -1,12 +1,7 @@
-# PowerShell Wrapper for MDT, Standalone and Chocolatey Installation - (C)2020 Jonathan Pitre, inspired by xenappblog.com
-# Example 1 Install EXE:
-# Execute-Process -Path .\appName.exe -Parameters "/silent"
-# Example 2 Install MSI:
-# Execute-MSI -Action Install -Path appName.msi -Parameters "/QB" -AddParameters "ALLUSERS=1"
-# Example 3 Uninstall MSI:
-# Remove-MSIApplications -Name "appName" -Parameters "/QB"
+# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
 
 #Requires -Version 5.1
+#Requires -RunAsAdministrator
 
 # Custom package providers list
 $PackageProviders = @("Nuget")
@@ -14,49 +9,40 @@ $PackageProviders = @("Nuget")
 # Custom modules list
 $Modules = @("PSADT", "Evergreen")
 
-Set-ExecutionPolicy -ExecutionPolicy Bypass -Force
+Write-Verbose -Message "Importing custom modules..." -Verbose
 
-# Checking for elevated permissions...
-If (-not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Warning -Message "Insufficient permissions to continue! PowerShell must be run with admin rights."
-    Break
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
+
+# Install custom package providers list
+Foreach ($PackageProvider in $PackageProviders) {
+	If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
 }
-Else {
-    Write-Verbose -Message "Importing custom modules..." -Verbose
 
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
+# Add the Powershell Gallery as trusted repository
+Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
 
-    # Install custom package providers list
-    Foreach ($PackageProvider in $PackageProviders) {
-        If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
-    }
+# Update PowerShellGet
+$InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
+$PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
+If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
 
-    # Add the Powershell Gallery as trusted repository
-    Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-
-    # Update PowerShellGet
-    $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
-    $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
-    If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
-
-    # Install and import custom modules list
-    Foreach ($Module in $Modules) {
-        If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-        Else {
-            $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
-            $ModuleVersion = (Find-Module -Name $Module).Version
-            $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
-            $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-            If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
-                Update-Module -Name $Module -Force
-                Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
-            }
-        }
-    }
-
-    Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
+# Install and import custom modules list
+Foreach ($Module in $Modules) {
+	If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
+	Else {
+		$InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
+		$ModuleVersion = (Find-Module -Name $Module).Version
+		$ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
+		$ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
+		If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+			Update-Module -Name $Module -Force
+			Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
+		}
+	}
 }
+
+Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 
 # Get the current script directory
 Function Get-ScriptDirectory {
@@ -99,7 +85,7 @@ $appURLADMX = "https://dl.google.com/dl/edgedl/chrome/policy/policy_templates.zi
 $appADMX = ($appURLADMX).Split("/")[7]
 $appURLADMX2 = "https://dl.google.com/dl/update2/enterprise/googleupdateadmx.zip"
 $appADMX2 = ($appURLADMX2).Split("/")[6]
-$appSource = $appVersion
+
 $appDestination = "$env:ProgramFiles\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
@@ -107,8 +93,8 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Ex
 
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appSource)) { New-Folder -Path $appSource }
-    Set-Location -Path $appSource
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
+    Set-Location -Path $appVersion
 
     # Delete machine policies to prevent issue during installation
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\Update" -Recurse -ContinueOnError $True
@@ -149,7 +135,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Remove-Folder -Path "$envProgramFilesX86\$appVendor\CrashReports" -ContinueOnError $True
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSource\$appSetup)) {
+    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup)) {
         Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
@@ -208,11 +194,3 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 Else {
     Write-Log -Message "$appVendor $appName $appLongName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
-
-<#
-Write-Verbose -Message "Uninstalling custom modules..." -Verbose
-Foreach ($Module in $Modules) {
-    If ((Get-Module -ListAvailable -Name $Module)) {Uninstall-Module -Name $Module -Force}
-}
-Write-Verbose -Message "Custom modules were succesfully uninstalled!" -Verbose
-#>
