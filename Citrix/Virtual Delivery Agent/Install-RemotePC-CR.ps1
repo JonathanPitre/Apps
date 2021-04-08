@@ -249,7 +249,7 @@ If ($appVersion -gt $appInstalledVersion) {
     # Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Type "DWord" -Value "0"
 
     # Session disconnects when you select Ctrl+Alt+Del on the machine that has session management notification enabled - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
-    If (($appHardwarePlatform -eq "Virtual") -or (Get-WindowsOptionalFeature -FeatureName "Microsoft-Hyper-V" -Online).State -eq "Enabled"){
+    If (($appHardwarePlatform -like "Virtual*") -or (Get-WindowsOptionalFeature -FeatureName "Microsoft-Hyper-V" -Online).State -eq "Enabled"){
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA" -Name "ForceEnableRemotePC" -Type "DWord" -Value "1"
     }
 
