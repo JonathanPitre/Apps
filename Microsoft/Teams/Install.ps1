@@ -93,7 +93,7 @@ Function Get-MicrosoftTeams {
         $webVersion = $webRequest.RawContent | Select-String -Pattern $regexAppVersion -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
         $appVersion = $webVersion.Split()[0].Trim("</td>")
         $appx64URL = "https://statics.teams.cdn.office.net/production-windows-x64/$appVersion/Teams_windows_x64.msi"
-        $appx86URL = "https://statics.teams.cdn.office.net/production-windows-x86/$appVersion/Teams_windows_x86.msi"
+        $appx86URL = "https://statics.teams.cdn.office.net/production-windows/$appVersion/Teams_windows.msi"
 
         $PSObject = Evergreen\Get-MicrosoftTeams
 
