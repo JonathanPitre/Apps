@@ -63,7 +63,7 @@ $appVendor = "Oracle"
 $appName = "Java"
 $appProcesses = @("java", "javaw", "javaws", "javacpl", "jp2launcher")
 $appInstallParameters = "INSTALL_SILENT=1 STATIC=0 AUTO_UPDATE=0 WEB_JAVA=1 WEB_JAVA_SECURITY_LEVEL=H WEB_ANALYTICS=0 EULA=0 REBOOT=0 REMOVEOUTOFDATEJRES=1 NOSTARTMENU=1 SPONSORS=0"
-$Evergreen = Get-OracleJava8 | Where-Object { $_.Architecture -eq "x64" }
+$Evergreen = Get-EvergreenApp -Name OracleJava8 | Where-Object { $_.Architecture -eq "x64" }
 $appVersion = $Evergreen.Version.Replace("-b", "0.").Replace("_", ".").Substring(2)
 $appMajorVersion = $appVersion.Split(".")[0]
 $appMinorVersion = $appVersion.Split(".")[2].Substring(0, 3)

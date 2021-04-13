@@ -80,7 +80,7 @@ $appSetup = "AcroRead.msi"
 $appInstallParameters = "/QB"
 $appAddParameters = "EULA_ACCEPT=YES DISABLE_CACHE=1 DISABLE_PDFMAKER=YES DISABLEDESKTOPSHORTCUT=0 UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1"
 $appAddParameters2 = "ALLUSERS=1"
-$Evergreen = Get-AdobeAcrobat| Where-Object {$_.Track -eq "DC"}
+$Evergreen = Get-EvergreenApp -Name AdobeAcrobat| Where-Object {$_.Track -eq "DC"}
 $appVersion = $Evergreen.Version
 # Evergreen removed the native command to download Adobe Reader MUI patch
 $appURLPatch = ($Evergreen.URI).Replace("acrobat", "reader").Replace("AcrobatDCUpd", "AcroRdrDCUpd").Replace(".msp", "_MUI.msp")

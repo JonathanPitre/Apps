@@ -75,7 +75,7 @@ $appVendor = "VMware"
 $appName = "Tools"
 $appProcesses = @("vmtoolsd", "VGAuthService", "vm3dservice")
 $appInstallParameters = "/S /v /qn REBOOT=R"
-$Evergreen = Get-VMwareTools | Where-Object { $_.Architecture -eq "x64" }
+$Evergreen = Get-EvergreenApp -Name VMwareTools | Where-Object { $_.Architecture -eq "x64" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = $appUrl.split("/")[8]

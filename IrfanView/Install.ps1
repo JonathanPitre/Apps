@@ -147,14 +147,14 @@ Function Get-IrfanView {
 $appName = "IrfanView"
 $appProcesses = @("i_view64")
 $appInstallParameters = "/assoc=1 /group=1 /ini=%APPDATA%\IrfanView /silent"
-$Evergreen = Get-IrfanView | Where-Object {$_.Architecture -eq "x64"}
+$Evergreen = Get-EvergreenApp -Name IrfanView | Where-Object {$_.Architecture -eq "x64"}
 $appVersion = $Evergreen.Version
 $appURLSetup = $Evergreen.URI
 $appSetup = $appURLSetup.Split("/")[5]
-$Evergreen = Get-IrfanView | Where-Object {$_.Architecture -eq "x64 Plugin"}
+$Evergreen = Get-EvergreenApp -Name IrfanView | Where-Object {$_.Architecture -eq "x64 Plugin"}
 $appURLSetupPlugin = $Evergreen.URI
 $appSetupPlugin = $appURLSetupPlugin.Split("/")[5]
-$Evergreen = Get-IrfanView | Where-Object {$_.Language -eq "french"}
+$Evergreen = Get-EvergreenApp -Name IrfanView | Where-Object {$_.Language -eq "french"}
 $appURLSetupLang = $Evergreen.URI
 $appSetupLang = $appURLSetupLang.Split("/")[4]
 $appDestination = "$env:ProgramFiles\IrfanView"

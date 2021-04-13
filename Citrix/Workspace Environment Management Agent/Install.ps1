@@ -75,7 +75,7 @@ $appVendor = "Citrix"
 $appName = "Workspace Environment Management Agent"
 $appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
 $appInstallParameters = "/quiet Cloud=1"  # OnPrem 0 Cloud 1
-#$Evergreen = Get-CitrixWorkspaceApp | Where-Object {$_.Title -contains "Citrix Workspace - Current Release"}
+#$Evergreen = Get-EvergreenApp -Name CitrixWorkspaceApp | Where-Object {$_.Title -contains "Citrix Workspace - Current Release"}
 $appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 #$appURL = $Evergreen.URI
 $appSetup = "Citrix Workspace Environment Management Agent.exe"

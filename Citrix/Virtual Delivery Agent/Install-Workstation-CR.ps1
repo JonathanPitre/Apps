@@ -78,7 +78,7 @@ $appProcesses = @("BrokerAgent", "picaSessionAgent")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
 $appInstallParameters = '/baseimage /noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /virtualmachine /INSTALL_MCSIO_DRIVER /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /exclude "User Personalization layer", "Citrix Files for Outlook", "Citrix Files for Windows", "Citrix Supportability Tools", "Citrix Telemetry Service", "Citrix Personalization for App-V - VDA", "Personal vDisk" /components vda /mastermcsimage'
-#$Evergreen = Get-CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -contains "Citrix Virtual Apps and Desktops 7 2006, All Editions"}
+#$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -contains "Citrix Virtual Apps and Desktops 7 2006, All Editions"}
 $appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 #$appURL = $Evergreen.URI
 $appSetup = "VDAWorkstationSetup_$appVersion.exe"

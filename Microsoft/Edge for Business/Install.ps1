@@ -79,7 +79,7 @@ $appProcesses = @("msedge", "MicrosoftEdgeUpdate", "MicrosoftEdgeUpdateBroker", 
 $appServices = @("edgeupdate", "edgeupdatem", "MicrosoftEdgeElevationService")
 $appInstallParameters = "/QB"
 $appAddParameters = "DONOTCREATEDESKTOPSHORTCUT=TRUE DONOTCREATETASKBARSHORTCUT=TRUE"
-$Evergreen = Get-MicrosoftEdge | Where-Object { $_.Architecture -eq "x64" -and $_.Channel -eq "Stable" -and $_.Platform -eq "Windows" }
+$Evergreen = Get-EvergreenApp -Name MicrosoftEdge | Where-Object { $_.Architecture -eq "x64" -and $_.Channel -eq "Stable" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appURLADMX = (Get-MicrosoftEdge | Where-Object { $_.Channel -eq "Policy" }).URI

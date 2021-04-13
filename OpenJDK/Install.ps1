@@ -75,7 +75,7 @@ $appName = "OpenJDk"
 $appProcesses = @("java", "javaw")
 $appInstallParameters = "/QB"
 $appAddParameters = "INSTALLLEVEL=3 UPDATE_NOTIFIER=0"
-$Evergreen = Get-OpenJDK | Where-Object { $_.Architecture -eq "x64" -and $_.URI -match ".msi" }
+$Evergreen = Get-EvergreenApp -Name OpenJDK | Where-Object { $_.Architecture -eq "x64" -and $_.URI -match ".msi" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = $appURL.Split("/")[8]

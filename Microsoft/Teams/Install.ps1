@@ -95,7 +95,7 @@ Function Get-MicrosoftTeams {
         $appx64URL = "https://statics.teams.cdn.office.net/production-windows-x64/$appVersion/Teams_windows_x64.msi"
         $appx86URL = "https://statics.teams.cdn.office.net/production-windows/$appVersion/Teams_windows.msi"
 
-        $PSObject = Evergreen\Get-MicrosoftTeams
+        $PSObject = Evergreen\Get-EvergreenApp -Name MicrosoftTeams
 
         $PSObjectx86 = [PSCustomObject] @{
             Version      = $appVersion

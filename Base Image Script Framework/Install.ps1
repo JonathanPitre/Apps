@@ -76,7 +76,7 @@ $appName = "Base Image Script Framework (BIS-F)"
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSERS=1"
 $appRepo = "https://api.github.com/repos/EUCweb/BIS-F/releases/latest"
-$Evergreen = Get-GitHubRelease -Uri $appRepo
+$Evergreen = Get-EvergreenApp -Name GitHubRelease -Uri $appRepo
 $appURL = $Evergreen.URI
 $appVersion = $Evergreen.Version
 $appSetup = $appURL.Split("/")[8]
