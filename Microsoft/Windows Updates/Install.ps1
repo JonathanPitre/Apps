@@ -77,6 +77,9 @@ $appService = "wuauserv"
 $appLog = "$env:ProgramData\Logs\Software\PSWindowsUpdate.log"
 ##*===============================================
 
+# Create folder to store log files
+New-Folder -Path "$env:ProgramData\Logs\Software"
+
 # Stop Windows Update service
 Stop-ServiceAndDependencies -Name $appService
 
