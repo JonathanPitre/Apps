@@ -16,7 +16,7 @@ Write-Verbose -Message "Importing custom modules..." -Verbose
 
 # Install custom package providers list
 Foreach ($PackageProvider in $PackageProviders) {
-	If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
+    If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
 }
 
 # Add the Powershell Gallery as trusted repository
@@ -29,16 +29,17 @@ If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name Po
 
 # Install and import custom modules list
 Foreach ($Module in $Modules) {
-	If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-	Else {
-		$InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
-		$ModuleVersion = (Find-Module -Name $Module).Version
-		$ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
-		$ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-		If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
-			Update-Module -Name $Module -Force
-			Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
-		}
+    If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
+    Else {
+        $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
+        $ModuleVersion = (Find-Module -Name $Module).Version
+        $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
+        $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
+        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+            Update-Module -Name $Module -Force
+            Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
+        }
+    }
 }
 
 Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
