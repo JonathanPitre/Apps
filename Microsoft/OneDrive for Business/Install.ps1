@@ -76,14 +76,16 @@ $appName = "OneDrive"
 $appLongName = "for Business"
 $appProcesses = @("OneDrive")
 $appInstallParameters = "/allusers /silent"
-$Evergreen = Get-MicrosoftOneDrive | Where-Object {$_.Ring -eq "Insider" -and $_.Type -eq "Exe"}
-$Evergreen = $Evergreen[$Evergreen.Count - 1]
+$Evergreen = (Get-EvergreenApp -Name MicrosoftOneDrive | Where-Object {$_.Architecture -eq "AMD64" -and $_.Ring -eq "Insider" -and $_.Type -eq "exe"}) | `
+    Sort-Object -Property @{ Expression = { [System.Version]$_.Version }; Descending = $true } | Select-Object -First 1
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appSetup = $appURL.Split("/")[6]
-$appDestination = "${env:ProgramFiles(x86)}\Microsoft OneDrive"
+$appSetup = Split-Path -Path $Evergreen.URI -Leaf
+$appDestination = "${env:ProgramFiles}\Microsoft OneDrive"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
+$appUninstallString = ((Get-InstalledApplication -Name "$appVendor $appName").UninstallString).Split("/")[0]
+$appUninstallParameters = ((Get-InstalledApplication -Name "$appVendor $appName").UninstallString).TrimStart($appUninstallString)
 ##*===============================================
 
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
@@ -104,7 +106,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-Process -Path $appDestination\$appInstalledVersion\$appSetup -Parameters "/uninstall  /allusers"
+        Execute-Process -Path $appUninstallString -Parameters $appUninstallParameters
     }
 
     Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
