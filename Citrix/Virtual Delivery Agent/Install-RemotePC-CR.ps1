@@ -75,7 +75,6 @@ $appVendor = "Citrix"
 $appName = "Virtual Apps and Desktops"
 $appName2 = "Virtual Delivery Agent"
 $appProcesses = @("BrokerAgent", "picaSessionAgent")
-$appServices = @("CitrixTelemetryService")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
 $appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports'
@@ -211,7 +210,9 @@ If ($appVersion -gt $appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Copy $appSetup to C:\Installs\VDA to avoid install issue
     Copy-File -Path ".\*" -Destination "$env:SystemDrive\Installs\VDA" -Recurse
+    Set-Location -Path "$env:SystemDrive\Installs\VDA"
 
     # Uninstall previous versions
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -222,10 +223,6 @@ If ($appVersion -gt $appInstalledVersion) {
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
-
-    # Stop and disable unneeded services
-    Stop-ServiceAndDependencies -Name $appServices[0]
-    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
 
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\User Profile Manager\UserProfileManager.exe" -Force
