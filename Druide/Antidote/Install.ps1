@@ -87,6 +87,7 @@ $appURLPatch = "https://telechargement12.druide.com/Win/antidote_$appShortVersio
 $appURLPatch2 = "https://telechargement12.druide.com/Win/antidote_$appShortVersion/Diff_Antidote_$($appShortVersion)_Module_F_$($appShortVersion).$appPatchVersion.msp"
 $appURLPatch3 = "https://telechargement12.druide.com/Win/antidote_$appShortVersion/Diff_Antidote_$($appShortVersion)_Module_E_$($appShortVersion).$appPatchVersion.msp"
 $appURLPatch4 = "https://telechargement12.druide.com/Win/antidote_$appShortVersion/Diff_Connectix_$($appShortVersion)_C_$($appShortVersion).$appPatchVersion.msp"
+$appURLMultiMgr = "https://telechargement.druide.com/telecharger/Reseau/antidote_$appShortVersion/GestionnaireMultiposte_Antidote$appShortVersion.exe"
 $appPatch = $appURLPatch.Split("/")[5]
 $appPatch2 = $appURLPatch2.Split("/")[5]
 $appPatch3 = $appURLPatch3.Split("/")[5]
