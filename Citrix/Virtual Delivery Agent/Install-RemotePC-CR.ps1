@@ -16,7 +16,7 @@ Write-Verbose -Message "Importing custom modules..." -Verbose
 
 # Install custom package providers list
 Foreach ($PackageProvider in $PackageProviders) {
-	If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
+    If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
 }
 
 # Add the Powershell Gallery as trusted repository
@@ -29,17 +29,17 @@ If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name Po
 
 # Install and import custom modules list
 Foreach ($Module in $Modules) {
-	If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-	Else {
-		$InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
-		$ModuleVersion = (Find-Module -Name $Module).Version
-		$ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
-		$ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-		If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
-			Update-Module -Name $Module -Force
-			Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
-		}
-	}
+    If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
+    Else {
+        $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
+        $ModuleVersion = (Find-Module -Name $Module).Version
+        $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
+        $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
+        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+            Update-Module -Name $Module -Force
+            Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
+        }
+    }
 }
 
 Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
@@ -89,7 +89,7 @@ $appHardwarePlatform = Get-HardwarePlatform
 $appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
 ##*===============================================
 
-Function Get-CitrixBinary {
+Function Get-CitrixDownload {
     <#
 .SYNOPSIS
   Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
@@ -107,7 +107,7 @@ Function Get-CitrixBinary {
 .PARAMETER CitrixPassword
   Citrix.com password
 .EXAMPLE
-  Get-CitrixBinary -dlNumber "16834" -dlEXE "Citrix_Virtual_Apps_and_Desktops_7_1912.iso" -CitrixUserName "MyCitrixUsername" -CitrixPassword "MyCitrixPassword" -dlPath "C:\Temp\"
+  Get-CitrixDownload -dlNumber "16834" -dlEXE "Citrix_Virtual_Apps_and_Desktops_7_1912.iso" -CitrixUserName "MyCitrixUsername" -CitrixPassword "MyCitrixPassword" -dlPath "C:\Temp\"
 #>
     Param(
         [Parameter(Mandatory = $true)]$dlNumber,
@@ -205,7 +205,7 @@ If ($appVersion -gt $appInstalledVersion) {
 
         # Download latest version
         Write-Log -Message "Downloading $appVendor $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-CitrixBinary -dlNumber $appDlNumber -dlEXE $appSetup -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
+        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appSetup -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
     }
     Else {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -241,6 +241,9 @@ If ($appVersion -gt $appInstalledVersion) {
     Execute-Process -Path "$envSystem32Directory\powercfg.exe" -Parameters "/requestsoverride PROCESS GFXMGR.exe DISPLAY"
 
     # Registry optimizations
+    # Enable EDT MTU Discovery on the VDA - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/technical-overview/hdx/adaptive-transport.html
+    Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "MtuDiscovery" -Type "DWord" -Value "1"
+
     # https://www.carlstalhood.com/remote-pc/#deliverygroup
     # When a user connects to his physical VDA using Remote PC Access, the monitor layout order change - https://support.citrix.com/article/CTX256820
     # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Graphics" -Name "UseSDCForLocalModes" -Type "DWord" -Value "1"
@@ -249,7 +252,7 @@ If ($appVersion -gt $appInstalledVersion) {
     # Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Type "DWord" -Value "0"
 
     # Session disconnects when you select Ctrl+Alt+Del on the machine that has session management notification enabled - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
-    If (($appHardwarePlatform -like "Virtual*") -or (Get-WindowsOptionalFeature -FeatureName "Microsoft-Hyper-V" -Online).State -eq "Enabled"){
+    If (($appHardwarePlatform -like "Virtual*") -or (Get-WindowsOptionalFeature -FeatureName "Microsoft-Hyper-V" -Online).State -eq "Enabled") {
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA" -Name "ForceEnableRemotePC" -Type "DWord" -Value "1"
     }
 
@@ -271,7 +274,6 @@ If ($appVersion -gt $appInstalledVersion) {
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
     Write-Log -Message "$appVendor $appName2" -Text "A reboot required after $appVendor $appName2 $appVersion installation. The computer $envComputerName will reboot in 30 seconds!" -Severity 2 -LogType CMTrace -WriteHost $True
-    Show-DialogBox -Title "$appVendor $appName2" -Text "A reboot required after $appVendor $appName2 $appVersion installation. The computer $envComputerName will reboot in 30 seconds!" -Timeout "10" -Icon "Exclamation"
     Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
 }
 Else {
