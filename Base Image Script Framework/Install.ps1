@@ -71,15 +71,13 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
-$appVendor = ""
 $appName = "Base Image Script Framework (BIS-F)"
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSERS=1"
-$appRepo = "https://api.github.com/repos/EUCweb/BIS-F/releases/latest"
-$Evergreen = Get-EvergreenApp -Name GitHubRelease -Uri $appRepo
+$Evergreen = Get-EvergreenApp -Name BISF
 $appURL = $Evergreen.URI
 $appVersion = $Evergreen.Version
-$appSetup = $appURL.Split("/")[8]
+$appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\Base Image Script Framework (BIS-F)"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appName").DisplayVersion)
@@ -91,23 +89,36 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appVersion
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup)) {
-        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Customize scripts, it's best practise to enable Task Offload and RSS and to disable DEP
+    $BISFDir = "$appDestination\Framework\SubCall"
+    If (Test-Path -Path "$BISFDir") {
+        Try {
+            Write-Log -Message "Customizig scripts for $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+            ((Get-Content "$BISFDir\Preparation\97_PrepBISF_PRE_BaseImage.ps1" -Raw) -replace "DisableTaskOffload' -Value '1'", "DisableTaskOffload' -Value '0'") | Set-Content -Path "$BISFDir\Preparation\97_PrepBISF_PRE_BaseImage.ps1"
+            ((Get-Content "$BISFDir\Preparation\97_PrepBISF_PRE_BaseImage.ps1" -Raw) -replace 'nx AlwaysOff', 'nx OptOut') | Set-Content -Path "$BISFDir\Preparation\97_PrepBISF_PRE_BaseImage.ps1"
+            ((Get-Content "$BISFDir\Preparation\97_PrepBISF_PRE_BaseImage.ps1" -Raw) -replace 'rss=disable', 'rss=enable') | Set-Content -Path "$BISFDir\Preparation\97_PrepBISF_PRE_BaseImage.ps1"
+        }
+        Catch {
+            Write-Log -Message "Error when customizing scripts" -Severity 2 -LogType CMTrace -WriteHost $True
+        }
+    }
 
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else {
-    Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
