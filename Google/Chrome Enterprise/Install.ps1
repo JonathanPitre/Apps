@@ -16,7 +16,7 @@ Write-Verbose -Message "Importing custom modules..." -Verbose
 
 # Install custom package providers list
 Foreach ($PackageProvider in $PackageProviders) {
-	If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
+    If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
 }
 
 # Add the Powershell Gallery as trusted repository
@@ -29,17 +29,17 @@ If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name Po
 
 # Install and import custom modules list
 Foreach ($Module in $Modules) {
-	If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-	Else {
-		$InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
-		$ModuleVersion = (Find-Module -Name $Module).Version
-		$ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
-		$ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-		If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
-			Update-Module -Name $Module -Force
-			Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
-		}
-	}
+    If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
+    Else {
+        $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
+        $ModuleVersion = (Find-Module -Name $Module).Version
+        $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
+        $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
+        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+            Update-Module -Name $Module -Force
+            Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
+        }
+    }
 }
 
 Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
@@ -74,18 +74,17 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Google"
 $appName = "Chrome"
 $appLongName = "Enterprise"
-$appSetup = "GoogleChromeStandaloneEnterprise64.msi"
 $appProcesses = @("chrome", "GoogleUpdate", "chrome_proxy", "elevation_service")
 $appServices = @("gupdate", "gupdatem", "GoogleChromeElevationService")
 $appInstallParameters = "/QB"
 $Evergreen = Get-EvergreenApp -Name GoogleChrome | Where-Object {$_.Architecture -eq "x64"}
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
+$appSetup = Split-Path -Path $Evergreen.URI -Leaf
 $appURLADMX = "https://dl.google.com/dl/edgedl/chrome/policy/policy_templates.zip"
-$appADMX = ($appURLADMX).Split("/")[7]
+$appADMX = Split-Path -Path $appURLADMX -Leaf
 $appURLADMX2 = "https://dl.google.com/dl/update2/enterprise/googleupdateadmx.zip"
-$appADMX2 = ($appURLADMX2).Split("/")[6]
-
+$appADMX2 = Split-Path -Path $appURLADMX2 -Leaf
 $appDestination = "$env:ProgramFiles\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
@@ -173,7 +172,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Stop-ServiceAndDependencies -Name $appServices[0]
     Stop-ServiceAndDependencies -Name $appServices[1]
     Stop-ServiceAndDependencies -Name $appServices[2]
-    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Manual"
     Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled"
     Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled"
 
