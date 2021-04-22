@@ -174,7 +174,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Configure Windows Search service auto-start and start it
     $serviceName = "WSearch"
-    If ((Get-ServiceStartMode -Name $serviceName) -ne "Automatic (Delayed Start)") {Set-ServiceStartMode -Name $serviceName -StartMode "Automatic (Delayed Start)"}
+    If ((Get-ServiceStartMode -Name $serviceName) -ne "Automatic") {Set-ServiceStartMode -Name $serviceName -StartMode "Automatic"}
     Start-ServiceAndDependencies -Name $serviceName
 
     # Fix for Citrix App Layering and FSLogix integration, must be done in the platform layer - https://support.citrix.com/article/CTX249873
@@ -201,7 +201,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxsvc.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxccds.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxsvc.exe" -Force
-    #Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frx.exe" -Force
 
     # Go back to the parent folder
     Set-Location ..
