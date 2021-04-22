@@ -74,16 +74,16 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Microsoft"
 $appName = "Edge"
 $appLongName = "for Business"
-$appSetup = "MicrosoftEdgeEnterpriseX64.msi"
 $appProcesses = @("msedge", "MicrosoftEdgeUpdate", "MicrosoftEdgeUpdateBroker", "MicrosoftEdgeUpdateCore", "msedgewebview2", "elevation_service")
 $appServices = @("edgeupdate", "edgeupdatem", "MicrosoftEdgeElevationService")
 $appInstallParameters = "/QB"
 $appAddParameters = "DONOTCREATEDESKTOPSHORTCUT=TRUE DONOTCREATETASKBARSHORTCUT=TRUE"
-$Evergreen = Get-EvergreenApp -Name MicrosoftEdge | Where-Object { $_.Architecture -eq "x64" -and $_.Channel -eq "Stable" }
+$Evergreen = Get-EvergreenApp -Name MicrosoftEdge | Where-Object { $_.Channel -eq "Stable" -and $_.Release -eq "Enterprise" -and $_.Architecture -eq "x64" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appURLADMX = (Get-MicrosoftEdge | Where-Object { $_.Channel -eq "Policy" }).URI
-$appADMX = ($appURLADMX).Split("/")[6]
+$appSetup = Split-Path -Path $Evergreen.URI -Leaf
+$EvergreenADMX = (Get-EvergreenApp -Name MicrosoftEdge | Where-Object { $_.Channel -eq "Policy" })
+$appADMX = Split-Path -Path $EvergreenADMX.URI -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
@@ -137,9 +137,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Download latest policy definitions
     Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
+    Invoke-WebRequest -UseBasicParsing -Uri $EvergreenADMX.URI -OutFile $appADMX
     New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-    If (Get-ChildItem -Path -Filter *.cab) {
+    If (Get-ChildItem -Filter *.cab) {
         Execute-Process -Path "$envSystem32Directory\cmd.exe" -Parameters "/C $envSystem32Directory\expand.exe `"$appScriptDirectory\$appVersion\$appADMX`" `"$appScriptDirectory\PolicyDefinitions\MicrosoftEdgePolicyTemplates.zip`""
         Remove-File -Path $appADMX -ContinueOnError $True
     }
@@ -171,7 +171,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Stop-ServiceAndDependencies -Name $appServices[0]
     Stop-ServiceAndDependencies -Name $appServices[1]
     Stop-ServiceAndDependencies -Name $appServices[2]
-    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Manual"
     Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled"
     Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled"
 
@@ -180,6 +180,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Remove Active Setup
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{9459C573-B17A-45AE-9F64-1857B5D58CEE}" -Name "StubPath"
+
+    # Execute the Microsoft Edge browser replacement task to make sure that the legacy Microsoft Edge browser is tucked away
+    # This is only needed on Windows 10 versions where Microsoft Edge is not included in the OS.
+    Execute-Process -Path "$envProgramFilesX86\$appVendor\$($appName)Update\MicrosoftEdgeUpdate.exe" -Parameters "/browserreplacement"
 
     # Remove desktop shortcut for all users
     #Remove-File "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
