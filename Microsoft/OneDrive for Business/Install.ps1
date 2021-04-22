@@ -80,7 +80,7 @@ $Evergreen = (Get-EvergreenApp -Name MicrosoftOneDrive | Where-Object {$_.Archit
     Sort-Object -Property @{ Expression = { [System.Version]$_.Version }; Descending = $true } | Select-Object -First 1
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appSetup = Split-Path -Path $Evergreen.URI -Leaf
+$appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles}\Microsoft OneDrive"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion

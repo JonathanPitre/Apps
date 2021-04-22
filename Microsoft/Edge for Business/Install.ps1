@@ -81,7 +81,7 @@ $appAddParameters = "DONOTCREATEDESKTOPSHORTCUT=TRUE DONOTCREATETASKBARSHORTCUT=
 $Evergreen = Get-EvergreenApp -Name MicrosoftEdge | Where-Object { $_.Channel -eq "Stable" -and $_.Release -eq "Enterprise" -and $_.Architecture -eq "x64" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appSetup = Split-Path -Path $Evergreen.URI -Leaf
+$appSetup = Split-Path -Path $appURL -Leaf
 $EvergreenADMX = (Get-EvergreenApp -Name MicrosoftEdge | Where-Object { $_.Channel -eq "Policy" })
 $appADMX = Split-Path -Path $EvergreenADMX.URI -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName\Application"
