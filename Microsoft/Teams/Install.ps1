@@ -119,15 +119,15 @@ Function Get-MicrosoftTeams {
 
 $appVendor = "Microsoft"
 $appName = "Teams"
-$appSetup = "Teams_windows_x64.msi"
 $appProcesses = @("Teams", "Update", "Squirrel", "Outlook")
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/Teams.mst"
-$appTransform = $appTransformURL.Split("/")[9]
+$appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
 $Evergreen = Get-MicrosoftTeams | Where-Object {$_.Ring -eq "Developer" -and $_.Architecture -eq "x64"}
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
+$appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\Microsoft\Teams\current"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-FileVersion $appDestination\Teams.exe)
