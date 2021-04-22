@@ -79,7 +79,7 @@ $appInstallParameters = "/quiet DISABLE_CEIP=1"
 $appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 $appURL = "https://support.citrix.com/supportkc/filedownload?uri=/filedownload/CTX220774/CitrixCQI.zip"
 $appSetup = "CitrixCQI.msi"
-$appDestination = "${env:ProgramFiles(x86)}\Citrix\Connection Quality Indicator"
+$appDestination = "${env:ProgramFiles(x86)}\Citrix\HDX\bin\Connection Quality Indicator"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion)
 ##*===============================================
