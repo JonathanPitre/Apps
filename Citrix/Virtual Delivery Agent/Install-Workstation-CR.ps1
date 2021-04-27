@@ -83,7 +83,6 @@ $appVersion = $Evergreen.Version
 $appSetup = "VDAWorkstationSetup_$appVersion.exe"
 $appDlNumber = "19145"
 $appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
-$appHardwarePlatform = Get-HardwarePlatform
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
 $appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
 ##*===============================================
