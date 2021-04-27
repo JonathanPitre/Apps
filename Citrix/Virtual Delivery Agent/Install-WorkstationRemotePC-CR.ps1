@@ -75,9 +75,10 @@ $appVendor = "Citrix"
 $appName = "Virtual Apps and Desktops"
 $appName2 = "Virtual Delivery Agent"
 $appProcesses = @("BrokerAgent", "picaSessionAgent")
+$appServices = @("CitrixTelemetryService")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /virtualmachine /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /mastermcsimage /includeadditional "Machine Identity Service","Citrix User Profile Manager","Citrix User Profile Manager WMI Plugin","Citrix MCS IODriver" /exclude "Workspace Environment Management","User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Telemetry Service","Citrix Personalization for App-V - VDA","Personal vDisk"'
+$appInstallParameters = '/remotepc /noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /includeadditional "Citrix User Profile Manager","Citrix User Profile Manager WMI Plugin"'
 $Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 *, All Editions"} | Select-Object -First 1
 $appVersion = $Evergreen.Version
 $appSetup = "VDAWorkstationSetup_$appVersion.exe"
@@ -219,6 +220,10 @@ If ($appVersion -gt $appInstalledVersion) {
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
+    # Stop and disable unneeded services
+    Stop-ServiceAndDependencies -Name $appServices[0]
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
+
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\User Profile Manager\UserProfileManager.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\Virtual Desktop Agent\BrokerAgent.exe" -Force
@@ -235,6 +240,30 @@ If ($appVersion -gt $appInstalledVersion) {
     # Registry optimizations
     # Enable EDT MTU Discovery on the VDA - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/technical-overview/hdx/adaptive-transport.html
     Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "MtuDiscovery" -Type "DWord" -Value "1"
+
+    # https://www.carlstalhood.com/remote-pc/#deliverygroup
+    # When a user connects to his physical VDA using Remote PC Access, the monitor layout order change - https://support.citrix.com/article/CTX256820
+    # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Graphics" -Name "UseSDCForLocalModes" -Type "DWord" -Value "1"
+
+    # The virtual machine 'Unknown' cannot accept additional sessions - https://discussions.citrix.com/topic/403211-remote-pc-solution-issue-the-virtual-machine-unknown-cannot-accept-additional-sessions/?source=email#comment-2045356
+    # Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Type "DWord" -Value "0"
+
+    # Session disconnects when you select Ctrl+Alt+Del on the machine that has session management notification enabled - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
+    If (($appHardwarePlatform -like "Virtual*") -or (Get-WindowsOptionalFeature -FeatureName "Microsoft-Hyper-V" -Online).State -eq "Enabled") {
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA" -Name "ForceEnableRemotePC" -Type "DWord" -Value "1"
+    }
+
+    # Allow a Remote PC Access machine to go into a sleep state - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
+    # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA" -Name "DisableRemotePCSleepPreventer" -Type "DWord" -Value "1"
+
+    # Prevent automatic disconnection to the local user session when a remote user session is initiated (by pressing CTRL+ATL+DEL) - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
+    # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA\RemotePC" -Name "SasNotification" -Type "DWord" -Value "1"
+
+    # The local user has preference over the remote user when the connection message is not acknowledged within the timeout period - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
+    # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA\RemotePC" -Name "RpcaMode" -Type "DWord" -Value "1"
+
+    # The timeout for enforcing the Remote PC Access mode is 30 seconds (decimal) by default - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
+    # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA\RemotePC" -Name "RpcaTimeout" -Type "DWord" -Value "45"
 
     Set-Location -Path $appScriptDirectory
     Remove-Folder -Path "$env:SystemDrive\Installs"
