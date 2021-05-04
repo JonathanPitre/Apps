@@ -81,12 +81,12 @@ $appInstallParameters = "--silent" #--INSTALLLANGUAGE=<ProductInstallLanguage>
 $appURLSetup = "https://prod-rel-ffc-ccm.oobesaas.adobe.com/adobe-ffc-external/core/v1/wam/download?sapCode=KCCC&productName=Creative%20Cloud&os=win&environment=prod&api_key=CCHomeWeb1"
 $appURLVersion = "https://helpx.adobe.com/ie/creative-cloud/release-note/cc-release-notes.html"
 $webRequest = Invoke-WebRequest -UseBasicParsing -Uri ($appURLVersion) -SessionVariable websession
-$regexAppVersion = "Version \d.\d.\d.\d{3} .+mandatory release"
+$regexAppVersion = "Version \d.\d.\d.\d+.+mandatory release"
 $webVersion = $webRequest.RawContent | Select-String -Pattern $regexAppVersion -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
-$appVersion = ($webVersion).Split(" ")[1]
+$appVersion = ($webVersion).Split(" ")[1].TrimEnd("&nbsp;released")
 # How to use the Creative Cloud Cleaner tool - https://helpx.adobe.com/ca/creative-cloud/kb/cc-cleaner-tool-installation-problems.html
 $appURLCleanerTool = "https://swupmf.adobe.com/webfeed/CleanerTool/win/AdobeCreativeCloudCleanerTool.exe"
-$appCleanerTool = $appURLCleanerTool.Split("/")[6]
+$appCleanerTool = Split-Path -Path $appURLCleanerTool -Leaf
 $appCleanerToolParameters = "--cleanupXML=$appScriptDirectory\cleanup.xml"
 $appDestination = "${env:ProgramFiles(x86)}\Adobe\Adobe Creative Cloud\Utils"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
