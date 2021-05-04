@@ -81,14 +81,14 @@ $appSetup = "AcroPro.msi"
 $appInstallParameters = "/QB"
 #$appParameters = "--tool=VolumeSerialize --generate --serial=1016-1899-8440-6413-0576-7429 --leid=V7{}AcrobatCont-12-Win-GM --regsuppress=ss --eulasuppress --stream" #--provfile Optional; path of the folder where prov.xml is created. If this parameter is not specified, prov.xml is created in the folder in which APTEE resides.
 $appAddParameters = "IGNOREVCRT64=1 EULA_ACCEPT=YES UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1 ROAMIDENTITY=1 ROAMLICENSING=1"
-$Evergreen = Get-EvergreenApp -Name AdobeAcrobat| Where-Object {$_.Track -eq "DC"}
+$Evergreen = Get-EvergreenApp -Name AdobeAcrobat| Where-Object {$_.Product -eq "Acrobat" -and $_.Track -eq "DC"}
 $appVersion = $Evergreen.Version
 $appURLPatch = $Evergreen.URI
-$appPatch = ($appURLPatch).Split("/")[9]
+$appPatch = Split-Path -Path ($appURLPatch) -Leaf
 $appURLADMX = "ftp://ftp.adobe.com/pub/adobe/acrobat/win/AcrobatDC/misc/AcrobatADMTemplate.zip"
-$appADMX = ($appURLADMX).Split("/")[9]
+$appADMX = Split-Path -Path ($appURLADMX) -Leaf
 $appURLCustWiz = "ftp://ftp.adobe.com/pub/adobe/acrobat/win/AcrobatDC/misc/CustWiz2000920067_en_US_DC.exe"
-$appCustWiz = ($appURLCustWiz).Split("/")[9]
+$appCustWiz = Split-Path -Path ($appURLCustWiz) -Leaf
 $appCustWizVersion = $appCustWiz.Trim("CustWiz").Trim("_en_US_DC.exe")
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\$appName"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appShortVersion")
