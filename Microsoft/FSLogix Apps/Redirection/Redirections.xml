@@ -227,6 +227,7 @@
     <Exclude Copy="0">AppData\Roaming\Yammer\GPUCache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Zoom\ZoomDownload</Exclude>
     <Exclude Copy="0">AppData\Roaming\Zoom\logs</Exclude>
+    <Exclude Copy="0">AppData\Roaming\ZoomVDI\logs</Exclude>
     <Exclude Copy="0">AppData\Roaming\com.adobe.formscentral.FormsCentralForAcrobat</Exclude>
     <Exclude Copy="0">Contacts</Exclude>
     <Exclude Copy="0">Desktop</Exclude>
