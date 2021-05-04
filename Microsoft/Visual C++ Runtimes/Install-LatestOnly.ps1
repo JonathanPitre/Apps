@@ -75,9 +75,8 @@ $appVendor = "Microsoft"
 $appName = "Visual C++"
 $appMajorVersion = "2019"
 $VcList = Get-VcList | Where-Object {$_.Release -eq $appMajorVersion}
-$appVersion = $VcList.Version | Select-Object -First 1
-$appVersion = $appVersion.Substring(0, $appVersion.Length - 2)
-$appSetup = ($VcList).Download.Split("/")[6]
+$appVersion = ($VcList.Version | Select-Object -First 1).Substring(0, $appVersion.Length - 2)
+$appSetup = Split-Path -Path ($VcList).Download -Leaf
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion").DisplayVersion | Select-Object -First 1
 ##*===============================================

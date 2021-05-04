@@ -77,7 +77,7 @@ $appMajorVersion = "2019"
 $VcList = Get-VcList
 $appVersion = ($VcList | Where-Object {$_.Release -eq "2019" -and $_.Architecture -eq "x64" }).Version
 $appVersion = $appVersion.Substring(0, $appVersion.Length - 2)
-$appSetup = ($VcList).Download.Split("/")[6]
+$appSetup = Split-Path -Path ($VcList).Download -Leaf
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion").DisplayVersion | Select-Object -First 1
 ##*===============================================
