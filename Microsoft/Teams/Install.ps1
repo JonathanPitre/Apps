@@ -15,8 +15,12 @@ Write-Verbose -Message "Importing custom modules..." -Verbose
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 
 # Install custom package providers list
-Foreach ($PackageProvider in $PackageProviders) {
-    If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
+Foreach ($PackageProvider in $PackageProviders)
+{
+    If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue))
+    {
+        Install-PackageProvider -Name $PackageProvider -Force
+    }
 }
 
 # Add the Powershell Gallery as trusted repository
@@ -25,17 +29,26 @@ Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
 # Update PowerShellGet
 $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
 $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
-If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
+If ($PSGetVersion -gt $InstalledPSGetVersion)
+{
+    Install-PackageProvider -Name PowerShellGet -Force
+}
 
 # Install and import custom modules list
-Foreach ($Module in $Modules) {
-    If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-    Else {
+Foreach ($Module in $Modules)
+{
+    If (-not(Get-Module -ListAvailable -Name $Module))
+    {
+        Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force
+    }
+    Else
+    {
         $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
         $ModuleVersion = (Find-Module -Name $Module).Version
         $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
         $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
+        {
             Update-Module -Name $Module -Force
             Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
         }
@@ -45,18 +58,31 @@ Foreach ($Module in $Modules) {
 Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 
 # Get the current script directory
-Function Get-ScriptDirectory {
+Function Get-ScriptDirectory
+{
     Remove-Variable appScriptDirectory
-    Try {
-        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
-        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
-        Else {
+    Try
+    {
+        If ($psEditor)
+        {
+            Split-Path $psEditor.GetEditorContext().CurrentFile.Path
+        } # Visual Studio Code Host
+        ElseIf ($psISE)
+        {
+            Split-Path $psISE.CurrentFile.FullPath
+        } # Windows PowerShell ISE Host
+        ElseIf ($PSScriptRoot)
+        {
+            $PSScriptRoot
+        } # Windows PowerShell 3.0-5.1
+        Else
+        {
             Write-Host -ForegroundColor Red "Cannot resolve script file's path"
             Exit 1
         }
     }
-    Catch {
+    Catch
+    {
         Write-Host -ForegroundColor Red "Caught Exception: $($Error[0].Exception.Message)"
         Exit 2
     }
@@ -71,24 +97,28 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
-Function Get-MicrosoftTeams {
+Function Get-MicrosoftTeams
+{
     <#
-            .NOTES
-                Author: Jonathan Pitre
-                Twitter: @PitreJonathan
-        #>
+    .NOTES
+        Author: Jonathan Pitre
+        Twitter: @PitreJonathan
+    #>
     [OutputType([System.Management.Automation.PSObject])]
     [CmdletBinding()]
     Param()
     $appURLVersion = "https://whatpulse.org/app/microsoft-teams#versions"
-    Try {
+    Try
+    {
         $webRequest = Invoke-WebRequest -UseBasicParsing -Uri ($appURLVersion) -SessionVariable websession
     }
-    Catch {
+    Catch
+    {
         Throw "Failed to connect to URL: $appURLVersion with error $_."
         Break
     }
-    Finally {
+    Finally
+    {
         $regexAppVersion = "\<td\>\d.\d.\d{2}.\d+<\/td\>\n.+windows"
         $webVersion = $webRequest.RawContent | Select-String -Pattern $regexAppVersion -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
         $appVersion = $webVersion.Split()[0].Trim("</td>")
@@ -133,9 +163,13 @@ $appDestination = "${env:ProgramFiles(x86)}\Microsoft\Teams\current"
 $appInstalledVersion = (Get-FileVersion $appDestination\Teams.exe)
 ##*===============================================
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion)
+{
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion))
+    {
+        New-Folder -Path $appVersion
+    }
     Set-Location -Path $appVersion
 
     # Uninstall previous versions
@@ -153,8 +187,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Remove user install
     $TeamsUsers = Get-ChildItem -Path "$($env:SystemDrive)\Users"
     $TeamsUsers | ForEach-Object {
-        Try {
-            If (Test-Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName\Update.exe") {
+        Try
+        {
+            If (Test-Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName\Update.exe")
+            {
                 Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$appVendor\$appName" -ContinueOnError $True
                 Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\SquirrelTemp" -ContinueOnError $True
                 Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Local\$($appName)MeetingAddin" -ContinueOnError $True
@@ -166,7 +202,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
                 Remove-File -Path "$($env:SystemDrive)\Users\$($_.Name)\Desktop\$appVendor $appName.lnk" -ContinueOnError $True
             }
         }
-        Catch {
+        Catch
+        {
             Out-Null
         }
     }
@@ -179,20 +216,24 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup)) {
+    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
+    {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     # Download required transform file
-    If (-Not(Test-Path -Path $appScriptDirectory\$appTransform)) {
-        Write-Log -Message "Downloading $appVendor $appName Transfrom.." -Severity 1 -LogType CMTrace -WriteHost $True
+    If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
+    {
+        Write-Log -Message "Downloading $appVendor $appName Transform.." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptDirectory\$appTransform
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
@@ -236,7 +277,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Microsoft\Teams\current\Teams.exe" -Force
 
     # Add Windows Firewall rule(s) - https://docs.microsoft.com/en-us/microsoftteams/get-clients#windows
-    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName")) {
+    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName"))
+    {
         New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\$($appProcesses[0]).exe" -Profile 'Domain, Private, Public'
     }
 
@@ -245,6 +287,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
-Else {
+Else
+{
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
