@@ -80,7 +80,7 @@ $appInstallParameters = "EnableCEIP=false EnableTracing=false /forceinstall /nor
 $Evergreen = Get-EvergreenApp -Name CitrixWorkspaceApp | Where-Object {$_.Title -contains "Citrix Workspace - Current Release"}
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appSetup = $appURL.Split("/")[7]
+$appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\ICA Client"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName \d{4}" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName \d{4}" -RegEx).DisplayVersion
@@ -130,6 +130,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     # Registry Optimizations
+    # Fix AutoCAD slow mouse performance - https://support.citrix.com/article/CTX235943
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Mouse" -Name "MouseTimer" -Type "String" -Value "25"
+
+    # Enable UDP Audio - https://www.mycugc.org/blogs/ray-davis1/2020/03/10/how-to-get-udp-audio-in-citrix-vad-working
+    <#
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "AudioBandwidthLimit" -Type "String" -Value "1-"
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "ClientAudio" -Type "String" -Value "true,false"
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "EnableRtpAudio" -Type "String" -Value "true,false"
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "EnableUDPThroughGateway" -Type "String" -Value "true,false"
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "RtpAudioHighestPort" -Type "String" -Value "16509"
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "RtpAudioLowestPort" -Type "String" -Value "16500"
+    #>
 
     # Go back to the parent folder
     Set-Location ..
