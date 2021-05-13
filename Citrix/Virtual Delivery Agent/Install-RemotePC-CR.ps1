@@ -168,8 +168,8 @@ If ($appVersion -gt $appInstalledVersion) {
 
     # Install Windows Media Player feature if missing
     If ($envOSName -Like "*Windows 10*") {
-        If ((Get-WindowsOptionalFeature –FeatureName "WindowsMediaPlayer" -Online).State -ne "Enabled") {
-            Enable-WindowsOptionalFeature –FeatureName "WindowsMediaPlayer" -All -Online
+        If ((Get-WindowsOptionalFeature -FeatureName "WindowsMediaPlayer" -Online).State -ne "Enabled") {
+            Enable-WindowsOptionalFeature -FeatureName "WindowsMediaPlayer" -All -Online
         }
     }
 
@@ -279,7 +279,7 @@ If ($appVersion -gt $appInstalledVersion) {
 
     # Enable WOL
     # https://www.cyberdrain.com/monitoring-with-powershell-monitor-and-enabling-wol-for-hp-lenovo-dell
-    
+
     Set-Location -Path $appScriptDirectory
     Remove-Folder -Path "$env:SystemDrive\Installs"
 
