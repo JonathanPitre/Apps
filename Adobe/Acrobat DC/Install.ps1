@@ -84,11 +84,11 @@ $appAddParameters = "IGNOREVCRT64=1 EULA_ACCEPT=YES UPDATE_MODE=0 DISABLE_ARM_SE
 $Evergreen = Get-EvergreenApp -Name AdobeAcrobat| Where-Object {$_.Product -eq "Acrobat" -and $_.Track -eq "DC"}
 $appVersion = $Evergreen.Version
 $appURLPatch = $Evergreen.URI
-$appPatch = Split-Path -Path ($appURLPatch) -Leaf
+$appPatch = Split-Path -Path $appURLPatch -Leaf
 $appURLADMX = "ftp://ftp.adobe.com/pub/adobe/acrobat/win/AcrobatDC/misc/AcrobatADMTemplate.zip"
-$appADMX = Split-Path -Path ($appURLADMX) -Leaf
+$appADMX = Split-Path -Path $appURLADMX -Leaf
 $appURLCustWiz = "ftp://ftp.adobe.com/pub/adobe/acrobat/win/AcrobatDC/misc/CustWiz2000920067_en_US_DC.exe"
-$appCustWiz = Split-Path -Path ($appURLCustWiz) -Leaf
+$appCustWiz = Split-Path -Path $appURLCustWiz -Leaf
 $appCustWizVersion = $appCustWiz.Trim("CustWiz").Trim("_en_US_DC.exe")
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\$appName"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appShortVersion")
