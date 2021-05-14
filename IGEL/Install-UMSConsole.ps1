@@ -7,7 +7,7 @@
 $PackageProviders = @("Nuget")
 
 # Custom modules list
-$Modules = @("PSADT", "Evergreen")
+$Modules = @("PSADT", "Nevergreen")
 
 Write-Verbose -Message "Importing custom modules..." -Verbose
 
@@ -75,11 +75,10 @@ $appVendor = "IGEL"
 $appName = "Universal Management Suite"
 $appProcesses = @("RMClient", "elasticsearch-service-x64")
 $appInstallParameters = "/ALLUSERS /CLOSEAPPLICATIONS /LOADINF=`"$appScriptDirectory\UMSConsole.inf`" /SILENT /LOG=`"$appScriptDirectory\$appName.log`""
-$webRequest = Invoke-WebRequest -UseBasicParsing -Uri ("https://www.igel.com/software-downloads/workspace-edition") -SessionVariable websession
-$regex = "https\:\/\/.+\/files\/IGEL_UNIVERSAL_MANAGEMENT_SUITE\/WINDOWS\/setup-igel-ums-windows_\d.\d{2}.\d{3}.exe"
-$appURL = $webRequest.RawContent | Select-String -Pattern $regex -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
-$appSetup = $appURL.Split("/")[6]
-$appVersion = $appSetup.Trim("setup-igel-ums-windows_").Trim(".exe")
+$Nevergreen = Get-NevergreenApp IGELUniversalManagementSuite| Where-Object {$_.Architecture -eq "x64"}
+$appVersion = $Nevergreen.Version
+$appURL = $Nevergreen.URI
+$appSetup = Split-Path -Path $appURL -Leaf
 $appMajorVersion = $appVersion.Substring(0, 1)
 $appDestination = "$env:ProgramFiles\IGEL\RemoteManager"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
