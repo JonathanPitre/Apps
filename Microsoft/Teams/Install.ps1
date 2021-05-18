@@ -196,27 +196,27 @@ Function Get-MicrosoftTeams
         $urlPreviewArm64MSI = ($webRequest.Content | Select-String -Pattern $regexPreviewArm64MSI).Matches.Groups[3].Value
 
         # Production/General ring
-        $regexProd64EXE = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $regexProd64EXE = 'production build( .*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
         $versionProd64EXE = ($webRequest.Content | Select-String -Pattern $regexProd64EXE).Matches.Groups[2].Value
         $urlProd64EXE = ($webRequest.Content | Select-String -Pattern $regexProd64EXE).Matches.Groups[3].Value
 
-        $regexProd64MSI = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $regexProd64MSI = 'production build( .*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
         $versionProd64MSI = ($webRequest.Content | Select-String -Pattern $regexProd64MSI).Matches.Groups[2].Value
         $urlProd64MSI = ($webRequest.Content | Select-String -Pattern $regexProd64MSI).Matches.Groups[3].Value
 
-        $regexProd32EXE = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $regexProd32EXE = 'production build( .*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
         $versionProd32EXE = ($webRequest.Content | Select-String -Pattern $regexProd32EXE).Matches.Groups[2].Value
         $urlProd32EXE = ($webRequest.Content | Select-String -Pattern $regexProd32EXE).Matches.Groups[3].Value
 
-        $regexProd32MSI = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $regexProd32MSI = 'production build( .*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
         $versionProd32MSI = ($webRequest.Content | Select-String -Pattern $regexProd32MSI).Matches.Groups[2].Value
         $urlProd32MSI = ($webRequest.Content | Select-String -Pattern $regexProd32MSI).Matches.Groups[3].Value
 
-        $regexProdArm64EXE = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $regexProdArm64EXE = 'production build( .*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
         $versionProdArm64EXE = ($webRequest.Content | Select-String -Pattern $regexProdArm64EXE).Matches.Groups[2].Value
         $urlProdArm64EXE = ($webRequest.Content | Select-String -Pattern $regexProdArm64EXE).Matches.Groups[3].Value
 
-        $regexProdArm64MSI = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $regexProdArm64MSI = 'production build( .*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
         $versionProdArm64MSI = ($webRequest.Content | Select-String -Pattern $regexProdArm64MSI).Matches.Groups[2].Value
         $urlProdArm64MSI = ($webRequest.Content | Select-String -Pattern $regexProdArm64MSI).Matches.Groups[3].Value
 
