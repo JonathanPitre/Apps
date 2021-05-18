@@ -7,7 +7,7 @@
 $PackageProviders = @("Nuget")
 
 # Custom modules list
-$Modules = @("PSADT", "Evergreen")
+$Modules = @("PSADT", "Nevergreen")
 
 Write-Verbose -Message "Importing custom modules..." -Verbose
 
@@ -97,6 +97,7 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
+
 Function Get-MicrosoftTeams
 {
     <#
@@ -107,10 +108,10 @@ Function Get-MicrosoftTeams
     [OutputType([System.Management.Automation.PSObject])]
     [CmdletBinding()]
     Param()
-    $appURLVersion = "https://whatpulse.org/app/microsoft-teams#versions"
+    $appURLVersion = "https://github.com/ItzLevvie/MicrosoftTeams-msinternal/blob/master/defconfig"
     Try
     {
-        $webRequest = Invoke-WebRequest -UseBasicParsing -Uri ($appURLVersion) -SessionVariable websession
+        $webRequest = Invoke-WebRequest -Uri $appURLVersion -UseBasicParsing
     }
     Catch
     {
@@ -119,31 +120,373 @@ Function Get-MicrosoftTeams
     }
     Finally
     {
-        $regexAppVersion = "\<td\>\d.\d.\d{2}.\d+<\/td\>\n.+windows"
-        $webVersion = $webRequest.RawContent | Select-String -Pattern $regexAppVersion -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
-        $appVersion = $webVersion.Split()[0].Trim("</td>")
-        $appx64URL = "https://statics.teams.cdn.office.net/production-windows-x64/$appVersion/Teams_windows_x64.msi"
-        $appx86URL = "https://statics.teams.cdn.office.net/production-windows/$appVersion/Teams_windows.msi"
+        # Continuous deployment/Development ring
+        $regexDev64EXE = 'continuous deployment(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionDev64EXE = ($webRequest.Content | Select-String -Pattern $regexDev64EXE).Matches.Groups[2].Value
+        $urlDev64EXE = ($webRequest.Content | Select-String -Pattern $regexDev64EXE).Matches.Groups[3].Value
 
-        $PSObject = Evergreen\Get-EvergreenApp -Name MicrosoftTeams
+        $regexDev64MSI = 'continuous deployment(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionDev64MSI = ($webRequest.Content | Select-String -Pattern $regexDev64MSI).Matches.Groups[2].Value
+        $urlDev64MSI = ($webRequest.Content | Select-String -Pattern $regexDev64MSI).Matches.Groups[3].Value
 
-        $PSObjectx86 = [PSCustomObject] @{
-            Version      = $appVersion
-            Ring         = "Developer"
-            Architecture = "x86"
-            URI          = $appx86URL
+        $regexDev32EXE = 'continuous deployment(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionDev32EXE = ($webRequest.Content | Select-String -Pattern $regexDev32EXE).Matches.Groups[2].Value
+        $urlDev32EXE = ($webRequest.Content | Select-String -Pattern $regexDev32EXE).Matches.Groups[3].Value
+
+        $regexDev32MSI = 'continuous deployment(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionDev32MSI = ($webRequest.Content | Select-String -Pattern $regexDev32MSI).Matches.Groups[2].Value
+        $urlDev32MSI = ($webRequest.Content | Select-String -Pattern $regexDev32MSI).Matches.Groups[3].Value
+
+        $regexDevArm64EXE = 'continuous deployment(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionDevArm64EXE = ($webRequest.Content | Select-String -Pattern $regexDevArm64EXE).Matches.Groups[2].Value
+        $urlDevArm64EXE = ($webRequest.Content | Select-String -Pattern $regexDevArm64EXE).Matches.Groups[3].Value
+
+        $regexDevArm64MSI = 'continuous deployment(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionDevArm64MSI = ($webRequest.Content | Select-String -Pattern $regexDevArm64MSI).Matches.Groups[2].Value
+        $urlDevArm64MSI = ($webRequest.Content | Select-String -Pattern $regexDevArm64MSI).Matches.Groups[3].Value
+
+        # Exploration/Beta ring
+        $regexBeta64EXE = 'exploration(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionBeta64EXE = ($webRequest.Content | Select-String -Pattern $regexBeta64EXE).Matches.Groups[2].Value
+        $urlBeta64EXE = ($webRequest.Content | Select-String -Pattern $regexBeta64EXE).Matches.Groups[3].Value
+
+        $regexBeta64MSI = 'exploration(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionBeta64MSI = ($webRequest.Content | Select-String -Pattern $regexBeta64MSI).Matches.Groups[2].Value
+        $urlBeta64MSI = ($webRequest.Content | Select-String -Pattern $regexBeta64MSI).Matches.Groups[3].Value
+
+        $regexBeta32EXE = 'exploration(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionBeta32EXE = ($webRequest.Content | Select-String -Pattern $regexBeta32EXE).Matches.Groups[2].Value
+        $urlBeta32EXE = ($webRequest.Content | Select-String -Pattern $regexBeta32EXE).Matches.Groups[3].Value
+
+        $regexBeta32MSI = 'exploration(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionBeta32MSI = ($webRequest.Content | Select-String -Pattern $regexBeta32MSI).Matches.Groups[2].Value
+        $urlBeta32MSI = ($webRequest.Content | Select-String -Pattern $regexBeta32MSI).Matches.Groups[3].Value
+
+        $regexBetaArm64EXE = 'exploration(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionBetaArm64EXE = ($webRequest.Content | Select-String -Pattern $regexBetaArm64EXE).Matches.Groups[2].Value
+        $urlBetaArm64EXE = ($webRequest.Content | Select-String -Pattern $regexBetaArm64EXE).Matches.Groups[3].Value
+
+        $regexBetaArm64MSI = 'exploration(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionBetaArm64MSI = ($webRequest.Content | Select-String -Pattern $regexBetaArm64MSI).Matches.Groups[2].Value
+        $urlBetaArm64MSI = ($webRequest.Content | Select-String -Pattern $regexBetaArm64MSI).Matches.Groups[3].Value
+
+        # Preview ring
+        $regexPreview64EXE = 'preview(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionPreview64EXE = ($webRequest.Content | Select-String -Pattern $regexPreview64EXE).Matches.Groups[2].Value
+        $urlPreview64EXE = ($webRequest.Content | Select-String -Pattern $regexPreview64EXE).Matches.Groups[3].Value
+
+        $regexPreview64MSI = 'preview(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionPreview64MSI = ($webRequest.Content | Select-String -Pattern $regexPreview64MSI).Matches.Groups[2].Value
+        $urlPreview64MSI = ($webRequest.Content | Select-String -Pattern $regexPreview64MSI).Matches.Groups[3].Value
+
+        $regexPreview32EXE = 'preview(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionPreview32EXE = ($webRequest.Content | Select-String -Pattern $regexPreview32EXE).Matches.Groups[2].Value
+        $urlPreview32EXE = ($webRequest.Content | Select-String -Pattern $regexPreview32EXE).Matches.Groups[3].Value
+
+        $regexPreview32MSI = 'preview(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionPreview32MSI = ($webRequest.Content | Select-String -Pattern $regexPreview32MSI).Matches.Groups[2].Value
+        $urlPreview32MSI = ($webRequest.Content | Select-String -Pattern $regexPreview32MSI).Matches.Groups[3].Value
+
+        $regexPreviewArm64EXE = 'preview(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionPreviewArm64EXE = ($webRequest.Content | Select-String -Pattern $regexPreviewArm64EXE).Matches.Groups[2].Value
+        $urlPreviewArm64EXE = ($webRequest.Content | Select-String -Pattern $regexPreviewArm64EXE).Matches.Groups[3].Value
+
+        $regexPreviewArm64MSI = 'preview(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionPreviewArm64MSI = ($webRequest.Content | Select-String -Pattern $regexPreviewArm64MSI).Matches.Groups[2].Value
+        $urlPreviewArm64MSI = ($webRequest.Content | Select-String -Pattern $regexPreviewArm64MSI).Matches.Groups[3].Value
+
+        # Production/General ring
+        $regexProd64EXE = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionProd64EXE = ($webRequest.Content | Select-String -Pattern $regexProd64EXE).Matches.Groups[2].Value
+        $urlProd64EXE = ($webRequest.Content | Select-String -Pattern $regexProd64EXE).Matches.Groups[3].Value
+
+        $regexProd64MSI = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionProd64MSI = ($webRequest.Content | Select-String -Pattern $regexProd64MSI).Matches.Groups[2].Value
+        $urlProd64MSI = ($webRequest.Content | Select-String -Pattern $regexProd64MSI).Matches.Groups[3].Value
+
+        $regexProd32EXE = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionProd32EXE = ($webRequest.Content | Select-String -Pattern $regexProd32EXE).Matches.Groups[2].Value
+        $urlProd32EXE = ($webRequest.Content | Select-String -Pattern $regexProd32EXE).Matches.Groups[3].Value
+
+        $regexProd32MSI = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-x86.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionProd32MSI = ($webRequest.Content | Select-String -Pattern $regexProd32MSI).Matches.Groups[2].Value
+        $urlProd32MSI = ($webRequest.Content | Select-String -Pattern $regexProd32MSI).Matches.Groups[3].Value
+
+        $regexProdArm64EXE = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.exe)'
+        $versionProdArm64EXE = ($webRequest.Content | Select-String -Pattern $regexProdArm64EXE).Matches.Groups[2].Value
+        $urlProdArm64EXE = ($webRequest.Content | Select-String -Pattern $regexProdArm64EXE).Matches.Groups[3].Value
+
+        $regexProdArm64MSI = 'production(.*?|\n)*?((?:\d+\.)+(?:\d+)).+win-arm64.+(https.+(?:\d+\.)+(?:\d+).+.msi)'
+        $versionProdArm64MSI = ($webRequest.Content | Select-String -Pattern $regexProdArm64MSI).Matches.Groups[2].Value
+        $urlProdArm64MSI = ($webRequest.Content | Select-String -Pattern $regexProdArm64MSI).Matches.Groups[3].Value
+
+        # Continuous deployment/Development ring
+        if ($versionDev64EXE -and $urlDev64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionDev64EXE
+                Ring         = 'Development'
+                Architecture = 'x64'
+                Type         = 'Exe'
+                URI          = $urlDev64EXE
+            }
         }
 
-        $PSObjectx64 = [PSCustomObject] @{
-            Version      = $appVersion
-            Ring         = "Developer"
-            Architecture = "x64"
-            URI          = $appx64URL
+        if ($versionDev64EXE -and $urlDev64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionDev64MSI
+                Ring         = 'Development'
+                Architecture = 'x64'
+                Type         = 'Msi'
+                URI          = $urlDev64MSI
+            }
         }
 
-        Write-Output -InputObject $PSObject
-        Write-Output -InputObject $PSObjectx86
-        Write-Output -InputObject $PSObjectx64
+        if ($versionDev32EXE -and $urlDev32EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionDev32EXE
+                Ring         = 'Development'
+                Architecture = 'x86'
+                Type         = 'Exe'
+                URI          = $urlDev32EXE
+            }
+        }
+
+        if ($versionDev32MSI -and $urlDev32MSI)
+        {
+            [PSCustomObject]@{
+                Version      = $versionDev32MSI
+                Ring         = 'Development'
+                Architecture = 'x86'
+                Type         = 'Msi'
+                URI          = $urlDev32MSI
+            }
+        }
+
+        if ($versionDevArm64EXE -and $urlDevArm64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionDevArm64EXE
+                Ring         = 'Development'
+                Architecture = 'Arm64'
+                Type         = 'Exe'
+                URI          = $urlDevArm64EXE
+            }
+        }
+
+        if ($versionDevArm64MSI -and $urlDevArm64MSI)
+        {
+            [PSCustomObject]@{
+                Version      = $versionDevArm64MSI
+                Ring         = 'Development'
+                Architecture = 'Arm64'
+                Type         = 'Msi'
+                URI          = $urlDevArm64MSI
+            }
+        }
+
+        # Exploration/Beta ring
+        if ($versionBeta64EXE -and $urlBeta64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionBeta64EXE
+                Ring         = 'Beta'
+                Architecture = 'x64'
+                Type         = 'Exe'
+                URI          = $urlBeta64EXE
+            }
+        }
+
+        if ($versionBeta64EXE -and $urlBeta64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionBeta64MSI
+                Ring         = 'Beta'
+                Architecture = 'x64'
+                Type         = 'Msi'
+                URI          = $urlBeta64MSI
+            }
+        }
+
+        if ($versionBeta32EXE -and $urlBeta32EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionBeta32EXE
+                Ring         = 'Beta'
+                Architecture = 'x86'
+                Type         = 'Exe'
+                URI          = $urlBeta32EXE
+            }
+        }
+
+        if ($versionBeta32MSI -and $urlBeta32MSI)
+        {
+            [PSCustomObject]@{
+                Version      = $versionBeta32MSI
+                Ring         = 'Beta'
+                Architecture = 'x86'
+                Type         = 'Msi'
+                URI          = $urlBeta32MSI
+            }
+        }
+
+        if ($versionBetaArm64EXE -and $urlBetaArm64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionBetaArm64EXE
+                Ring         = 'Beta'
+                Architecture = 'Arm64'
+                Type         = 'Exe'
+                URI          = $urlBetaArm64EXE
+            }
+        }
+
+        if ($versionBetaArm64MSI -and $urlBetaArm64MSI)
+        {
+            [PSCustomObject]@{
+                Version      = $versionBetaArm64MSI
+                Ring         = 'Beta'
+                Architecture = 'Arm64'
+                Type         = 'Msi'
+                URI          = $urlBetaArm64MSI
+            }
+        }
+
+        # Preview ring
+        if ($versionPreview64EXE -and $urlPreview64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionPreview64EXE
+                Ring         = 'Preview'
+                Architecture = 'x64'
+                Type         = 'Exe'
+                URI          = $urlPreview64EXE
+            }
+        }
+
+        if ($versionPreview64EXE -and $urlPreview64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionPreview64MSI
+                Ring         = 'Preview'
+                Architecture = 'x64'
+                Type         = 'Msi'
+                URI          = $urlPreview64MSI
+            }
+        }
+
+        if ($versionPreview32EXE -and $urlPreview32EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionPreview32EXE
+                Ring         = 'Preview'
+                Architecture = 'x86'
+                Type         = 'Exe'
+                URI          = $urlPreview32EXE
+            }
+        }
+
+        if ($versionPreview32MSI -and $urlPreview32MSI)
+        {
+            [PSCustomObject]@{
+                Version      = $versionPreview32MSI
+                Ring         = 'Preview'
+                Architecture = 'x86'
+                Type         = 'Msi'
+                URI          = $urlPreview32MSI
+            }
+        }
+
+        if ($versionPreviewArm64EXE -and $urlPreviewArm64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionPreviewArm64EXE
+                Ring         = 'Preview'
+                Architecture = 'Arm64'
+                Type         = 'Exe'
+                URI          = $urlPreviewArm64EXE
+            }
+        }
+
+        if ($versionPreviewArm64MSI -and $urlPreviewArm64MSI)
+        {
+            [PSCustomObject]@{
+                Version      = $versionPreviewArm64MSI
+                Ring         = 'Preview'
+                Architecture = 'Arm64'
+                Type         = 'Msi'
+                URI          = $urlPreviewArm64MSI
+            }
+        }
+
+        # Production/General ring
+        if ($versionProd64EXE -and $urlProd64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionProd64EXE
+                Ring         = 'Production'
+                Architecture = 'x64'
+                Type         = 'Exe'
+                URI          = $urlProd64EXE
+            }
+        }
+
+        if ($versionProd64EXE -and $urlProd64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionProd64MSI
+                Ring         = 'Production'
+                Architecture = 'x64'
+                Type         = 'Msi'
+                URI          = $urlProd64MSI
+            }
+        }
+
+        if ($versionProd32EXE -and $urlProd32EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionProd32EXE
+                Ring         = 'Production'
+                Architecture = 'x86'
+                Type         = 'Exe'
+                URI          = $urlProd32EXE
+            }
+        }
+
+        if ($versionProd32MSI -and $urlProd32MSI)
+        {
+            [PSCustomObject]@{
+                Version      = $versionProd32MSI
+                Ring         = 'Production'
+                Architecture = 'x86'
+                Type         = 'Msi'
+                URI          = $urlProd32MSI
+            }
+        }
+
+        if ($versionProdArm64EXE -and $urlProdArm64EXE)
+        {
+            [PSCustomObject]@{
+                Version      = $versionProdArm64EXE
+                Ring         = 'Production'
+                Architecture = 'Arm64'
+                Type         = 'Exe'
+                URI          = $urlProdArm64EXE
+            }
+        }
+
+        if ($versionProdArm64MSI -and $urlProdArm64MSI)
+        {
+            [PSCustomObject]@{
+                Version      = $versionProdArm64MSI
+                Ring         = 'Production'
+                Architecture = 'Arm64'
+                Type         = 'Msi'
+                URI          = $urlProdArm64MSI
+            }
+        }
     }
 }
 
@@ -154,9 +497,9 @@ $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/T
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
-$Evergreen = Get-EvergreenApp MicrosoftTeams | Where-Object {$_.Ring -eq "Preview" -and $_.Architecture -eq "x64"}
-$appVersion = $Evergreen.Version
-$appURL = $Evergreen.URI
+$Nevergreen = Get-MicrosoftTeams | Where-Object {$_.Ring -eq "Beta" -and $_.Architecture -eq "x64" -and $_.Type -eq "Msi"}
+$appVersion = $Nevergreen.Version
+$appURL = $Nevergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\Microsoft\Teams\current"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
