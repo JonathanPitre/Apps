@@ -15,7 +15,8 @@ Write-Verbose -Message "Importing custom modules..." -Verbose
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 
 # Install custom package providers list
-Foreach ($PackageProvider in $PackageProviders) {
+Foreach ($PackageProvider in $PackageProviders)
+{
     If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
 }
 
@@ -28,14 +29,17 @@ $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
 If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
 
 # Install and import custom modules list
-Foreach ($Module in $Modules) {
+Foreach ($Module in $Modules)
+{
     If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-    Else {
+    Else
+    {
         $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
         $ModuleVersion = (Find-Module -Name $Module).Version
         $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
         $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
+        {
             Update-Module -Name $Module -Force
             Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
         }
@@ -45,18 +49,22 @@ Foreach ($Module in $Modules) {
 Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 
 # Get the current script directory
-Function Get-ScriptDirectory {
+Function Get-ScriptDirectory
+{
     Remove-Variable appScriptDirectory
-    Try {
+    Try
+    {
         If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
         ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
         ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
-        Else {
+        Else
+        {
             Write-Host -ForegroundColor Red "Cannot resolve script file's path"
             Exit 1
         }
     }
-    Catch {
+    Catch
+    {
         Write-Host -ForegroundColor Red "Caught Exception: $($Error[0].Exception.Message)"
         Exit 2
     }
@@ -71,21 +79,72 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
+Function Get-MicrosoftFSLogixApps
+{
+    <#
+    .NOTES
+        Author: Jonathan Pitre
+        Twitter: @PitreJonathan
+    #>
+    [OutputType([System.Management.Automation.PSObject])]
+    [CmdletBinding()]
+    Param()
+    $URLPreview = "https://download.microsoft.com/download/d/b/e/dbeeff02-b137-4971-a70b-83c22f82380f/FSLogix_Apps_2.9.7802.10873.zip"
+    Try
+    {
+        Invoke-WebRequest -Uri $URLPreview -UseBasicParsing
+    }
+    Catch
+    {
+        Throw "Failed to connect to URL: $URLPreview with error $_."
+        Break
+    }
+    Finally
+    {
+        $Evergreen = Get-EvergreenApp -Name MicrosoftFSLogixApps
+        $VersionProd = $Evergreen.Version
+        $DateProd = $Evergreen.Date
+        $URLProd = $Evergreen.URI
+
+        $VersionPreview = ($URLPreview | Select-String -Pattern 'FSLogix_Apps_((?:\d+\.)+(?:\d+))').Matches.Groups[1].Value
+
+        if ($VersionProd -and $DateProd -and $URLProd)
+        {
+            [PSCustomObject]@{
+                Version = $VersionProd
+                Date    = $DateProd
+                Ring    = 'Production'
+                URI     = $URLProd
+            }
+        }
+
+        if ($VersionPreview -and $URLPreview)
+        {
+            [PSCustomObject]@{
+                Version = $VersionPreview
+                Date    = '2021-05-24'
+                Ring    = 'Preview'
+                URI     = $URLPreview
+            }
+        }
+    }
+}
 $appVendor = "Microsoft"
 $appName = "FSLogix Apps Java RuleEditor"
 $appSetup = "FSLogixAppsJavaRuleEditorSetup.exe"
 $appProcesses = @("JavaRuleEditor")
 $appInstallParameters = "/install /quiet /norestart"
-$Evergreen = Get-EvergreenApp -Name MicrosoftFSLogixApps
-$appVersion = $Evergreen.Version
-$appURL = $Evergreen.URI
-$appZip = "FSLogix Apps.zip"
+$Nevergreen = Get-MicrosoftFSLogixApps | Where-Object { $_.Ring -eq "Preview" }
+$appVersion = $Nevergreen.Version
+$appURL = $Nevergreen.URI
+$appZip = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\FSLogix\Apps"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact) | Select-Object -Last 1
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -Last 1
 ##*===============================================
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion)
+{
     Set-Location -Path $appScriptDirectory
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion

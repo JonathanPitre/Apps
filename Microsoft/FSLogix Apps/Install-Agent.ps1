@@ -15,7 +15,8 @@ Write-Verbose -Message "Importing custom modules..." -Verbose
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 
 # Install custom package providers list
-Foreach ($PackageProvider in $PackageProviders) {
+Foreach ($PackageProvider in $PackageProviders)
+{
     If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
 }
 
@@ -28,14 +29,17 @@ $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
 If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
 
 # Install and import custom modules list
-Foreach ($Module in $Modules) {
+Foreach ($Module in $Modules)
+{
     If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-    Else {
+    Else
+    {
         $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
         $ModuleVersion = (Find-Module -Name $Module).Version
         $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
         $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
+        {
             Update-Module -Name $Module -Force
             Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
         }
@@ -45,18 +49,22 @@ Foreach ($Module in $Modules) {
 Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 
 # Get the current script directory
-Function Get-ScriptDirectory {
+Function Get-ScriptDirectory
+{
     Remove-Variable appScriptDirectory
-    Try {
+    Try
+    {
         If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
         ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
         ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
-        Else {
+        Else
+        {
             Write-Host -ForegroundColor Red "Cannot resolve script file's path"
             Exit 1
         }
     }
-    Catch {
+    Catch
+    {
         Write-Host -ForegroundColor Red "Caught Exception: $($Error[0].Exception.Message)"
         Exit 2
     }
@@ -71,22 +79,74 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
+Function Get-MicrosoftFSLogixApps
+{
+    <#
+    .NOTES
+        Author: Jonathan Pitre
+        Twitter: @PitreJonathan
+    #>
+    [OutputType([System.Management.Automation.PSObject])]
+    [CmdletBinding()]
+    Param()
+    $URLPreview = "https://download.microsoft.com/download/d/b/e/dbeeff02-b137-4971-a70b-83c22f82380f/FSLogix_Apps_2.9.7802.10873.zip"
+    Try
+    {
+        Invoke-WebRequest -Uri $URLPreview -UseBasicParsing
+    }
+    Catch
+    {
+        Throw "Failed to connect to URL: $URLPreview with error $_."
+        Break
+    }
+    Finally
+    {
+        $Evergreen = Get-EvergreenApp -Name MicrosoftFSLogixApps
+        $VersionProd = $Evergreen.Version
+        $DateProd = $Evergreen.Date
+        $URLProd = $Evergreen.URI
+
+        $VersionPreview = ($URLPreview | Select-String -Pattern 'FSLogix_Apps_((?:\d+\.)+(?:\d+))').Matches.Groups[1].Value
+
+        if ($VersionProd -and $DateProd -and $URLProd)
+        {
+            [PSCustomObject]@{
+                Version = $VersionProd
+                Date    = $DateProd
+                Ring    = 'Production'
+                URI     = $URLProd
+            }
+        }
+
+        if ($VersionPreview -and $URLPreview)
+        {
+            [PSCustomObject]@{
+                Version = $VersionPreview
+                Date    = '2021-05-24'
+                Ring    = 'Preview'
+                URI     = $URLPreview
+            }
+        }
+    }
+}
+
 $appVendor = "Microsoft"
 $appName = "FSLogix Apps"
 $appSetup = "FSLogixAppsSetup.exe"
 $appProcesses = @("frxsvc", "frxtray", "frxshell", "frxccds")
 $appInstallParameters = "/install /quiet /norestart"
-$Evergreen = Get-EvergreenApp -Name MicrosoftFSLogixApps
-$appVersion = $Evergreen.Version
-$appURL = $Evergreen.URI
-$appURLScript = "https://raw.githubusercontent.com/FSLogix/Invoke-FslShrinkDisk/master/Invoke-FslShrinkDisk.ps1"
-$appZip = "FSLogix Apps.zip"
+$Nevergreen = Get-MicrosoftFSLogixApps | Where-Object { $_.Ring -eq "Preview" }
+$appVersion = $Nevergreen.Version
+$appURL = $Nevergreen.URI
+$appZip = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\FSLogix\Apps"
+$appURLScript = "https://raw.githubusercontent.com/FSLogix/Invoke-FslShrinkDisk/master/Invoke-FslShrinkDisk.ps1"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact) | Select-Object -Last 1
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -Last 1
 ##*===============================================
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion)
+{
     Set-Location -Path $appScriptDirectory
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion
@@ -94,7 +154,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\x64\Release\$appSetup)) {
+    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\x64\Release\$appSetup))
+    {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
         Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appVersion
@@ -105,7 +166,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Move-Item -Path .\fslogix.adml -Destination "$appScriptDirectory\PolicyDefinitions\en-US\fslogix.adml" -Force
         Remove-File -Path $appZip
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
@@ -122,18 +184,21 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     New-Shortcut -Path "$envCommonStartMenuPrograms\Troubleshooting Tools\FSLogix Tray Icon.lnk" -TargetPath "$appDestination\frxtray.exe" -IconLocation "$appDestination\frxtray.exe" -Description "FSLogix Tray Icon" -WorkingDirectory "$appDestination"
 
     # Enable FSLogix Apps agent search roaming - Apply different configurations based on operating system
-    If ($envOSName -Like "*Windows Server 2012*" -or $envOSName -Like "*Windows Server 2016") {
+    If ($envOSName -Like "*Windows Server 2012*" -or $envOSName -Like "*Windows Server 2016")
+    {
         # Install Windows Search feature when missing, if Office was installed before it must be repair!
         If (!(Get-WindowsFeature -Name Search-Service)) {Install-WindowsFeature Search-Service}
     }
-    If ($envOSName -Like "*Windows Server 201*" -or $envOSName -eq "Microsoft Windows 10 Enterprise for Virtual Desktops") {
+    If ($envOSName -Like "*Windows Server 201*" -or $envOSName -eq "Microsoft Windows 10 Enterprise for Virtual Desktops")
+    {
         # Limit Windows Search to a single cpu core - https://social.technet.microsoft.com/Forums/en-US/88725f57-67ed-4c09-8ae6-780ff785e555/problems-with-search-service-on-server-2012-r2-rds?forum=winserverTS
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "CoreCount" -Type "DWord" -Value "1"
         # Configure multi-user search - https://docs.microsoft.com/en-us/fslogix/configure-search-roaming-ht
         Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Type "DWord" -Value "2"
         Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Type "DWord" -Value "2"
     }
-    If ($envOSName -Like "*Windows Server 2019*" -or $envOSName -eq "Microsoft Windows 10 Enterprise for Virtual Desktops") {
+    If ($envOSName -Like "*Windows Server 2019*" -or $envOSName -eq "Microsoft Windows 10 Enterprise for Virtual Desktops")
+    {
         # Enable Windows per user search catalog since FSLogix search indexing functionality is not recommended on Windows Server 2019 and Windows 10 multi-session
         # https://docs.microsoft.com/en-us/fslogix/configure-search-roaming-ht
         # https://jkindon.com/2020/03/15/windows-search-in-server-2019-and-multi-session-windows-10
@@ -167,7 +232,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
         Write-Log -Message "Scheduled Task to reset Windows Search was registered!" -Severity 1 -LogType CMTrace -WriteHost $True
     }
-    If ($envOSName -Like "*Windows 10*" -and $envOSName -ne "Microsoft Windows 10 Enterprise for Virtual Desktops") {
+    If ($envOSName -Like "*Windows 10*" -and $envOSName -ne "Microsoft Windows 10 Enterprise for Virtual Desktops")
+    {
         Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Type "DWord" -Value "1"
         Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Type "DWord" -Value "1"
     }
@@ -179,13 +245,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Fix for Citrix App Layering and FSLogix integration, must be done in the platform layer - https://support.citrix.com/article/CTX249873
     # https://social.msdn.microsoft.com/Forums/windows/en-US/660959a4-f9a9-486b-8a0d-dec3eba549e3/using-citrix-app-layering-unidesk-with-fslogix?forum=FSLogix
-    If ((Test-Path -Path "HKLM:\SYSTEM\CurrentControlSet\Services\unifltr") -and (Get-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\frxdrvvt\Instances\frxdrvvt" -Value "Altitude") -ne 138010) {
+    If ((Test-Path -Path "HKLM:\SYSTEM\CurrentControlSet\Services\unifltr") -and (Get-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\frxdrvvt\Instances\frxdrvvt" -Value "Altitude") -ne 138010)
+    {
         Write-Log -Message "Modifying $appVendor $appName altitude setting to be compatible with Citrix App Layering..." -Severity 1 -LogType CMTrace -WriteHost $True
         Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\frxdrvvt\Instances\frxdrvvt" -Name "Altitude" -Value "138010" -Type "String"
     }
 
     # Disable Citrix Profile Management if detected
-    If ((Test-Path -Path "HKLM:\SYSTEM\CurrentControlSet\Services\ctxProfile") -and (Get-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Value "PSEnabled") -ne "0") {
+    If ((Test-Path -Path "HKLM:\SYSTEM\CurrentControlSet\Services\ctxProfile") -and (Get-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Value "PSEnabled") -ne "0")
+    {
         Write-Log -Message "Disabling Citrix Profile Management..." -Severity 1 -LogType CMTrace -WriteHost $True
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Name "PSEnabled" -Value "0" -Type "DWord"
     }
@@ -207,6 +275,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
-Else {
+Else
+{
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
