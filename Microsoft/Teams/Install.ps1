@@ -497,7 +497,7 @@ $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/T
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
-$Nevergreen = Get-MicrosoftTeams | Where-Object {$_.Ring -eq "Beta" -and $_.Architecture -eq "x64" -and $_.Type -eq "Msi"}
+$Nevergreen = Get-MicrosoftTeams | Where-Object {$_.Ring -eq "Preview" -and $_.Architecture -eq "x64" -and $_.Type -eq "Msi"}
 $appVersion = $Nevergreen.Version
 $appURL = $Nevergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
