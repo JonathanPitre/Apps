@@ -79,65 +79,14 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
-Function Get-MicrosoftFSLogixApps
-{
-    <#
-    .NOTES
-        Author: Jonathan Pitre
-        Twitter: @PitreJonathan
-    #>
-    [OutputType([System.Management.Automation.PSObject])]
-    [CmdletBinding()]
-    Param()
-    $URLPreview = "https://download.microsoft.com/download/d/b/e/dbeeff02-b137-4971-a70b-83c22f82380f/FSLogix_Apps_2.9.7802.10873.zip"
-    Try
-    {
-        Invoke-WebRequest -Uri $URLPreview -UseBasicParsing
-    }
-    Catch
-    {
-        Throw "Failed to connect to URL: $URLPreview with error $_."
-        Break
-    }
-    Finally
-    {
-        $Evergreen = Get-EvergreenApp -Name MicrosoftFSLogixApps
-        $VersionProd = $Evergreen.Version
-        $DateProd = $Evergreen.Date
-        $URLProd = $Evergreen.URI
-
-        $VersionPreview = ($URLPreview | Select-String -Pattern 'FSLogix_Apps_((?:\d+\.)+(?:\d+))').Matches.Groups[1].Value
-
-        if ($VersionProd -and $DateProd -and $URLProd)
-        {
-            [PSCustomObject]@{
-                Version = $VersionProd
-                Date    = $DateProd
-                Ring    = 'Production'
-                URI     = $URLProd
-            }
-        }
-
-        if ($VersionPreview -and $URLPreview)
-        {
-            [PSCustomObject]@{
-                Version = $VersionPreview
-                Date    = '2021-05-24'
-                Ring    = 'Preview'
-                URI     = $URLPreview
-            }
-        }
-    }
-}
-
 $appVendor = "Microsoft"
 $appName = "FSLogix Apps"
 $appSetup = "FSLogixAppsSetup.exe"
 $appProcesses = @("frxsvc", "frxtray", "frxshell", "frxccds")
 $appInstallParameters = "/install /quiet /norestart"
-$Nevergreen = Get-MicrosoftFSLogixApps | Where-Object { $_.Ring -eq "Preview" }
-$appVersion = $Nevergreen.Version
-$appURL = $Nevergreen.URI
+$Evergreen = Get-EvergreenApp MicrosoftFSLogixApps | Where-Object { $_.Channel -eq "Preview" }
+$appVersion = $Evergreen.Version
+$appURL = $Evergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\FSLogix\Apps"
 $appURLScript = "https://raw.githubusercontent.com/FSLogix/Invoke-FslShrinkDisk/master/Invoke-FslShrinkDisk.ps1"
