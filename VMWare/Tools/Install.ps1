@@ -107,7 +107,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Enable Receive Size Scaling https://virtualnomadblog.com/2018/04/04/vmware-tools-10-2-5
     # https://kb.vmware.com/s/article/2008925
     Get-NetAdapter | Where-Object { $_.InterfaceDescription -like "vmxnet3*" } | Set-NetAdapterAdvancedProperty -DisplayName "Receive Side Scaling" -DisplayValue "Enabled" -NoRestart
-    Get-NetAdapter | Where-Object { $_.InterfaceDescription -like "vmxnet3*" } | Set-NetAdapterAdvancedProperty -DisplayName "Receive Throttle" -DisplayValue "30" -NoRestartGet-NetAdapter | Where-Object { $_.InterfaceDescription -like "vmxnet3*" } | Set-NetAdapterAdvancedProperty -DisplayName "Receive Side Scaling" -DisplayValue "Enabled" -NoRestart
     Get-NetAdapter | Where-Object { $_.InterfaceDescription -like "vmxnet3*" } | Set-NetAdapterAdvancedProperty -DisplayName "Receive Throttle" -DisplayValue "30" -NoRestart
 
     # Hide system tray icon
