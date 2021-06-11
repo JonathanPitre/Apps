@@ -15,7 +15,8 @@ Write-Verbose -Message "Importing custom modules..." -Verbose
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 
 # Install custom package providers list
-Foreach ($PackageProvider in $PackageProviders) {
+Foreach ($PackageProvider in $PackageProviders)
+{
     If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
 }
 
@@ -28,14 +29,17 @@ $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
 If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
 
 # Install and import custom modules list
-Foreach ($Module in $Modules) {
+Foreach ($Module in $Modules)
+{
     If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-    Else {
+    Else
+    {
         $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
         $ModuleVersion = (Find-Module -Name $Module).Version
         $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
         $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
+        {
             Update-Module -Name $Module -Force
             Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
         }
@@ -45,18 +49,22 @@ Foreach ($Module in $Modules) {
 Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 
 # Get the current script directory
-Function Get-ScriptDirectory {
+Function Get-ScriptDirectory
+{
     Remove-Variable appScriptDirectory
-    Try {
+    Try
+    {
         If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
         ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
         ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
-        Else {
+        Else
+        {
             Write-Host -ForegroundColor Red "Cannot resolve script file's path"
             Exit 1
         }
     }
-    Catch {
+    Catch
+    {
         Write-Host -ForegroundColor Red "Caught Exception: $($Error[0].Exception.Message)"
         Exit 2
     }
@@ -73,27 +81,30 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Microsoft"
 $appName = "Visual C++"
-$appMajorVersion = "2019"
 $VcList = Get-VcList
-$appVersion = ($VcList | Where-Object {$_.Release -eq "2019" -and $_.Architecture -eq "x64" }).Version
-$appVersion = $appVersion.Substring(0, $appVersion.Length - 2)
+$appMajorVersion = ($VcList | Select-Object -Last).Release
+$VcListVersion = ($VcList | Where-Object {$_.Release -eq $appMajorVersion -and $_.Architecture -eq "x64" }).Version
+$appVersion = $VcListVersion.Substring(0, $VcListVersion.Length - 2)
 $appSetup = Split-Path -Path ($VcList).Download -Leaf
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion").DisplayVersion | Select-Object -First 1
 ##*===============================================
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion)
+{
     Set-Location -Path $appScriptDirectory
 
     # Uninstall previous versions
     Remove-MSIApplications -Name "$appVendor $appName" -ContinueOnError $True
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appMajorVersion\x64\RTM\$appSetup)) {
+    If (-Not(Test-Path -Path $appScriptDirectory\$appMajorVersion\x64\RTM\$appSetup))
+    {
         Write-Log -Message "Downloading $appVendor $appName Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
         Save-VcRedist -VcList $VcList -Path $appScriptDirectory
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
@@ -108,6 +119,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "$appVendor $appName Runtimes were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
-Else {
+Else
+{
     Write-Log -Message "$appVendor $appName $appMajorVersion $appInstalledVersion Runtimes are already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
