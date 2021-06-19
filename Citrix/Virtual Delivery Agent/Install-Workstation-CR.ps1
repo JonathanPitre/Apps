@@ -81,7 +81,7 @@ $appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexpe
 $Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 *, All Editions"} | Select-Object -First 1
 $appVersion = $Evergreen.Version
 $appSetup = "VDAWorkstationSetup_$appVersion.exe"
-$appDlNumber = "19145"
+$appDlNumber = "19469"
 $appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
 $appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
@@ -162,8 +162,8 @@ If ($appVersion -gt $appInstalledVersion) {
 
     # Install Windows Media Player feature if missing
     If ($envOSName -Like "*Windows 10*") {
-        If ((Get-WindowsOptionalFeature ñFeatureName "WindowsMediaPlayer" -Online).State -ne "Enabled") {
-            Enable-WindowsOptionalFeature ñFeatureName "WindowsMediaPlayer" -All -Online
+        If ((Get-WindowsOptionalFeature ùFeatureName "WindowsMediaPlayer" -Online).State -ne "Enabled") {
+            Enable-WindowsOptionalFeature ùFeatureName "WindowsMediaPlayer" -All -Online
         }
     }
 
