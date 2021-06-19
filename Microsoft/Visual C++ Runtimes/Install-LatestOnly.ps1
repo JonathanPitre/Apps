@@ -81,8 +81,8 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Microsoft"
 $appName = "Visual C++"
-$VcList = Get-VcList
-$appMajorVersion = ($VcList | Select-Object -Last).Release
+$appMajorVersion = ( Get-VcList | Select-Object -Last 1).Release
+$VcList = Get-VcList | Where-Object {$_.Release -eq $appMajorVersion}
 $VcListVersion = ($VcList | Where-Object {$_.Release -eq $appMajorVersion -and $_.Architecture -eq "x64" }).Version
 $appVersion = $VcListVersion.Substring(0, $VcListVersion.Length - 2)
 $appSetup = Split-Path -Path ($VcList).Download -Leaf
