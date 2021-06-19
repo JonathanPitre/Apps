@@ -97,60 +97,6 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
-
-Function Get-MicrosoftTeams
-{
-    <#
-    .NOTES
-        Author: Jonathan Pitre
-        Twitter: @PitreJonathan
-    #>
-    [OutputType([System.Management.Automation.PSObject])]
-    [CmdletBinding()]
-    Param()
-    $DownloadURL = "https://github.com/ItzLevvie/MicrosoftTeams-msinternal/blob/master/defconfig"
-    Try
-    {
-        $DownloadText = (Invoke-WebRequest -Uri $DownloadURL -UseBasicParsing).Content
-    }
-    Catch
-    {
-        Throw "Failed to connect to URL: $DownloadURL with error $_."
-        Break
-    }
-    Finally
-    {
-        $Rings = @('Continuous Deployment', 'Exploration', 'Preview', 'Production')
-        $Architectures = @('x64', 'x86', 'Arm64')
-        $Types = @('Exe', 'Msi')
-        ForEach ($Ring in $Rings)
-        {
-            ForEach ($Architecture in $Architectures)
-            {
-                ForEach ($Type in $Types)
-                {
-                    $RegEx = "$Ring(.*?|\n)*?((?:\d+\.)+\d+).+win-$Architecture.+(http.+\.$Type)"
-                    If ($DownloadText -match $RegEx)
-                    {
-                        [PSCustomObject]@{
-                            Version      = $Matches[2]
-                            Ring         = $Ring
-                            Architecture = $Architecture
-                            Type         = $Type
-                            URI          = $Matches[3]
-                        }
-                    }
-                    Else
-                    {
-                        Write-Warning -Debug "No match found for Microsoft Teams $Ring $Architecture $Type"
-                    }
-
-                }
-            }
-        }
-    }
-}
-
 $appVendor = "Microsoft"
 $appName = "Teams"
 $appProcesses = @("Teams", "Update", "Squirrel", "Outlook")
@@ -158,7 +104,7 @@ $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/T
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
-$Nevergreen = Get-MicrosoftTeams | Where-Object {$_.Ring -eq "Preview" -and $_.Architecture -eq "x64" -and $_.Type -eq "Msi"}
+$Nevergreen = Get-NevergreenApp MicrosoftTeams | Where-Object {$_.Ring -eq "Preview" -and $_.Architecture -eq "x64" -and $_.Type -eq "Msi"}
 $appVersion = $Nevergreen.Version
 $appURL = $Nevergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
