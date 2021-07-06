@@ -183,7 +183,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{8A69D345-D564-463c-AFF1-A69D9E530F96}" -Name "StubPath"
 
     # Remove desktop shortcut for all users
-    #Remove-File "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
+    #Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
     Update-GroupPolicy
 

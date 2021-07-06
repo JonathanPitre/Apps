@@ -186,7 +186,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Execute-Process -Path "$envProgramFilesX86\$appVendor\$($appName)Update\MicrosoftEdgeUpdate.exe" -Parameters "/browserreplacement"
 
     # Remove desktop shortcut for all users
-    #Remove-File "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
+    #Remove-File -Path envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
     # Disable Citrix API hook - https://discussions.citrix.com/topic/406494-microsoft-new-edge-ready-for-citrix-terminal-serves
     # https://blog.vermeerschconsulting.be/index.php/2020/04/23/edge-chromium-in-citrix-virtual-apps-server-2016-or-2019-with-a-working-smart-card-reader
