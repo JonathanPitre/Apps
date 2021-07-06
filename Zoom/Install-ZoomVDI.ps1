@@ -101,7 +101,9 @@ $appShortName = "Zoom"
 $appName = "Zoom Client for VDI"
 $appProcesses = @("Zoom", "Zoom_launcher", "ZoomOutlookIMPlugin")
 $appInstallParameters = "/QB"
-$Nevergreen = Get-NevergreenApp Zoom | Where-Object {$_.Platform -eq "VDI" }
+# https://support.zoom.us/hc/en-us/articles/201362163-Mass-Installation-and-Configuration-for-Windows
+$appAddParameters = "zNoDesktopShortCut=1"
+$Nevergreen = Get-NevergreenApp Zoom | Where-Object {$_.Name -like "*VDI Client" }
 $appVersion = $Nevergreen.Version
 $appURL = $Nevergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
@@ -185,8 +187,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Install latest version
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
+    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
+    # Remove desktop shortcut for all users
+    Remove-File -Path "$envCommonDesktop\$appShortName VDI.lnk" -ContinueOnError $True
 
     # Go back to the parent folder
     Set-Location ..
