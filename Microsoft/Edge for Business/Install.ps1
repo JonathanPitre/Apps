@@ -84,6 +84,8 @@ $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $EvergreenADMX = (Get-EvergreenApp -Name MicrosoftEdge | Where-Object { $_.Channel -eq "Policy" })
 $appADMX = Split-Path -Path $EvergreenADMX.URI -Leaf
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Edge%20for%20Business/master_preferences"
+$appConfig = Split-Path -Path $appConfigURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
@@ -135,6 +137,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Download required config file
+    If (-Not(Test-Path -Path $appScriptDirectory\$appConfig))
+    {
+        Write-Log -Message "Downloading $appVendor $appName Config.." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
     # Download latest policy definitions
     Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
     Invoke-WebRequest -UseBasicParsing -Uri $EvergreenADMX.URI -OutFile $appADMX
@@ -175,18 +188,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled"
     Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled"
 
-    # Creates a pinned taskbar icons for all users
-    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
-
-    # Remove Active Setup
+    # Remove Active Setup - https://virtualwarlock.net/microsoft-edge-in-citrix
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{9459C573-B17A-45AE-9F64-1857B5D58CEE}" -Name "StubPath"
 
     # Execute the Microsoft Edge browser replacement task to make sure that the legacy Microsoft Edge browser is tucked away
     # This is only needed on Windows 10 versions where Microsoft Edge is not included in the OS.
     Execute-Process -Path "$envProgramFilesX86\$appVendor\$($appName)Update\MicrosoftEdgeUpdate.exe" -Parameters "/browserreplacement"
 
+    # Creates a pinned taskbar icons for all users
+    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
+
     # Remove desktop shortcut for all users
-    #Remove-File -Path envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
+    #Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
     # Disable Citrix API hook - https://discussions.citrix.com/topic/406494-microsoft-new-edge-ready-for-citrix-terminal-serves
     # https://blog.vermeerschconsulting.be/index.php/2020/04/23/edge-chromium-in-citrix-virtual-apps-server-2016-or-2019-with-a-working-smart-card-reader
@@ -207,4 +220,5 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 }
 Else {
     Write-Log -Message "$appVendor $appName $appLongName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+}   Write-Log -Message "$appVendor $appName $appLongName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }

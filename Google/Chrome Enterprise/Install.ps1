@@ -85,6 +85,8 @@ $appURLADMX = "https://dl.google.com/dl/edgedl/chrome/policy/policy_templates.zi
 $appADMX = Split-Path -Path $appURLADMX -Leaf
 $appURLADMX2 = "https://dl.google.com/dl/update2/enterprise/googleupdateadmx.zip"
 $appADMX2 = Split-Path -Path $appURLADMX2 -Leaf
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Google/Chrome%20Enterprise/master_preferences"
+$appConfig = Split-Path -Path $appConfigURL -Leaf
 $appDestination = "$env:ProgramFiles\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
@@ -142,6 +144,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Download required config file
+    If (-Not(Test-Path -Path $appScriptDirectory\$appConfig))
+    {
+        Write-Log -Message "Downloading $appVendor $appName Config.." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
     # Download latest policy definitions
     Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
     Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appScriptDirectory\$appADMX
@@ -176,16 +189,19 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled"
     Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled"
 
-    # Creates a pinned taskbar icons for all users
-    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
-
     # Remove Active Setup - https://dennisspan.com/google-chrome-on-citrix-deep-dive/#StubPath
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{8A69D345-D564-463c-AFF1-A69D9E530F96}" -Name "StubPath"
+
+    # Creates a pinned taskbar icons for all users
+    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
 
     # Remove desktop shortcut for all users
     #Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
     Update-GroupPolicy
+
+    # Go back to the parent folder
+    Set-Location ..
 
     Write-Log -Message "$appVendor $appName $appLongName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
