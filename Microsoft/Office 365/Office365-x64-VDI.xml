@@ -1,8 +1,7 @@
 <Configuration ID="7dad9b9c-b133-48df-9ee1-fac7f92f0449">
   <Info Description="Office 365 Optimized for VDI" />
-  <Add OfficeClientEdition="64" Channel="Current">
+  <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
     <Product ID="O365ProPlusRetail">
-      <Language ID="fr-fr" />
       <Language ID="en-us" />
       <ExcludeApp ID="Groove" />
       <ExcludeApp ID="Lync" />
@@ -11,9 +10,8 @@
       <ExcludeApp ID="Bing" />
     </Product>
     <Product ID="LanguagePack">
-      <Language ID="fr-fr" />
+      <Language ID="MatchOS" />
       <Language ID="en-us" />
-      <ExcludeApp ID="Bing" />
     </Product>
   </Add>
   <Property Name="SharedComputerLicensing" Value="1" />
@@ -26,10 +24,17 @@
   <RemoveMSI />
   <AppSettings>
     <Setup Name="Company" Value="" />
+    <User Key="software\microsoft\office\16.0\common\sharepointintegration" Name="hidelearnmorelink" Value="1" Type="REG_DWORD" App="office16" Id="L_HideTheLearnMoreAboutSharePointHyperlink" />
     <User Key="software\microsoft\office\16.0\common\toolbars" Name="customuiroaming" Value="1" Type="REG_DWORD" App="office16" Id="L_AllowRoamingQuickAccessToolBarRibbonCustomizations" />
     <User Key="software\microsoft\office\16.0\common" Name="sendcustomerdata" Value="0" Type="REG_DWORD" App="office16" Id="L_Sendcustomerdata" />
+    <User Key="software\microsoft\shared tools\proofing tools\1.0\office" Name="ignoreuppercase" Value="1" Type="REG_DWORD" App="office16" Id="L_IgnorewordsinUPPERCASE" />
+    <User Key="software\microsoft\shared tools\proofing tools\1.0\office" Name="ignorewordswithnumbers" Value="1" Type="REG_DWORD" App="office16" Id="L_Ignorewordswithnumbers" />
+    <User Key="software\microsoft\shared tools\proofing tools\1.0\office" Name="ignoreinternetfileaddresses" Value="1" Type="REG_DWORD" App="office16" Id="L_IgnoreInternetandfileaddresses" />
+    <User Key="software\microsoft\shared tools\proofing tools\1.0\office" Name="enforceaccenteduppercase" Value="1" Type="REG_DWORD" App="office16" Id="L_AllowaccenteduppercaseinFrench" />
+    <User Key="software\microsoft\office\16.0\common\ptwatson" Name="ptwoptin" Value="0" Type="REG_DWORD" App="office16" Id="L_ImproveProofingTools" />
     <User Key="software\microsoft\office\16.0\common\general" Name="shownfirstrunoptin" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableOptinWizard" />
     <User Key="software\microsoft\office\16.0\common" Name="qmenable" Value="0" Type="REG_DWORD" App="office16" Id="L_EnableCustomerExperienceImprovementProgram" />
+    <User Key="software\microsoft\office\16.0\common" Name="updatereliabilitydata" Value="0" Type="REG_DWORD" App="office16" Id="L_UpdateReliabilityPolicy" />
     <User Key="software\microsoft\office\16.0\common\languageresources" Name="helplanguage" Value="1036" Type="REG_DWORD" App="office16" Id="L_Displayhelpin" />
     <User Key="software\microsoft\office\16.0\common\languageresources" Name="installlanguage" Value="3084" Type="REG_DWORD" App="office16" Id="L_PrimaryEditingLanguage" />
     <User Key="software\microsoft\office\16.0\common\services\fax" Name="nofax" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableFaxOverInternetfeature" />
@@ -55,6 +60,8 @@
     <User Key="software\microsoft\office\16.0\excel\options" Name="defaultformat" Value="51" Type="REG_DWORD" App="excel16" Id="L_SaveExcelfilesas" />
     <User Key="software\microsoft\office\16.0\excel\options" Name="autorecovertime" Value="5" Type="REG_DWORD" App="excel16" Id="L_AutoRecovertime" />
     <User Key="software\microsoft\office\16.0\excel\options" Name="autorecoverdelay" Value="300" Type="REG_DWORD" App="excel16" Id="L_AutoRecoverdelay" />
+    <User Key="software\microsoft\office\16.0\outlook\cached mode" Name="cacheothersmail" Value="1" Type="REG_DWORD" App="outlk16" Id="L_CacheOthersMail" />
+    <User Key="software\microsoft\office\16.0\outlook\search" Name="disabledownloadsearchprompt" Value="1" Type="REG_DWORD" App="outlk16" Id="L_Disableinstallationprompts" />
     <User Key="software\microsoft\office\16.0\outlook\preferences" Name="ctrlentersends" Value="1" Type="REG_DWORD" App="outlk16" Id="L_Changectrlentershortcutbehavior" />
     <User Key="software\microsoft\office\16.0\outlook\options\pubcal" Name="disableofficeonline" Value="1" Type="REG_DWORD" App="outlk16" Id="L_PreventpublishingtoOfficeOnline" />
     <User Key="software\microsoft\office\16.0\outlook\options\calendar" Name="workday" Value="124" Type="REG_DWORD" App="outlk16" Id="L_Workweek" />
