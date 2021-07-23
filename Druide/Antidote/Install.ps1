@@ -154,10 +154,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -Transform $appTransform -SkipMSIAlreadyInstalledCheck -Patch $appScriptDirectory\$appVersion\$appPatch
-    Execute-MSI -Action Install -Path $appSetup2 -Parameters $appInstallParameters -SkipMSIAlreadyInstalledCheck -Patch $appScriptDirectory\$appVersion\$appPatch2
-    If (Test-Path -Path $appSetup3) {Execute-MSI -Action Install -Path $appSetup3 -Parameters $appInstallParameters -SkipMSIAlreadyInstalledCheck} -Patch $appScriptDirectory\$appVersion\$appPatch3
-    Execute-MSI -Action Install -Path $appSetup4 -Parameters $appInstallParameters -Transform $appTransform2 -SkipMSIAlreadyInstalledCheck -Patch $appScriptDirectory\$appVersion\$appPatch4
+    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -Transform $appTransform -Patch $appScriptDirectory\$appVersion\$appPatch
+    Execute-MSI -Action Install -Path $appSetup2 -Parameters $appInstallParameters -Patch $appScriptDirectory\$appVersion\$appPatch2
+    If (Test-Path -Path $appSetup3) {Execute-MSI -Action Install -Path $appSetup3 -Parameters $appInstallParameters} -Patch $appScriptDirectory\$appVersion\$appPatch3
+    Execute-MSI -Action Install -Path $appSetup4 -Parameters $appInstallParameters -Transform $appTransform2 -Patch $appScriptDirectory\$appVersion\$appPatch4
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
