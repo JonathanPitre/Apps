@@ -220,5 +220,4 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 }
 Else {
     Write-Log -Message "$appVendor $appName $appLongName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
-}   Write-Log -Message "$appVendor $appName $appLongName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
-}
+} 
