@@ -100,11 +100,12 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Microsoft"
 $appName = "Teams"
 $appProcesses = @("Teams", "Update", "Squirrel", "Outlook")
+$appArchitecture = "x64"
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/Teams.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
-$Nevergreen = Get-NevergreenApp MicrosoftTeams | Where-Object {$_.Ring -eq "Preview" -and $_.Architecture -eq "x64" -and $_.Type -eq "Msi"}
+$Nevergreen = Get-NevergreenApp $appVendor$appName | Where-Object {$_.Ring -eq "Production" -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi"}
 $appVersion = $Nevergreen.Version
 $appURL = $Nevergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
