@@ -77,8 +77,8 @@ $appName2 = "Virtual Delivery Agent"
 $appProcesses = @("BrokerAgent", "picaSessionAgent")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /includeadditional "Citrix User Profile Manager","Citrix User Profile Manager WMI Plugin" /exclude "Workspace Environment Management","User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Telemetry Service","Citrix Personalization for App-V - VDA","Machine Identity Service","Citrix Universal Print Client","Personal vDisk"'
-$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 *, All Editions"} | Select-Object -First 1
+$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /includeadditional "Citrix User Profile Manager","Citrix User Profile Manager WMI Plugin" /exclude "Workspace Environment Management","User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Telemetry Service","Citrix Personalization for App-V - VDA","Machine Identity Service","Citrix Universal Print Client","Personal vDisk" /enablerestore'
+$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 21*, All Editions"} | Select-Object -First 1
 $appVersion = $Evergreen.Version
 $appSetup = "VDAWorkstationSetup_$appVersion.exe"
 $appDlNumber = "19469"
@@ -262,7 +262,7 @@ If ($appVersion -gt $appInstalledVersion) {
         # Disconnected sessions might remain open on a physical machine even after the time specified under "Disconnect session timer interval" has passed
         # https://discussions.citrix.com/topic/410389-sessions-to-physical-pcs-do-not-go-into-disconnected-state
         # https://docs.citrix.com/en-us/legacy-archive/downloads/xenapp-and-xendesktop-7.6-long-term-service-release-(ltsr).pdf
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA" -Name "ForceDisableRemotePC" -Type "DWord" -Value "1"
+        #Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA" -Name "ForceDisableRemotePC" -Type "DWord" -Value "1"
     }
 
     # Allow a Remote PC Access machine to go into a sleep state - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html

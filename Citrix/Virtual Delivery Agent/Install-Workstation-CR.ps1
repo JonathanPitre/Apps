@@ -77,8 +77,8 @@ $appName2 = "Virtual Delivery Agent"
 $appProcesses = @("BrokerAgent", "picaSessionAgent")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /virtualmachine /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /mastermcsimage /includeadditional "Machine Identity Service","Citrix User Profile Manager","Citrix User Profile Manager WMI Plugin","Citrix MCS IODriver" /exclude "Workspace Environment Management","User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Telemetry Service","Citrix Personalization for App-V - VDA","Personal vDisk"'
-$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 *, All Editions"} | Select-Object -First 1
+$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /virtualmachine /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /mastermcsimage /includeadditional "Machine Identity Service","Citrix User Profile Manager","Citrix User Profile Manager WMI Plugin","Citrix MCS IODriver" /exclude "Workspace Environment Management","User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Telemetry Service","Citrix Personalization for App-V - VDA","Personal vDisk" /enablerestore'
+$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 21*, All Editions"} | Select-Object -First 1
 $appVersion = $Evergreen.Version
 $appSetup = "VDAWorkstationSetup_$appVersion.exe"
 $appDlNumber = "19469"
@@ -162,8 +162,8 @@ If ($appVersion -gt $appInstalledVersion) {
 
     # Install Windows Media Player feature if missing
     If ($envOSName -Like "*Windows 10*") {
-        If ((Get-WindowsOptionalFeature ùFeatureName "WindowsMediaPlayer" -Online).State -ne "Enabled") {
-            Enable-WindowsOptionalFeature ùFeatureName "WindowsMediaPlayer" -All -Online
+        If ((Get-WindowsOptionalFeature -FeatureName "WindowsMediaPlayer" -Online).State -ne "Enabled") {
+            Enable-WindowsOptionalFeature -FeatureName "WindowsMediaPlayer" -All -Online
         }
     }
 
