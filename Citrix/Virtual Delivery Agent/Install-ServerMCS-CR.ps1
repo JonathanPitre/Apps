@@ -79,7 +79,7 @@ $appServices = @("CitrixTelemetryService")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
 $appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /virtualmachine /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /mastermcsimage /includeadditional "Machine Identity Service","Citrix Profile Management","Citrix Profile Management WMI Plugin","Citrix MCS IODriver" /exclude "Citrix WEM Agent","User personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Personalization for App-V - VDA"'
-$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 *, All Editions"} | Select-Object -First 1
+$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 21*, All Editions"} | Select-Object -First 1
 $appVersion = $Evergreen.Version
 $appSetup = "VDAServerSetup_$appVersion.exe"
 $appDlNumber = "19468"
