@@ -211,8 +211,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Set-RegistryKey -Key $regKey\$regKeyProcess -Value "(Default)"
     }
 
-    Update-GroupPolicy
-
     # Go back to the parent folder
     Set-Location ..
 
@@ -220,4 +218,4 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 }
 Else {
     Write-Log -Message "$appVendor $appName $appLongName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
-} 
+}

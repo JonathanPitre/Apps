@@ -263,8 +263,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Stop-ServiceAndDependencies -Name $appServices[0]
     Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
 
-    Update-GroupPolicy
-
     # Go back to the parent folder
     Set-Location ..
 

@@ -198,8 +198,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Remove desktop shortcut for all users
     #Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
-    Update-GroupPolicy
-
     # Go back to the parent folder
     Set-Location ..
 
