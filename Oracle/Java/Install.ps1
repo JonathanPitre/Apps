@@ -86,6 +86,11 @@ $appMinorVersion = $appVersion.Split(".")[2].Substring(0, 3)
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\$appName\jre1.$appMajorVersion.0_$appMinorVersion\bin"
+$appURLDeploymentConfig = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Oracle/Java/deployment.config"
+$appDeploymentConfig = Split-Path -Path $appURLDeploymentConfig -Leaf
+$appURLDeploymentProperties = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Oracle/Java/deployment.properties"
+$appDeploymentProperties = Split-Path -Path $appURLDeploymentProperties -Leaf
+$appExceptionSites = "exception.sites"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName \d Update \d{3}" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName \d Update \d{3}" -RegEx).DisplayVersion | Select-Object -First 1
 ##*================================================
@@ -107,7 +112,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
+    If (-Not(Test-Path -Path "$appScriptDirectory\$appVersion\$appSetup"))
     {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
@@ -117,7 +122,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Install latest version
-    Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters -WaitForMsiExec
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -136,8 +141,47 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Copy configs to system wide location
     Copy-File -Path $appScriptDirectory\Config\* -Destination "$envSystemRoot\Sun\Java\Deployment" -Recurse
 
-    # Copy trusted cert to system wide location
-    Copy-File -Path "$($envLocalAppData)Low\Sun\Java\Deployment\security\trusted.certs" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+    # Download required configuration files and copy to approprite location
+    If ((-Not(Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\$appDeploymentConfig")) -and (-Not(Test-Path -Path "$appScriptDirectory\$appDeploymentConfig")))
+    {
+        Write-Log -Message "Downloading $appVendor $appName configuration files.." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appURLDeploymentConfig -OutFile "$appScriptDirectory\$appDeploymentConfig"
+        Invoke-WebRequest -UseBasicParsing -Uri $appURLDeploymentProperties -OutFile "$appScriptDirectory\$appDeploymentProperties"
+        Copy-File -Path "$appScriptDirectory\$appDeploymentConfig" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+        Copy-File -Path "$appScriptDirectory\$appDeploymentProperties" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+    }
+    # Update deployment.properties if already exist
+    ElseIf (Test-Path -Path "$appScriptDirectory\$appDeploymentProperties")
+    {
+        Copy-File -Path "$appScriptDirectory\$appDeploymentProperties" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    # Create exception.sites files if missing
+    If ((-Not (Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\$appExceptionSites")) -and (-Not(Test-Path -Path "$appScriptDirectory\$appExceptionSites")))
+    {
+        New-Item -Path "$appScriptDirectory\$appExceptionSites"
+        Set-Content "$appScriptDirectory\$appExceptionSites" 'http://example.com'
+        Copy-File -Path "$appScriptDirectory\$appExceptionSites" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+    }
+    # Update exception.sites if already exist
+    ElseIf (Test-Path -Path "$appScriptDirectory\$appExceptionSites")
+    {
+        Copy-File -Path "$appScriptDirectory\$appExceptionSites" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+    }
+
+    # Copy trusted certs to system wide location
+    If ((-Not (Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\trusted.certs")) -and (Test-Path -Path "$appScriptDirectory\trusted.certs"))
+    {
+        Copy-File -Path "$appScriptDirectory\trusted.certs" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+    }
+    ElseIf ((-Not (Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\trusted.certs")) -and (Test-Path -Path "$($envLocalAppData)Low\Sun\Java\Deployment\security\trusted.certs"))
+    {
+        Copy-File -Path "$($envLocalAppData)Low\Sun\Java\Deployment\security\trusted.certs" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+    }
 
     # Delete user configs so system wide configs can take over
     Remove-Folder "$($envLocalAppData)Low\Sun"
