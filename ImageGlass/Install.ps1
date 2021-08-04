@@ -163,7 +163,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "NoNewAppAlert" -Type DWord -Value "1"
 
     # Register file associations for images - https://imageglass.org/docs/command-line-utilities
-    Execute-Process -Path "$appDestination\igtasks.exe" -Parameters "regassociations *.b64;*.bay;*.bmp;*.cap;*.cr2;*.crw;*.cur;*.cut;*.dcr;*.dcs;*.dds;*.dib;*.dng;*.drf;*.eip;*.emf;*.erf;*.exif;*.exr;*.fff;*.gif;*.gpr;*.hdr;*.heic;*.ico;*.iiq;*.jfif;*.jpe;*.jpeg;*.jpg;*.jxr;*.k25;*.kdc;*.mdc;*.mef;*.mos;*.mrw;*.nef;*.nrw;*.orf;*.pbm;*.pcx;*.pef;*.pgm;*.png;*.ppm;*.psb;*.psd;*.ptx;*.pxn;*.r3d;*.raf;*.raw;*.rw2;*.rwl;*.rwz;*.sr2;*.srf;*.srw;*.svg;*.tga;*.tif;*.tiff;*.wdp;*.webp;*.wpg;*.x3f;*.xbm" -UseShellExecute
+    Execute-Process -Path "$appDestination\igtasks.exe" -Parameters "regassociations *.b64;*.bay;*.bmp;*.cap;*.cr2;*.crw;*.cur;*.cut;*.dcr;*.dcs;*.dds;*.dib;*.dng;*.drf;*.eip;*.emf;*.erf;*.exif;*.exr;*.fff;*.gif;*.gpr;*.hdr;*.heic;*.ico;*.iiq;*.jfif;*.jpe;*.jpeg;*.jpg;*.jxr;*.k25;*.kdc;*.mdc;*.mef;*.mos;*.mrw;*.nef;*.nrw;*.orf;*.pbm;*.pcx;*.pef;*.pgm;*.png;*.ppm;*.psb;*.psd;*.ptx;*.pxn;*.r3d;*.raf;*.raw;*.rw2;*.rwl;*.rwz;*.sr2;*.srf;*.srw;*.svg;*.tga;*.tif;*.tiff;*.wdp;*.webp;*.wpg;*.x3f;*.xbm" -IgnoreExitCodes
 
     # Install language pack - https://imageglass.org/docs/command-line-utilities
     Copy-File -Path $appScriptDirectory\*.iglang -Destination $appDestination\Languages
@@ -173,6 +173,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Copy themes files - https://github.com/d2phap/ImageGlass/issues/1112
     Copy-File -Path $appScriptDirectory\*.igtheme -Destination $appDestination\Themes
+
+    # Remove desktop shortcut
+    Remove-File -Path $envCommonDesktop\$appName.lnk -ContinueOnError $True
 
     # Go back to the parent folder
     Set-Location ..
