@@ -147,9 +147,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\Database\Content Type\application/x-java-jnlp-file" -Name "Extension" -Value ".jnlp" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\MIME\Database\Content Type\application/x-java-jnlp-file" -Name "Extension" -Value ".jnlp" -Type String
 
-    # Copy configs to system wide location
-    Copy-File -Path $appScriptDirectory\Config\* -Destination "$envSystemRoot\Sun\Java\Deployment" -Recurse
-
     # Download required configuration files and copy to approprite location
     If ((-Not(Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\$appDeploymentConfig")) -and (-Not(Test-Path -Path "$appScriptDirectory\$appDeploymentConfig")))
     {
