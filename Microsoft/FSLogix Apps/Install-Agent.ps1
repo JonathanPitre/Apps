@@ -151,7 +151,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Type "DWord" -Value "2"
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Type "DWord" -Value "0"
     }
-    If ($envOSName -like "*Windows Server 2019*" -or $envOSName -like "*Windows 10 Enterprise for Virtual Desktops")
+    If ($envOSName -like "*Windows Server 2019*" -or $envOSName -like "*Windows Server 2022*" -or $envOSName -like "*Windows 10 Enterprise for Virtual Desktops")
     {
         # Limit Windows Search to a single cpu core - https://social.technet.microsoft.3.com/Forums/en-US/88725f57-67ed-4c09-8ae6-780ff785e555/problems-with-search-service-on-server-2012-r2-rds?forum=winserverTS
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "CoreCount" -Type "DWord" -Value "1"
@@ -163,7 +163,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Type "DWord" -Value "0"
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Type "DWord" -Value "0"
     }
-    If ($envOSName -like "*Windows Server 2019*")
+    If ($envOSName -like "*Windows Server 2019*" -or $envOSName -like "*Windows Server 2022*")
     {
         # Define CIM object variables - https://virtualwarlock.net/how-to-install-the-fslogix-apps-agent
         # This is needed for accessing the non-default trigger settings when creating a schedule task using Powershell
@@ -217,17 +217,25 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Name "PSEnabled" -Value "0" -Type "DWord"
     }
 
+    # Enable frxrobocopy - https://docs.microsoft.com/en-us/fslogix/fslogix-installed-components-functions-reference
+    Copy-File -Path "$envWinDir\System32\robocopy.exe" -Destination "$appDestination\frxrobocopy.exe"
+
     # Add Windows Defender exclusion(s) - https://docs.microsoft.com/en-us/azure/architecture/example-scenario/wvd/windows-virtual-desktop-fslogix
     Add-MpPreference -ExclusionPath "%ProgramFiles%\FSLogix\Apps\frxdrv.sys" -Force
     Add-MpPreference -ExclusionPath "%ProgramFiles%\FSLogix\Apps\frxdrvvt.sys" -Force
     Add-MpPreference -ExclusionPath "%ProgramFiles%\FSLogix\Apps\frxccd.sys" -Force
-    Add-MpPreference -ExclusionPath "%TEMP%*.VHD" -Force
-    Add-MpPreference -ExclusionPath "%TEMP%*.VHDX" -Force
-    Add-MpPreference -ExclusionPath "%windir%\TEMP*.VHD" -Force
-    Add-MpPreference -ExclusionPath "%windir%\TEMP*.VHDX" -Force
+    Add-MpPreference -ExclusionPath "%TEMP%\*.VHD" -Force
+    Add-MpPreference -ExclusionPath "%TEMP%\*.VHDX" -Force
+    Add-MpPreference -ExclusionPath "%Windir%\TEMP\*.VHD" -Force
+    Add-MpPreference -ExclusionPath "%Windir%\TEMP­­\*.VHDX" -Force
+    Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Cache\*.VHD" -Force
+    Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Cache\*.VHDX" -Force
+    Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Proxy\*.VHD" -Force
+    Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Proxy\*.VHDX" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxsvc.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxccds.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxsvc.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxrobocopy.exe" -Force
 
     # Go back to the parent folder
     Set-Location ..
