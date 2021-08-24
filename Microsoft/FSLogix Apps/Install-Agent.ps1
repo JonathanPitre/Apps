@@ -218,7 +218,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Enable frxrobocopy - https://docs.microsoft.com/en-us/fslogix/fslogix-installed-components-functions-reference
-    Copy-File -Path "$envWinDir\System32\robocopy.exe" -Destination "$appDestination\frxrobocopy.exe"
+    Copy-File -Path "$envWinDir\System32\Robocopy.exe" -Destination "$appDestination\frxrobocopy.exe"
+    # https://github.com/MicrosoftDocs/fslogix-docs/issues/78
+    Copy-File -Path "$envWinDir\System32\en-us\Robocopy.exe.mui" -Destination "$appDestination\en-us\frxrobocopy.exe.mui"
 
     # Add Windows Defender exclusion(s) - https://docs.microsoft.com/en-us/azure/architecture/example-scenario/wvd/windows-virtual-desktop-fslogix
     Add-MpPreference -ExclusionPath "%ProgramFiles%\FSLogix\Apps\frxdrv.sys" -Force
