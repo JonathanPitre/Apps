@@ -67,7 +67,7 @@
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\PepperFlash</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\SSLErrorAssistant</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\Safe Browsing</Exclude>
-    <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\ShaderCache</Exclude> 
+    <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\ShaderCache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\Subresource Filter</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\SwReporter</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\WidevineCdm</Exclude>
@@ -202,6 +202,13 @@
     <Exclude Copy="0">Videos</Exclude>
   </Excludes>
   <Includes>
+    <Include Copy="3">AppData\Local\Apps</Include>
+    <Include Copy="3">AppData\Local\Microsoft\Credentials</Include>
+    <Include Copy="3">AppData\Local\Microsoft\Windows\Caches</Include>
     <Include Copy="3">AppData\LocalLow\Sun\Java\Deployment\security</Include>
+    <Include Copy="3">AppData\Roaming\Microsoft\Credentials</Include>
+    <Include Copy="3">AppData\Roaming\Microsoft\Crypto</Include>
+    <Include Copy="3">AppData\Roaming\Microsoft\Protect</Include>
+    <Include Copy="3">AppData\Roaming\Microsoft\SystemCertificates</Include>
   </Includes>
 </FrxProfileFolderRedirection>
