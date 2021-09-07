@@ -15,7 +15,8 @@ Write-Verbose -Message "Importing custom modules..." -Verbose
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 
 # Install custom package providers list
-Foreach ($PackageProvider in $PackageProviders) {
+Foreach ($PackageProvider in $PackageProviders)
+{
     If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
 }
 
@@ -28,14 +29,17 @@ $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
 If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
 
 # Install and import custom modules list
-Foreach ($Module in $Modules) {
+Foreach ($Module in $Modules)
+{
     If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-    Else {
+    Else
+    {
         $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
         $ModuleVersion = (Find-Module -Name $Module).Version
         $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
         $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
+        {
             Update-Module -Name $Module -Force
             Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
         }
@@ -45,18 +49,22 @@ Foreach ($Module in $Modules) {
 Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 
 # Get the current script directory
-Function Get-ScriptDirectory {
+Function Get-ScriptDirectory
+{
     Remove-Variable appScriptDirectory
-    Try {
+    Try
+    {
         If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
         ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
         ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
-        Else {
+        Else
+        {
             Write-Host -ForegroundColor Red "Cannot resolve script file's path"
             Exit 1
         }
     }
-    Catch {
+    Catch
+    {
         Write-Host -ForegroundColor Red "Caught Exception: $($Error[0].Exception.Message)"
         Exit 2
     }
@@ -77,9 +85,9 @@ $appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", 
 $appInstallParameters = "/quiet Cloud=1" # OnPrem 0 Cloud 1
 #$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Workspace Environment Management 21*"} | Select-Object
 -First 1
-$appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
+$appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object CreationTime -Descending | Select-Object -Last 1 | Select-Object -ExpandProperty Name)
 #$appURL = $Evergreen.URI
-$appSetup = "Citrix Workspace Environment Management Agent.exe"
+$appSetup = Get-ChildItem $appScriptDirectory\$appVersion -Filter "$appVendor $appName*" | Select-Object -ExpandProperty Name
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
 $appScriptURL = "https://raw.githubusercontent.com/JonathanPitre/Scripts/master/Citrix/Reset-WEMCache/Reset-WEMCache.ps1"
 $appScript = Split-Path -Path $appScriptURL -Leaf
@@ -87,7 +95,8 @@ $appScript = Split-Path -Path $appScriptURL -Leaf
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
 ##*===============================================
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion)
+{
     Set-Location -Path $appScriptDirectory
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion
@@ -160,6 +169,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }
-Else {
+Else
+{
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
