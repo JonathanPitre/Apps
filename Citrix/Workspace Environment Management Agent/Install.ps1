@@ -74,14 +74,17 @@ $appScriptDirectory = Get-ScriptDirectory
 $appVendor = "Citrix"
 $appName = "Workspace Environment Management Agent"
 $appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
-$appInstallParameters = "/quiet Cloud=1"  # OnPrem 0 Cloud 1
-#$Evergreen = Get-EvergreenApp -Name CitrixWorkspaceApp | Where-Object {$_.Title -contains "Citrix Workspace - Current Release"}
+$appInstallParameters = "/quiet Cloud=1" # OnPrem 0 Cloud 1
+#$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Workspace Environment Management 21*"} | Select-Object
+-First 1
 $appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object CreationTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 #$appURL = $Evergreen.URI
 $appSetup = "Citrix Workspace Environment Management Agent.exe"
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
+$appScriptURL = "https://raw.githubusercontent.com/JonathanPitre/Scripts/master/Citrix/Reset-WEMCache/Reset-WEMCache.ps1"
+$appScript = Split-Path -Path $appScriptURL -Leaf
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion)
+$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
 ##*===============================================
 
 If ([version]$appVersion -gt [version]$appInstalledVersion) {
@@ -102,6 +105,19 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
 
+    # Download required script
+    If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
+    {
+        Write-Log -Message "Downloading $appVendor $appName Reset-WEMCache script..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appScriptURL -OutFile $appScriptDirectory\$appScript
+        Copy-File -Path "$appScriptDirectory\$appScript" -Destination "$env:SystemDrive\Scripts" -Recurse
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Copy-File -Path "$appScriptDirectory\$appScript" -Destination "$env:SystemDrive\Scripts" -Recurse
+    }
+
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters
 
@@ -113,6 +129,33 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\Citrix.Wem.Agent.Service.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMCmdAgent.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMUIAgent.exe" -Force
+
+    # Create schedule task to reset Citrix WEM Cache when Event ID 0 'Cache sync failed with error: SyncFailed' occurs.
+    # https://support.citrix.com/article/CTX247927
+
+    # Define CIM object variables
+    # This is needed for accessing the non-default trigger settings when creating a schedule task using Powershell
+    $Class = cimclass MSFT_TaskEventTrigger root/Microsoft/Windows/TaskScheduler
+    $Trigger = $class | New-CimInstance -ClientOnly
+    $Trigger.Enabled = $true
+    $Trigger.Subscription = "<QueryList><Query Id=`"0`" Path=`"WEM Agent Service`"><Select Path=`"WEM Agent Service`">*[System[(Level=2) and (EventID=0)]] and *[EventData[(Data='Cache sync failed with error: SyncFailed')]]</Select></Query></QueryList>"
+    # Define additional variables containing scheduled task action and scheduled task principal
+    $A = New-ScheduledTaskAction –Execute powershell.exe -Argument "-NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -File C:\Scripts\Reset-WEMCache.ps1"
+    $P = New-ScheduledTaskPrincipal -UserId "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount
+    $S = New-ScheduledTaskSettingsSet
+
+    # Cook it all up and create the scheduled task
+    $RegSchTaskParameters = @{
+        TaskName    = "Reset Citrix WEM Cache"
+        Description = "Reset Citrix WEM Cache when event id 0 'Cache sync failed with error: SyncFailed' occurs"
+        TaskPath    = "\"
+        Action      = $A
+        Principal   = $P
+        Settings    = $S
+        Trigger     = $Trigger
+    }
+    Register-ScheduledTask @RegSchTaskParameters
+    Write-Log -Message "Scheduled Task to reset Citrix WEM Cache was registered!" -Severity 1 -LogType CMTrace -WriteHost $True
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
