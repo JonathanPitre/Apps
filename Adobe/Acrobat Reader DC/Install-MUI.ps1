@@ -79,63 +79,12 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
-Function Test-FTPConnection
-{
-    <#
-    .SYNOPSIS
-        The Test-FTPConnection function allows you to test an FTP connection.
-
-    .DESCRIPTION
-        The Test-FTPConnection function allows you to test an FTP connection.
-
-    .PARAMETER URL
-
-    .EXAMPLE
-        Test-FTPConnection -URL "ftp.adobe.com"
-
-        This will test the ftp connection for URL ftp.adobe.com.
-
-    .NOTES
-        Author: Jonathan Pitre
-        Twitter: @PitreJonathan
-    #>
-
-    [CmdletBinding()]
-    Param(
-        [Parameter(
-            Mandatory = $true,
-            ValueFromPipeline = $true)]
-        [String]$URL,
-
-        [Alias("RunAs")]
-        [System.Management.Automation.Credential()]
-        $Credential = [System.Management.Automation.PSCredential]::Empty
-
-    ) #Param
-
-    Process
-    {
-        If ($URL)
-        {
-            Write-Verbose -Message "One or more URL specified" -Verbose
-            Try
-            {
-                Test-NetConnection -ComputerName $URL -Port 21 | Select-Object -ExpandProperty TcpTestSucceeded
-            } #Try
-            Catch
-            {
-                Throw "Failed to connect to URL: $URL with error $_."
-                Break
-            } #Catch
-        } # If
-    } #Process
-}
-
 $appVendor = "Adobe"
 $appName = "Acrobat Reader"
 $appShortVersion = "DC"
 $appProcesses = @("AcroRd32", "AcroBroker", "AcroTextExtractor", "ADelRCP", "AdobeCollabSync", "arh", "Eula", "FullTrustNotIfier", "LogTransport2", "reader_sl", "wow_helper")
-$appTransform = "AcroRead.mst"
+$appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat%20Reader%20DC/AcroRead.mst"
+$appTransform = Split-Path -Path $appTransformURL -Leaf
 $appSetup = "AcroRead.msi"
 $appInstallParameters = "/QB"
 $appAddParameters = "EULA_ACCEPT=YES DISABLE_CACHE=1 DISABLE_PDFMAKER=YES DISABLEDESKTOPSHORTCUT=0 UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1"
@@ -144,15 +93,14 @@ $Nevergreen = Get-NevergreenApp -Name AdobeAcrobatReader| Where-Object { $_.Arch
 $appVersion = $Nevergreen.Version
 $appURLPatch = $Nevergreen.URI
 $appPatch = Split-Path -Path $appURLPatch -Leaf
-$appURLMUI = "ftp://ftp.adobe.com/pub/adobe/reader/win/AcrobatDC/1500720033/AcroRdrDC1500720033_MUI.exe"
+$appURLMUI = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/1500720033/AcroRdrDC1500720033_MUI.exe"
 $appMUI = Split-Path -Path $appURLMUI -Leaf
-$appURLFont = "ftp://ftp.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/FontPack1902120058_XtdAlf_Lang_DC.msi"
+$appURLFont = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/FontPack2100120135_XtdAlf_Lang_DC.msi"
 $appFont = Split-Path -Path $appURLFont -Leaf
-$appURLDic = "ftp://ftp.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/AcroRdrSD1900820071_all_DC.msi"
+$appURLDic = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/AcroRdrSD1900820071_all_DC.msi"
 $appDic = Split-Path -Path $appURLDic -Leaf
-$appURLADMX = "ftp://ftp.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/ReaderADMTemplate.zip"
+$appURLADMX = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/ReaderADMTemplate.zip"
 $appADMX = Split-Path -Path $appURLADMX -Leaf
-$appFTP = Test-FTPConnection -URL "ftp.adobe.com"
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\Reader"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appShortVersion MUI")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion MUI").DisplayVersion
@@ -163,7 +111,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-Location -Path $appScriptDirectory
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSetup) -and ($appFTP))
+    If (-Not(Test-Path -Path $appScriptDirectory\$appSetup))
     {
         Write-Log -Message "Downloading $appVendor $appName $appShortVersion MUI..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURLMUI -OutFile $appMUI
@@ -174,34 +122,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Remove-Folder -Path "$appScriptDirectory\MSI"
         Remove-File -Path "$appScriptDirectory\$appMUI"
     }
-    ElseIf (-not($appFTP))
-    {
-        Write-Log -Message "FTP URL is unreachable, $appVendor $appName $appShortVersion MUI setup won't be downloaded." -Severity 2 -LogType CMTrace -WriteHost $True
-    }
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
-
 
     # Download latest policy definitions
-
-    If ($appFTP)
-    {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
-        New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-        Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
-        Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\*.adm
-    }
-    ElseIf (-not($appFTP))
-    {
-        Write-Log -Message "FTP URL is unreachable, $appVendor $appName $appShortVersion MUI setup won't be downloaded." -Severity 2 -LogType CMTrace -WriteHost $True
-    }
-    Else
-    {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
+    Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
+    New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
+    Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
+    Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\*.adm
 
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
@@ -209,42 +140,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Remove-MSIApplications -Name "$appVendor $appName $appShortVersion MUI"
-    }
-
-    If (-Not(Test-Path -Path $appScriptDirectory\$appDIC) -and ($appFTP))
-    {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion Spelling Dictionaries..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLDic -OutFile $appDic
-        Write-Log -Message "Installing $appVendor $appName $appShortVersion Spelling Dictionaries..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSI -Action Install -Path $appDic -Parameters $appInstallParameters -AddParameters $appAddParameters2
-    }
-    ElseIf (-not($appFTP))
-    {
-        Write-Log -Message "FTP URL is unreachable, $appVendor $appName $appShortVersion Spelling Dictionaries won't be downloaded. " -Severity 2 -LogType CMTrace -WriteHost $True
-        Write-Log -Message "Installing $appVendor $appName $appShortVersion Spelling Dictionaries..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSI -Action Install -Path $appDic -Parameters $appInstallParameters -AddParameters $appAddParameters2
-    }
-    Else
-    {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
-
-    If (-Not(Test-Path -Path $appScriptDirectory\$appFont) -and ($appFTP))
-    {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion Extended Asian Language Font Pack..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLFont -OutFile $appFont
-        Write-Log -Message "Installing $appVendor $appName $appShortVersion Extended Asian Language Font Pack..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSI -Action Install -Path $appFont -Parameters $appInstallParameters -AddParameters $appAddParameters2
-    }
-    ElseIf (-not($appFTP))
-    {
-        Write-Log -Message "FTP URL is unreachable, $appVendor $appName $appShortVersion Extended Asian Language Font Pack won't be downloaded. " -Severity 2 -LogType CMTrace -WriteHost $True
-    }
-    Else
-    {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-        Write-Log -Message "Installing $appVendor $appName $appShortVersion Extended Asian Language Font Pack..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSI -Action Install -Path $appFont -Parameters $appInstallParameters -AddParameters $appAddParameters2
     }
 
     # Download latest patch file
@@ -270,13 +165,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         # Download required transform file
         If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
         {
-            Write-Log -Message "Downloading $appVendor $appName $appShortVersion Transform.." -Severity 1 -LogType CMTrace -WriteHost $True
+            Write-Log -Message "Downloading $appVendor $appName $appShortVersion Transform..." -Severity 1 -LogType CMTrace -WriteHost $True
             Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptDirectory\$appTransform
         }
         Else
         {
             Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
         }
+
         # Install latest version
         Write-Log -Message "Installing $appVendor $appName $appShortVersion $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-MSI -Action Install -Path $appSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -Patch $appPatch -SkipMSIAlreadyInstalledCheck
@@ -294,6 +190,36 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Exit-Script
     }
 
+    # Install Extended Asian Language Font Pack
+    If (-Not(Test-Path -Path $appScriptDirectory\$appFont))
+    {
+        Write-Log -Message "Downloading $appVendor $appName $appShortVersion Extended Asian Language Font Pack..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appURLFont -OutFile $appFont
+        Write-Log -Message "Installing $appVendor $appName $appShortVersion Extended Asian Language Font Pack..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-MSI -Action Install -Path $appFont -Parameters $appInstallParameters -AddParameters $appAddParameters2
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Installing $appVendor $appName $appShortVersion Extended Asian Language Font Pack..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-MSI -Action Install -Path $appFont -Parameters $appInstallParameters -AddParameters $appAddParameters2
+    }
+
+    # Install Spelling Dictionaries
+    If (-Not(Test-Path -Path $appScriptDirectory\$appDIC))
+    {
+        Write-Log -Message "Downloading $appVendor $appName $appShortVersion Spelling Dictionaries..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appURLDic -OutFile $appDic
+        Write-Log -Message "Installing $appVendor $appName $appShortVersion Spelling Dictionaries..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-MSI -Action Install -Path $appDic -Parameters $appInstallParameters -AddParameters $appAddParameters2
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Installing $appVendor $appName $appShortVersion Spelling Dictionaries..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-MSI -Action Install -Path $appDic -Parameters $appInstallParameters -AddParameters $appAddParameters2
+    }
+
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Stop and disable unneeded scheduled tasks
@@ -303,6 +229,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Fix application Start Menu shorcut
     Copy-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -Destination "$envCommonStartMenuPrograms\$appVendor $appName $appShortVersion.lnk" -ContinueFileCopyOnError $True
     Remove-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -ContinueOnError $True
+
+    # Remove Active Setup
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Active Setup\Installed Components\{A6EADE66-0000-0000-484E-7E8A45000000}" -Name "StubPath"
 
     # Go back to the parent folder
     Set-Location ..
