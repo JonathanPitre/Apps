@@ -79,58 +79,6 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
-Function Test-FTPConnection
-{
-    <#
-    .SYNOPSIS
-        The Test-FTPConnection function allows you to test an FTP connection.
-
-    .DESCRIPTION
-        The Test-FTPConnection function allows you to test an FTP connection.
-
-    .PARAMETER URL
-
-    .EXAMPLE
-        Test-FTPConnection -URL "ftp.adobe.com"
-
-        This will test the ftp connection for URL ftp.adobe.com.
-
-    .NOTES
-        Author: Jonathan Pitre
-        Twitter: @PitreJonathan
-    #>
-
-    [CmdletBinding()]
-    Param(
-        [Parameter(
-            Mandatory = $true,
-            ValueFromPipeline = $true)]
-        [String]$URL,
-
-        [Alias("RunAs")]
-        [System.Management.Automation.Credential()]
-        $Credential = [System.Management.Automation.PSCredential]::Empty
-
-    ) #Param
-
-    Process
-    {
-        If ($URL)
-        {
-            Write-Verbose -Message "One or more URL specified" -Verbose
-            Try
-            {
-                Test-NetConnection -ComputerName $URL -Port 21 | Select-Object -ExpandProperty TcpTestSucceeded
-            } #Try
-            Catch
-            {
-                Throw "Failed to connect to URL: $URL with error $_."
-                Break
-            } #Catch
-        } # If
-    } #Process
-}
-
 $appVendor = "Adobe"
 $appName = "Acrobat"
 $appShortVersion = "DC"
@@ -147,12 +95,11 @@ $appURLPatch = $Evergreen.URI
 $appPatch = Split-Path -Path $appURLPatch -Leaf
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat DC/AcroPro.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
-$appURLADMX = "ftp://ftp.adobe.com/pub/adobe/acrobat/win/AcrobatDC/misc/AcrobatADMTemplate.zip"
+$appURLADMX = "https://ardownload2.adobe.com/pub/adobe/acrobat/win/AcrobatDC/misc/AcrobatADMTemplate.zip"
 $appADMX = Split-Path -Path $appURLADMX -Leaf
-$appURLCustWiz = "ftp://ftp.adobe.com/pub/adobe/acrobat/win/AcrobatDC/misc/CustWiz2000920067_en_US_DC.exe"
+$appURLCustWiz = "https://ardownload2.adobe.com/pub/adobe/acrobat/win/AcrobatDC/2100520048/CustWiz2100520048_en_US_DC.exe"
 $appCustWiz = Split-Path -Path $appURLCustWiz -Leaf
 $appCustWizVersion = $appCustWiz.Trim("CustWiz").Trim("_en_US_DC.exe")
-$appFTP = Test-FTPConnection -URL "ftp.adobe.com"
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\$appName"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appShortVersion")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion").DisplayVersion
@@ -171,28 +118,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Download latest policy definitions
-    If ($appFTP)
-    {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
-        New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-        Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
-        Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\$appName$($appShortVersion).adm
-    }
-    Else
-    {
-        Write-Log -Message "FTP URL is unreachable, latest policy definitions files won't be downloaded." -Severity 2 -LogType CMTrace -WriteHost $True
-    }
+    Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
+    New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
+    Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
+    Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\$appName$($appShortVersion).adm
 
     # Download latest Adobe Acrobat Customization Wizard DC
-    If (-Not(Test-Path -Path $appScriptDirectory\$appCustWiz) -and ($appFTP))
+    If (-Not(Test-Path -Path $appScriptDirectory\$appCustWiz))
     {
         Write-Log -Message "Downloading $appVendor $appName Custimization Wizard $appShortVersion $appCustWizVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURLCustWiz -OutFile $appCustWiz
-    }
-    ElseIf (-not($appFTP))
-    {
-        Write-Log -Message "FTP URL is unreachable, $appVendor $appName Custimization Wizard $appShortVersion won't be downloaded. " -Severity 2 -LogType CMTrace -WriteHost $True
     }
     Else
     {
@@ -222,13 +158,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         # Download required transform file
         If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
         {
-            Write-Log -Message "Downloading $appVendor $appName $appShortVersion Transform.." -Severity 1 -LogType CMTrace -WriteHost $True
+            Write-Log -Message "Downloading $appVendor $appName $appShortVersion Transform..." -Severity 1 -LogType CMTrace -WriteHost $True
             Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptDirectory\$appTransform
         }
         Else
         {
             Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
         }
+
         # Install latest version
         Write-Log -Message "Installing $appVendor $appName $appShortVersion $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-MSI -Action Install -Path $appSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -Patch $appPatch -SkipMSIAlreadyInstalledCheck
