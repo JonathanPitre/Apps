@@ -237,6 +237,7 @@ If ($appVersion -gt $appInstalledVersion) {
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\ICAService\picaSvc2.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\ICAService\CpSvc.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\HDX\bin\WebSocketService.exe" -Force
+    Add-MpPreference -ExclusionPath "%SystemRoot%\System32\drivers\CtxUvi.sys" -Force
 
     # Setting powercfg over-rides to get around screen lock issues - https://forums.ivanti.com/s/article/Screensaver-doesn-t-become-active-on-a-Citrix-Virtual-Desktop-Agent
     Execute-Process -Path "$envSystem32Directory\powercfg.exe" -Parameters "/requestsoverride PROCESS picaSessionAgent.exe DISPLAY"

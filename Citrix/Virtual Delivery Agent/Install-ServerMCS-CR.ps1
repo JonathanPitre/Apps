@@ -227,6 +227,7 @@ If ($appVersion -gt $appInstalledVersion) {
     Add-MpPreference -ExclusionProcess "%SystemRoot%\System32\spoolsv.exe" -Force
     Add-MpPreference -ExclusionProcess "%SystemRoot%\System32\winlogon.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\HDX\bin\WebSocketService.exe" -Force
+    Add-MpPreference -ExclusionPath "%SystemRoot%\System32\drivers\CtxUvi.sys" -Force
 
     # Registry optimizations
     # Enable EDT MTU Discovery on the VDA - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/technical-overview/hdx/adaptive-transport.html
