@@ -85,7 +85,7 @@ $appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", 
 $appInstallParameters = "/quiet Cloud=1" # OnPrem 0 Cloud 1
 #$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Workspace Environment Management 21*"} | Select-Object
 -First 1
-$appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object CreationTime -Descending | Select-Object -Last 1 | Select-Object -ExpandProperty Name)
+$appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 #$appURL = $Evergreen.URI
 $appSetup = Get-ChildItem $appScriptDirectory\$appVersion -Filter "$appVendor $appName*" | Select-Object -ExpandProperty Name
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
@@ -115,9 +115,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Get-Process -Name $appProcesses | Stop-Process -Force
 
     # Download required script
-    If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
+    If (-Not(Test-Path -Path $appScriptDirectory\$appScript))
     {
-        Write-Log -Message "Downloading $appVendor $appName Reset-WEMCache script..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appName script..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appScriptURL -OutFile $appScriptDirectory\$appScript
         Copy-File -Path "$appScriptDirectory\$appScript" -Destination "$env:SystemDrive\Scripts" -Recurse
     }
