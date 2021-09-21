@@ -204,7 +204,7 @@ If ($appVersion -gt $appInstalledVersion) {
     }
 
     # Copy $appSetup to C:\Installs\VDA to avoid install issue
-    Copy-File -Path ".\*" -Destination "$env:SystemDrive\Installs\VDA" -Recurse
+    Copy-File -Path ".\$appSetup" -Destination "$env:SystemDrive\Installs\VDA" -Recurse
     Set-Location -Path "$env:SystemDrive\Installs\VDA"
 
     # Uninstall previous versions
