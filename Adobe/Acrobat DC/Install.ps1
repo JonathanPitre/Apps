@@ -7,7 +7,7 @@
 $PackageProviders = @("Nuget")
 
 # Custom modules list
-$Modules = @("PSADT", "Evergreen")
+$Modules = @("PSADT", "Nevergreen")
 
 Write-Verbose -Message "Importing custom modules..." -Verbose
 
@@ -83,15 +83,16 @@ $appVendor = "Adobe"
 $appName = "Acrobat"
 $appShortVersion = "DC"
 $appProcesses = @("Acrobat", "AcroBroker", "acrobat_sl", "AcroCEF", "acrodist", "acrotray", "AcroRd32", "Acrobat Elements", "AcroTextExtractor", "ADelRCP", "AdobeCollabSync", "arh", "FullTrustNotIfier", "LogTransport2", "wow_helper", "outlook", "chrome", "iexplore")
+$appArchitecture = "x86"
 $appServices = @("AdobeUpdateService")
 $appTransform = "AcroPro.mst"
 $appSetup = "AcroPro.msi"
 $appInstallParameters = "/QB"
 #$appParameters = "--tool=VolumeSerialize --generate --serial=1016-1899-8440-6413-0576-7429 --leid=V7{}AcrobatCont-12-Win-GM --regsuppress=ss --eulasuppress --stream" #--provfile Optional; path of the folder where prov.xml is created. If this parameter is not specified, prov.xml is created in the folder in which APTEE resides.
 $appAddParameters = "IGNOREVCRT64=1 EULA_ACCEPT=YES UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1 ROAMIDENTITY=1 ROAMLICENSING=1"
-$Evergreen = Get-EvergreenApp -Name AdobeAcrobat | Where-Object {$_.Product -eq "Acrobat" -and $_.Track -eq "DC" -and $_.Architecture -eq "x86"}
-$appVersion = $Evergreen.Version
-$appURLPatch = $Evergreen.URI
+$Nevergreen = Get-NevergreenApp -Name AdobeAcrobat | Where-Object {$_.Architecture -eq $appArchitecture}
+$appVersion = $Nevergreen.Version
+$appURLPatch = $Nevergreen.URI
 $appPatch = Split-Path -Path $appURLPatch -Leaf
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat DC/AcroPro.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
@@ -122,7 +123,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
     New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
     Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
-    Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\$appName$($appShortVersion).adm
+    Remove-File -Path $appADMX, "$appScriptDirectory\PolicyDefinitions\$($appName)$($appShortVersion).adm"
 
     # Download latest Adobe Acrobat Customization Wizard DC
     If (-Not(Test-Path -Path $appScriptDirectory\$appCustWiz))
