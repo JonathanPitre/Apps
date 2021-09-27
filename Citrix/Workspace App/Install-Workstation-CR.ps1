@@ -138,6 +138,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "RtpAudioLowestPort" -Type "String" -Value "16500"
     #>
 
+    # Copy policy definitions files to lacal computer
+    Copy-File -Path $appDestination\Configuration\*.admx, $appDestination\Configuration\en-us -Destination $envWinDir\PolicyDefinitions -Recurse
+
     # Go back to the parent folder
     Set-Location ..
 
