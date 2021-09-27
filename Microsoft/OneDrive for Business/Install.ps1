@@ -225,6 +225,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Load the Default User registry hive
+    Start-Sleep -Seconds 5
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "LOAD HKLM\DefaultUser $envSystemDrive\Users\Default\NTUSER.DAT" -WindowStyle Hidden
 
     # Set OneDriveSetup variable
