@@ -84,15 +84,17 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Oracle"
 $appName = "Java"
+$appMajorVersion = "8"
+$appArchitecture = "x86"
 $appProcesses = @("java", "javaw", "javaws", "javacpl", "jp2launcher")
 $appInstallParameters = "INSTALL_SILENT=1 STATIC=0 AUTO_UPDATE=0 WEB_JAVA=1 WEB_JAVA_SECURITY_LEVEL=H WEB_ANALYTICS=0 EULA=0 REBOOT=0 REMOVEOUTOFDATEJRES=1 NOSTARTMENU=1 SPONSORS=0"
-$Evergreen = Get-EvergreenApp -Name OracleJava8 | Where-Object { $_.Architecture -eq "x64" }
+$Evergreen = Get-EvergreenApp -Name $appVendor$appName$appMajorVersion | Where-Object { $_.Architecture -eq $appArchitecture }
 $appVersion = $Evergreen.Version.Replace("-b", "0.").Replace("_", ".").Substring(2)
-$appMajorVersion = $appVersion.Split(".")[0]
 $appMinorVersion = $appVersion.Split(".")[2].Substring(0, 3)
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
-$appDestination = "$env:ProgramFiles\$appName\jre1.$appMajorVersion.0_$appMinorVersion\bin"
+If ($appArchitecture -eq "x64") {$appDestination = "$env:ProgramFiles\$appName\jre1.$appMajorVersion.0_$appMinorVersion\bin"}
+If ($appArchitecture -eq "x86") {$appDestination = "${env:ProgramFiles(x86)}\$appName\jre1.$appMajorVersion.0_$appMinorVersion\bin"}
 $appURLDeploymentConfig = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Oracle/Java/deployment.config"
 $appDeploymentConfig = Split-Path -Path $appURLDeploymentConfig -Leaf
 $appURLDeploymentProperties = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Oracle/Java/deployment.properties"
@@ -142,8 +144,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Associate .jnlp file extension
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\.jnlp" -Name "(Default)" -Value "JNLPFile" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\.jnlp" -Name "Content Type" -Value "application/x-java-jnlp-file" -Type String
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\jnlp\shell\open\Command" -Name "Content Type" -Value "`"C:\Program Files\Java\jre1.$appMajorVersion.0_$appMinorVersion\bin\jp2launcher.exe`" -securejws `"%1`"" -Type String
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\JNLPFile\shell\open\Command" -Name "(Default)" -Value "`"C:\Program Files\Java\jre1.$appMajorVersion.0_$appMinorVersion\bin\javaws.exe`" `"%1`"" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\jnlp\shell\open\Command" -Name "Content Type" -Value "`"$appDestination\jp2launcher.exe`" -securejws `"%1`"" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\JNLPFile\shell\open\Command" -Name "(Default)" -Value "`"$appDestination\javaws.exe`" `"%1`"" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\Database\Content Type\application/x-java-jnlp-file" -Name "Extension" -Value ".jnlp" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\MIME\Database\Content Type\application/x-java-jnlp-file" -Name "Extension" -Value ".jnlp" -Type String
 
