@@ -240,6 +240,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxsvc.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxrobocopy.exe" -Force
 
+    # Add built-in administrators group to exclude list
+    Add-LocalGroupMember -Group "FSLogix ODFC Exclude List" -Member "BUILTIN\Administrators"
+    Add-LocalGroupMember -Group "FSLogix Profile Exclude List" -Member "BUILTIN\Administrators"
+
     # Go back to the parent folder
     Set-Location ..
 
