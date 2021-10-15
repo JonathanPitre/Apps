@@ -129,7 +129,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     Write-Log -Message "Installing $appVendor $appName Management Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
-    # https://docs.microsoft.com/en-us/fslogix/disk-management-utility-referencehttps://docs.microsoft.com/en-us/fslogix/disk-management-utility-reference
+    # https://docs.microsoft.com/en-us/fslogix/disk-management-utility-reference
     Execute-Process -Path $appDestination\frxcontext.exe -Parameters "--install"
 
     # Add shortcut on the Start Menu
