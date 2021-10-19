@@ -202,10 +202,12 @@
     <Exclude Copy="0">Videos</Exclude>
   </Excludes>
   <Includes>
+    <Include Copy="3">AppData\LocalLow\Sun\Java\Deployment\security</Include>
     <Include Copy="3">AppData\Local\Apps</Include>
     <Include Copy="3">AppData\Local\Microsoft\Credentials</Include>
+    <Include Copy="3">AppData\Local\Microsoft\OneAuth</Include>
     <Include Copy="3">AppData\Local\Microsoft\Windows\Caches</Include>
-    <Include Copy="3">AppData\LocalLow\Sun\Java\Deployment\security</Include>
+    <Include Copy="3">AppData\Local\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy</Include>
     <Include Copy="3">AppData\Roaming\Microsoft\Credentials</Include>
     <Include Copy="3">AppData\Roaming\Microsoft\Crypto</Include>
     <Include Copy="3">AppData\Roaming\Microsoft\Protect</Include>
