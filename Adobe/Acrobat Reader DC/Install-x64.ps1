@@ -84,12 +84,11 @@ $appName = "Acrobat"
 $appShortVersion = "DC"
 $appLanguage = "French"
 $appArchitecture ="x64"
-$appProcesses = @("Acrobat", "AcroBroker", "AcroTextExtractor", "ADelRCP", "AdobeCollabSync", "arh", "Eula", "FullTrustNotIfier", "LogTransport2", "reader_sl", "wow_helper")
-$appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat%20Reader%20DC/AcroReadx64.mst"
-$appTransform = "AcroReadx64.mst"
+$appProcesses = @("Acrobat", "AdobeCollabSync", "AcroCEF", "acrobat_sl")
+$appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat%20Reader%20DC/AcroProx64.mst"
+$appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "EULA_ACCEPT=YES DISABLE_CACHE=1 DISABLE_PDFMAKER=YES DISABLEDESKTOPSHORTCUT=0 UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1"
-$appAddParameters2 = "ALLUSERS=1"
 $Evergreen = Get-EvergreenApp -Name AdobeAcrobatReaderDC | Where-Object { $_.Language -eq $appLanguage -and $_.Architecture -eq $appArchitecture }
 $appVersion = $Evergreen.Version
 $appSetupURL = $Evergreen.URI
