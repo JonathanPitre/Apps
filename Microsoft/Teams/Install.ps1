@@ -101,9 +101,10 @@ $appVendor = "Microsoft"
 $appName = "Teams"
 $appProcesses = @("Teams", "Update", "Squirrel", "Outlook")
 $appArchitecture = "x64"
+$appLanguage = "fr-CA"
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/Teams.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
-$appTeamsConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Scripts/master/Default%20User%20Profile/desktop-config.json"
+$appTeamsConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/desktop-config.json"
 $appTeamsConfig = Split-Path -Path $appTeamsConfigURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
@@ -359,6 +360,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    # Change language into desktop-config.json
+    If (Test-Path -Path $appScriptDirectory\$appTeamsConfig)
+    {
+        $json = Get-Content -Path $appScriptDirectory\$appTeamsConfig -Raw | ConvertFrom-Json
+        If ($json.currentWebLanguage -ne $appLanguage)
+        {
+            $json.currentWebLanguage = $appLanguage
+            $json | ConvertTo-Json | Out-File $appScriptDirectory\$appTeamsConfig -Encoding utf8
+            Write-Log -Message "$appVendor $appName config file was modified successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+        }
     }
 
     # Copy Microsoft Teams config file to the default profile
