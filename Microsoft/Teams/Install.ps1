@@ -375,11 +375,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Copy Microsoft Teams config file to the default profile
-    If (-Not(Test-Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Teams"))
-    {
-        Copy-File -Path "$appScriptDirectory\$appTeamsConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Teams"
-        Write-Log -Message "$appVendor $appName settings were configured for the Default User profile." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
+    Copy-File -Path "$appScriptDirectory\$appTeamsConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Teams"
+    Write-Log -Message "$appVendor $appName settings were configured for the Default User profile." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Register Teams as the chat app for Office
     Set-RegistryKey -Key "HKLM:\SOFTWARE\IM Providers\Teams" -Name "FriendlyName" -Type "String" -Value "Microsoft Teams"
