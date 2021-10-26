@@ -228,10 +228,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Get-Download -Url $appAdmxUrl -Destination $appScriptDirectory $appAdmx -IncludeStats
     Expand-Archive -Path "$appScriptDirectory\$appAdmx" -DestinationPath "$appScriptDirectory\Temp" -Force
     Remove-File -Path "$appScriptDirectory\$appAdmx"
-    If (-Not(Test-Path -Path "$appScriptDirectory\ADMX")) { New-Folder -Path "$appScriptDirectory\ADMX" }
-    Move-Item -Path "$appScriptDirectory\Temp\*\*.admx" -Destination "$appScriptDirectory\ADMX" -Force
-    If (-Not(Test-Path -Path "$appScriptDirectory\ADMX\en-US")) { New-Folder -Path "$appScriptDirectory\ADMX\en-US" }
-    Move-Item -Path "$appScriptDirectory\Temp\*\en-US\*.adml" -Destination "$appScriptDirectory\ADMX\en-US" -Force
+    If (-Not(Test-Path -Path "$appScriptDirectory\PolicyDefinitions")) { New-Folder -Path "$appScriptDirectory\PolicyDefinitions" }
+    Move-Item -Path "$appScriptDirectory\Temp\*\*.admx" -Destination "$appScriptDirectory\PolicyDefinitions" -Force
+    If (-Not(Test-Path -Path "$appScriptDirectory\PolicyDefinitions\en-US")) { New-Folder -Path "$appScriptDirectory\PolicyDefinitions\en-US" }
+    Move-Item -Path "$appScriptDirectory\Temp\*\en-US\*.adml" -Destination "$appScriptDirectory\PolicyDefinitions\en-US" -Force
     Remove-Folder -Path "$appScriptDirectory\Temp"
     Write-Log -Message "$appShortName ADMX templates $appAdmxVersion were downloaded successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
