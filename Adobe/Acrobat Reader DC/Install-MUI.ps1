@@ -81,29 +81,32 @@ $appScriptDirectory = Get-ScriptDirectory
 ##*===============================================
 $appVendor = "Adobe"
 $appName = "Acrobat Reader"
+$appName2 = "Reader"
 $appShortVersion = "DC"
-$appProcesses = @("AcroRd32", "AcroBroker", "AcroTextExtractor", "ADelRCP", "AdobeCollabSync", "arh", "Eula", "FullTrustNotIfier", "LogTransport2", "reader_sl", "wow_helper")
+$appLanguage = "Multi"
+$appArchitecture ="x86"
+$appProcesses = @("AcroRd32", "AdobeCollabSync", "ReaderCEF", "reader_sl")
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat%20Reader%20DC/AcroRead.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
-$appSetup = "AcroRead.msi"
 $appInstallParameters = "/QB"
 $appAddParameters = "EULA_ACCEPT=YES DISABLE_CACHE=1 DISABLE_PDFMAKER=YES DISABLEDESKTOPSHORTCUT=0 UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1"
 $appAddParameters2 = "ALLUSERS=1"
-$Nevergreen = Get-NevergreenApp -Name AdobeAcrobatReader| Where-Object { $_.Architecture -eq "x86" -and $_.Language -eq "Multi"}
+$Nevergreen = Get-NevergreenApp -Name AdobeAcrobatReader| Where-Object { $_.Language -eq $appLanguage -and $_.Architecture -eq $appArchitecture }
 $appVersion = $Nevergreen.Version
-$appURLPatch = $Nevergreen.URI
-$appPatch = Split-Path -Path $appURLPatch -Leaf
-$appURLMUI = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/1500720033/AcroRdrDC1500720033_MUI.exe"
-$appMUI = Split-Path -Path $appURLMUI -Leaf
-$appURLFont = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/FontPack2100120135_XtdAlf_Lang_DC.msi"
-$appFont = Split-Path -Path $appURLFont -Leaf
-$appURLDic = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/AcroRdrSD1900820071_all_DC.msi"
-$appDic = Split-Path -Path $appURLDic -Leaf
-$appURLADMX = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/ReaderADMTemplate.zip"
-$appADMX = Split-Path -Path $appURLADMX -Leaf
-$appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\Reader"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appShortVersion MUI")
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion MUI").DisplayVersion
+$appSetupURL = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/1500720033/AcroRdrDC1500720033_MUI.exe"
+$appSetup = Split-Path -Path $appSetupURL -Leaf
+$appMsiSetup = "AcroRead.msi"
+$appPatchURL = $Nevergreen.URI
+$appPatch = Split-Path -Path $appPatchURL -Leaf
+$appFontURL = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/FontPack2100120135_XtdAlf_Lang_DC.msi"
+$appFont = Split-Path -Path $appFontURL -Leaf
+$appDicURL = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/AcroRdrSD1900820071_all_DC.msi"
+$appDic = Split-Path -Path $appDicURL -Leaf
+$appADMXurl = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/ReaderADMTemplate.zip"
+$appADMX = Split-Path -Path $appADMXurl -Leaf
+$appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\$appName2"
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.* $appShortVersion .*" -RegEx)
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion MUI" -Exact).DisplayVersion
 ##*===============================================
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
@@ -111,43 +114,30 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-Location -Path $appScriptDirectory
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSetup))
+    If (-Not(Test-Path -Path $appScriptDirectory\$appMsiSetup))
     {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion MUI..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLMUI -OutFile $appMUI
-        Write-Log -Message "Extracting $appVendor $appName $appShortVersion MSI..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appLanguage $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appSetupURL -OutFile $appSetup
+        Write-Log -Message "Extracting $appVendor $appName $appShortVersion $appLanguage $appArchitecture $appVersion MSI..." -Severity 1 -LogType CMTrace -WriteHost $True
         New-Folder -Path "$appScriptDirectory\MSI"
-        Execute-Process -Path .\$appMUI -Parameters "-sfx_o`"$appScriptDirectory\MSI`" -sfx_ne"
+        # Extract MSI
+        Execute-Process -Path .\$appSetup -Parameters "-sfx_o`"$appScriptDirectory\MSI`" -sfx_ne"
         Copy-File -Path "$appScriptDirectory\MSI\*" -Destination $appScriptDirectory -Recurse
         Remove-Folder -Path "$appScriptDirectory\MSI"
-        Remove-File -Path "$appScriptDirectory\$appMUI"
+        Remove-File -Path "$appScriptDirectory\$appSetup"
     }
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    # Download latest policy definitions
-    Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
-    New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-    Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
-    Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\*.adm
-
-    # Uninstall previous versions
-    Get-Process -Name $appProcesses | Stop-Process -Force
-    If (($IsAppInstalled) -and (Test-Path -Path $appSetup))
-    {
-        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Remove-MSIApplications -Name "$appVendor $appName $appShortVersion MUI"
-    }
-
-    # Download latest patch file
+    # Download latest patch
     If (-Not(Test-Path -Path $appScriptDirectory\$appPatch))
     {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLPatch -OutFile $appPatch
-        If ((Test-Path -Path $appScriptDirectory\$appPatch) -and (Test-Path -Path $appScriptDirectory\$appPatch\setup.ini))
+        Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appPatchURL -OutFile $appPatch
+        # Modify setup.ini according to latest patch
+	If ((Test-Path -Path $appScriptDirectory\$appPatch) -and (Test-Path -Path $appScriptDirectory\$appPatch\setup.ini))
         {
             Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Startup" -Key "CmdLine" -Value "/sPB /rs /msi $appAddParameters"
             Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Product" -Key "CmdLine" -Value "TRANSFORMS=`"$appTransform`""
@@ -159,13 +149,27 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Download latest policy definitions
+    Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appADMXurl -OutFile $appADMX
+    New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
+    Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
+    Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\*.adm
 
-    If ((Test-Path -Path $appScriptDirectory\$appSetup) -and (Test-Path -Path $appScriptDirectory\$appPatch))
+    # Uninstall previous versions
+    Get-Process -Name $appProcesses | Stop-Process -Force
+    If (($IsAppInstalled) -and (Test-Path -Path $appScriptDirectory\$appMsiSetup))
+    {
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Remove-MSIApplications -Name "$appVendor $appName* $appShortVersion*" -WildCard -Exact
+    }
+
+    If ((Test-Path -Path "$appScriptDirectory\$appMsiSetup") -and (Test-Path -Path $appScriptDirectory\$appPatch))
     {
         # Download required transform file
         If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
         {
-            Write-Log -Message "Downloading $appVendor $appName $appShortVersion Transform..." -Severity 1 -LogType CMTrace -WriteHost $True
+            Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture transform..." -Severity 1 -LogType CMTrace -WriteHost $True
             Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptDirectory\$appTransform
         }
         Else
@@ -174,19 +178,19 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         }
 
         # Install latest version
-        Write-Log -Message "Installing $appVendor $appName $appShortVersion $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSI -Action Install -Path $appSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -Patch $appPatch -SkipMSIAlreadyInstalledCheck
+        Write-Log -Message "Installing $appVendor $appName $appShortVersion $appLanguage $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-MSI -Action Install -Path $appMsiSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -Patch $appPatch -SkipMSIAlreadyInstalledCheck
     }
     ElseIf (($IsAppInstalled) -and (Test-Path -Path $appScriptDirectory\$appPatch))
     {
         # Install latest patch
-        Write-Log -Message "Setup file(s) are missing, MSP file will be installed." -Severity 1 -LogType CMTrace -WriteHost $True
-        Write-Log -Message "Installing $appVendor $appName $appShortVersion $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSP -Path $appPatch -Parameters $appInstallParameters
+        Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Installing $appVendor $appName $appShortVersion $appArchitecture $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-MSP -Path $appPatch
     }
     Else
     {
-        Write-Log -Message "Setup file(s) are missing" -Severity 2 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Setup file(s) are missing." -Severity 3 -LogType CMTrace -WriteHost $True
         Exit-Script
     }
 
@@ -194,7 +198,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If (-Not(Test-Path -Path $appScriptDirectory\$appFont))
     {
         Write-Log -Message "Downloading $appVendor $appName $appShortVersion Extended Asian Language Font Pack..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLFont -OutFile $appFont
+        Invoke-WebRequest -UseBasicParsing -Uri $appFontURL -OutFile $appFont
         Write-Log -Message "Installing $appVendor $appName $appShortVersion Extended Asian Language Font Pack..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-MSI -Action Install -Path $appFont -Parameters $appInstallParameters -AddParameters $appAddParameters2
     }
@@ -209,7 +213,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If (-Not(Test-Path -Path $appScriptDirectory\$appDIC))
     {
         Write-Log -Message "Downloading $appVendor $appName $appShortVersion Spelling Dictionaries..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLDic -OutFile $appDic
+        Invoke-WebRequest -UseBasicParsing -Uri $appDicURL -OutFile $appDic
         Write-Log -Message "Installing $appVendor $appName $appShortVersion Spelling Dictionaries..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-MSI -Action Install -Path $appDic -Parameters $appInstallParameters -AddParameters $appAddParameters2
     }
@@ -228,7 +232,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Fix application Start Menu shorcut
     Copy-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -Destination "$envCommonStartMenuPrograms\$appVendor $appName $appShortVersion.lnk" -ContinueFileCopyOnError $True
-    Remove-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -ContinueOnError $True
+    Remove-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -ContinueOnError
 
     # Remove Active Setup
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Active Setup\Installed Components\{A6EADE66-0000-0000-484E-7E8A45000000}" -Name "StubPath"
@@ -236,9 +240,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appVendor $appName $appShortVersion $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appShortVersion $appLanguage $appArchitecture $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
 {
-    Write-Log -Message "$appVendor $appName $appShortVersion $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appShortVersion $appArchitecture $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
