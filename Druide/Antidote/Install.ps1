@@ -173,7 +173,7 @@ Function Get-DruideAntidote
 
 $appVendor = "Druide"
 $appName = "Antidote"
-$appProcesses = @("Antidote", "AgentAntidote", "Connectix", "AgentConnectix", "OUTLOOK", "WINWORD", "EXCEL", "POWERPNT")
+$appProcesses = @("Antidote", "AgentAntidote", "Connectix", "AgentConnectix", "OUTLOOK", "WINWORD", "EXCEL", "POWERPNT", "CHROME", "msedge")
 $appTransformAntidote = "ReseauAntidote.mst"
 $appTransformConnectix = "ReseauConnectix.mst"
 $appShortVersion = "10"
