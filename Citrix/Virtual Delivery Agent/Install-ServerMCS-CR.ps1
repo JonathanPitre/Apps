@@ -15,7 +15,8 @@ Write-Verbose -Message "Importing custom modules..." -Verbose
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 
 # Install custom package providers list
-Foreach ($PackageProvider in $PackageProviders) {
+Foreach ($PackageProvider in $PackageProviders)
+{
     If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
 }
 
@@ -28,14 +29,17 @@ $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
 If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
 
 # Install and import custom modules list
-Foreach ($Module in $Modules) {
+Foreach ($Module in $Modules)
+{
     If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-    Else {
+    Else
+    {
         $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
         $ModuleVersion = (Find-Module -Name $Module).Version
         $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
         $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion) {
+        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
+        {
             Update-Module -Name $Module -Force
             Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
         }
@@ -45,18 +49,22 @@ Foreach ($Module in $Modules) {
 Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
 
 # Get the current script directory
-Function Get-ScriptDirectory {
+Function Get-ScriptDirectory
+{
     Remove-Variable appScriptDirectory
-    Try {
+    Try
+    {
         If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
         ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
         ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
-        Else {
+        Else
+        {
             Write-Host -ForegroundColor Red "Cannot resolve script file's path"
             Exit 1
         }
     }
-    Catch {
+    Catch
+    {
         Write-Host -ForegroundColor Red "Caught Exception: $($Error[0].Exception.Message)"
         Exit 2
     }
@@ -71,24 +79,8 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
-$appVendor = "Citrix"
-$appName = "Virtual Apps and Desktops"
-$appName2 = "Virtual Delivery Agent"
-$appProcesses = @("BrokerAgent", "picaSessionAgent")
-$appServices = @("CitrixTelemetryService")
-# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
-# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /virtualmachine /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /mastermcsimage /includeadditional "Machine Identity Service","Citrix Profile Management","Citrix Profile Management WMI Plugin","Citrix MCS IODriver" /exclude "Citrix WEM Agent","User personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Personalization for App-V - VDA"'
-$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 21*, All Editions"} | Sort-Object Version -Descending | Select-Object -First 1
-$appVersion = $Evergreen.Version
-$appSetup = "VDAServerSetup_$appVersion.exe"
-$appDlNumber = "19800"
-$appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
-$appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
-##*===============================================
-
-Function Get-CitrixDownload {
+Function Get-CitrixDownload
+{
     <#
 .SYNOPSIS
   Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
@@ -126,16 +118,20 @@ Function Get-CitrixDownload {
     }
 
     #Authenticate
-    Try {
+    Try
+    {
         Invoke-WebRequest -Uri ("https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response") -WebSession $websession -Method POST -Body $form -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -ErrorAction Stop | Out-Null
     }
-    Catch {
-        If ($_.Exception.Response.StatusCode.Value__ -eq 500) {
+    Catch
+    {
+        If ($_.Exception.Response.StatusCode.Value__ -eq 500)
+        {
             Write-Verbose "500 returned on auth. Ignoring"
             Write-Verbose $_.Exception.Response
             Write-Verbose $_.Exception.Message
         }
-        Else {
+        Else
+        {
             Throw $_
         }
     }
@@ -156,26 +152,103 @@ Function Get-CitrixDownload {
     return $OutFile
 }
 
-If ($appVersion -gt $appInstalledVersion) {
+$appVendor = "Citrix"
+$appName = "Virtual Apps and Desktops"
+$appName2 = "Virtual Delivery Agent"
+$appProcesses = @("BrokerAgent", "picaSessionAgent")
+$appServices = @("CitrixTelemetryService")
+# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
+# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
+$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /virtualmachine /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /mastermcsimage /includeadditional "Machine Identity Service","Citrix Profile Management","Citrix Profile Management WMI Plugin","Citrix MCS IODriver" /exclude "Citrix WEM Agent","User personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Personalization for App-V - VDA"'
+$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 21*, All Editions"} | Sort-Object Version -Descending | Select-Object -First 1
+$appVersion = $Evergreen.Version
+$appSetup = "VDAServerSetup_$appVersion.exe"
+$appDlNumber = "19800"
+$appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
+$appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
+##*===============================================
+
+If ($appVersion -gt $appInstalledVersion)
+{
     Set-Location -Path $appScriptDirectory
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion
 
-    # Install Windows Server Media Foundation feature if missing
-    If ($envOSName -Like "*Windows Server *") {
-        If (-Not(Get-WindowsFeature -Name Server-Media-Foundation)) {Install-WindowsFeature Server-Media-Foundation}
+    # Installing Microsoft Windows prerequisites
+    If ($envOSName -like "*Windows Server 2008*" -or $envOSName -like "*Windows Server 2012*")
+    {
+        # Install Windows Server Desktop Experience
+        Write-Log -Message "Installing Windows Server Desktop Experience..." -Severity 1 -LogType CMTrace -WriteHost $True
+        If (-Not(Get-WindowsFeature -Name Desktop-Experience))
+        {
+            Install-WindowsFeature -Name Desktop-Experience
+        }
+        Else
+        {
+            Write-Log -Message "Windows Server Desktop Experience is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+        }
+    }
+    ElseIf ($envOSName -like "*Windows Server*")
+    {
+        # Install Microsoft .NET Framework
+        Write-Log -Message "Installing Microsoft .NET Framework 4.7..." -Severity 1 -LogType CMTrace -WriteHost $True
+        If (-Not(Get-WindowsFeature -Name NET-Framework-45-Features))
+        {
+            Install-WindowsFeature -Name NET-Framework-45-Features
+        }
+        Else
+        {
+            Write-Log -Message "Microsoft .NET Framework 4.7 is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+        }
+
+        # Install Microsoft Remote Assistance
+        Write-Log -Message "Installing Microsoft Remote Assistance..." -Severity 1 -LogType CMTrace -WriteHost $True
+        If (-Not(Get-WindowsFeature -Name RDS-RD-Server))
+        {
+            Install-WindowsFeature -Name Remote-Assistance
+        }
+        Else
+        {
+            Write-Log -Message "Microsoft Remote Assistance is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+        }
+
+        # Install Windows Server Media Foundation
+        Write-Log -Message "Installing Windows Search Service..." -Severity 1 -LogType CMTrace -WriteHost $True
+        If (-Not(Get-WindowsFeature -Name Server-Media-Foundation))
+        {
+            Install-WindowsFeature -Name Server-Media-Foundation
+        }
+        Else
+        {
+            Write-Log -Message "Windows Search Service is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+        }
+
+        # Install Microsoft Remote Desktop Session Host
+        Write-Log -Message "Installing Microsoft Remote Desktop Session Host..." -Severity 1 -LogType CMTrace -WriteHost $True
+        If (-Not(Get-WindowsFeature -Name RDS-RD-Server))
+        {
+            Install-WindowsFeature -Name RDS-RD-Server -IncludeManagementTools
+        }
+        Else
+        {
+            Write-Log -Message "Microsoft Remote Desktop Session Host is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+        }
     }
 
     # Fix VDA install error - https://www.thewindowsclub.com/computer-missing-media-features-icloud-windows-error
-    If (Test-Path -Path "$envProgramFiles\Windows Media Player\wmplayer.exe") {
+    If (Test-Path -Path "$envProgramFiles\Windows Media Player\wmplayer.exe")
+    {
         $WindowsMediaPlayerVersion = (Get-FileVersion -File "$envProgramFiles\Windows Media Player\setup_wm.exe" -ProductVersion)
-        If ((Test-Path -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\WindowsFeatures\WindowsMediaVersion") -and (Get-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\WindowsFeatures\WindowsMediaVersion" -Value "(Default)") -eq "") {
+        If ((Test-Path -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\WindowsFeatures\WindowsMediaVersion") -and (Get-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\WindowsFeatures\WindowsMediaVersion" -Value "(Default)") -eq "")
+        {
             Write-Log -Message "Windows Media Player version is empty" -Severity 1 -LogType CMTrace -WriteHost $True
             Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Setup\WindowsFeatures\WindowsMediaVersion" -Name "(Default)" -Value $WindowsMediaPlayerVersion -Type "DWord"
         }
     }
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup) -or (Get-ChildItem).Length -lt 1024kb) {
+    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup) -or (Get-ChildItem).Length -lt 1024kb)
+    {
         Write-Log -Message "Citrix credentials for downloading the $appVendor $appName2" -Severity 1 -LogType CMTrace -WriteHost $True
         $CitrixUserName = Read-Host -Prompt "Please supply your Citrix.com username"
         $CitrixPassword1 = Read-Host -Prompt "Please supply your Citrix.com password" -AsSecureString
@@ -183,7 +256,8 @@ If ($appVersion -gt $appInstalledVersion) {
         $CitrixPassword1Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword1))
         $CitrixPassword2Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword2))
 
-        If ($CitrixPassword1Temp -ne $CitrixPassword2Temp) {
+        If ($CitrixPassword1Temp -ne $CitrixPassword2Temp)
+        {
             Write-Log -Message "The supplied Citrix passwords missmatch!" -Severity 3 -LogType CMTrace -WriteHost $True
             Exit-Script -ExitCode 1
         }
@@ -199,7 +273,8 @@ If ($appVersion -gt $appInstalledVersion) {
         Write-Log -Message "Downloading $appVendor $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appSetup -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
@@ -218,8 +293,8 @@ If ($appVersion -gt $appInstalledVersion) {
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Stop and disable unneeded services
-    Stop-ServiceAndDependencies -Name $appServices[0]
-    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
+    Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError
 
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\User Profile Manager\UserProfileManager.exe" -Force
@@ -241,6 +316,7 @@ If ($appVersion -gt $appInstalledVersion) {
     Write-Log -Message "$appVendor $appName2" -Text "A reboot required after $appVendor $appName2 $appVersion installation. The computer $envComputerName will reboot in 30 seconds!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
 }
-Else {
+Else
+{
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }

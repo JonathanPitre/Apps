@@ -79,23 +79,6 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
-$appVendor = "Citrix"
-$appName = "Virtual Apps and Desktops"
-$appName2 = "Virtual Delivery Agent"
-$appProcesses = @("BrokerAgent", "picaSessionAgent")
-$appServices = @("CitrixTelemetryService")
-# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
-# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /virtualmachine /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /masterpvsimage /includeadditional "Citrix Profile Management","Citrix Profile Management WMI Plugin" /exclude "Citrix WEM Agent","User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Personalization for App-V - VDA" /enablerestore'
-$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 21*, All Editions"} | Sort-Object Version -Descending | Select-Object -First 1
-$appVersion = $Evergreen.Version
-$appSetup = "VDAWorkstationSetup_$appVersion.exe"
-$appDlNumber = "19801"
-$appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
-$appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
-##*===============================================
-
 Function Get-CitrixDownload
 {
     <#
@@ -169,6 +152,23 @@ Function Get-CitrixDownload
     return $OutFile
 }
 
+$appVendor = "Citrix"
+$appName = "Virtual Apps and Desktops"
+$appName2 = "Virtual Delivery Agent"
+$appProcesses = @("BrokerAgent", "picaSessionAgent")
+$appServices = @("CitrixTelemetryService")
+# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
+# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
+$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /virtualmachine /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /masterpvsimage /includeadditional "Citrix Profile Management","Citrix Profile Management WMI Plugin" /exclude "Citrix WEM Agent","User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Personalization for App-V - VDA" /enablerestore'
+$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 21*, All Editions"} | Sort-Object Version -Descending | Select-Object -First 1
+$appVersion = $Evergreen.Version
+$appSetup = "VDAWorkstationSetup_$appVersion.exe"
+$appDlNumber = "19801"
+$appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
+$appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
+##*===============================================
+
 If ($appVersion -gt $appInstalledVersion)
 {
     Set-Location -Path $appScriptDirectory
@@ -241,9 +241,9 @@ If ($appVersion -gt $appInstalledVersion)
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Stop and disable unneeded services
-    Stop-ServiceAndDependencies -Name $appServices[0]
-    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
-    
+    Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError
+
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\User Profile Manager\UserProfileManager.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\Virtual Desktop Agent\BrokerAgent.exe" -Force
