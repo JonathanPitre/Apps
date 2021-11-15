@@ -140,12 +140,12 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If ($envOSName -like "*Windows Server 2012*" -or $envOSName -like "*Windows Server 2016")
     {
         # Install Windows Search feature when missing, if Office was installed before it must be repair!
-        If (!(Get-WindowsFeature -Name Search-Service)) {Install-WindowsFeature Search-Service}
+        If (-Not(Get-WindowsFeature -Name Search-Service)) {Install-WindowsFeature Search-Service}
     }
     If ($envOSName -like "*Windows Server 2016")
     {
         # Limit Windows Search to a single cpu core - https://social.technet.microsoft.com/Forums/en-US/88725f57-67ed-4c09-8ae6-780ff785e555/problems-with-search-service-on-server-2012-r2-rds?forum=winserverTS
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "CoreCount" -Type "DWord" -Value "1"
+        #Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "CoreCount" -Type "DWord" -Value "1"
         # Configure multi-user search - https://docs.microsoft.com/en-us/fslogix/configure-search-roaming-ht
         Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Type "DWord" -Value "2"
         Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Type "DWord" -Value "2"
