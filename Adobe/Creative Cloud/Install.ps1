@@ -79,14 +79,8 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
-
 Function Get-AdobeCreativeCloud
 {
-    <#
-    .NOTES
-        Author: Jonathan Pitre
-        Twitter: @PitreJonathan
-    #>
     [OutputType([System.Management.Automation.PSObject])]
     [CmdletBinding()]
     Param()
