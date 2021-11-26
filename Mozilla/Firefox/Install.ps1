@@ -75,14 +75,16 @@ $appVendor = "Mozilla"
 $appName = "Firefox"
 $appProcesses = @("firefox", "maintenanceservice")
 $appInstallParameters = "/QB"
+$appArchitecture = "x64"
+$appChannel = "LATEST"
 $appAddParameters = "TASKBAR_SHORTCUT=true DESKTOP_SHORTCUT=true START_MENU_SHORTCUT=true INSTALL_MAINTENANCE_SERVICE=false PREVENT_REBOOT_REQUIRED=true REGISTER_DEFAULT_AGENT=false"
 [string]$currentUILanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2)
 If ($currentUILanguage -eq "EN") { $appLanguage = "en-US" } Else { $appLanguage = $currentUILanguage} #EN is not a valid language
-$Evergreen = Get-EvergreenApp -Name MozillaFirefox | Where-Object { $_.Architecture -eq "x64" -and $_.Channel -match "LATEST" -and $_.Language -eq "$appLanguage" -and $_.Type -eq "msi"}
+$Evergreen = Get-EvergreenApp -Name MozillaFirefox -AppParams @{Language=$appLanguage} | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Channel -match $appChannel -and $_.Language -eq "$appLanguage" -and $_.Type -eq "msi"}
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appRepo = "https://api.github.com/repos/mozilla/policy-templates/releases/latest"
-$EvergreenADMX = Get-GitHubRelease -Uri $appRepo
+$EvergreenADMX = Get-EvergreenApp -Name "GitHubRelease" -AppParams @{ Uri=$appRepo }
 $appURLADMX = $EvergreenADMX.URI
 $appADMX = Split-Path -Path $appURLADMX -Leaf
 $appSetup = (Split-Path -Path $appURL -Leaf).Replace("%20"," ")
