@@ -71,14 +71,18 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
+
 $appName = "7-Zip"
 $appProcesses = @("7z", "7zFM", "7zG")
 $appInstallParameters = "/QB"
-$Evergreen = Get-EvergreenApp -Name 7zip | Where-Object { $_.Architecture -eq "x64" -and $_.URI -match ".msi" }
+$appArchitecture = "x64"
+$Evergreen = Get-EvergreenApp -Name 7zip | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Type -eq "msi" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appSetup = $appUrl.split("/")[7]
-$appTransform = "7-Zip.mst"
+$appSetup = Split-Path -Path $appURL -Leaf
+$appLanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2)
+$appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/7-Zip/7-Zip-$appLanguage.mst"
+$appTransform = Split-Path -Path $appTransformURL -Leaf
 $appDestination = "$env:ProgramFiles\7-Zip"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appName").DisplayVersion).Substring(0, 5)
@@ -103,6 +107,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Get-Process explorer | Stop-Process -Force
         Remove-MSIApplications -Name $appName -Parameters $appInstallParameters
         Execute-Process -Path "$appDestination\Uninstall.exe" -Parameters "/S" -PassThru
+    }
+
+    # Download required transform file
+    If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
+    {
+        Write-Log -Message "Downloading $appVendor $appName Transform.." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptDirectory\$appTransform
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
