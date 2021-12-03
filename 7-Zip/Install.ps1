@@ -7,7 +7,7 @@
 $PackageProviders = @("Nuget")
 
 # Custom modules list
-$Modules = @("PSADT", "Evergreen")
+$Modules = @("PSADT", "Nevergreen")
 
 Write-Verbose -Message "Importing custom modules..." -Verbose
 
@@ -71,14 +71,13 @@ $appScriptDirectory = Get-ScriptDirectory
 
 # Application related
 ##*===============================================
-
 $appName = "7-Zip"
 $appProcesses = @("7z", "7zFM", "7zG")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
-$Evergreen = Get-EvergreenApp -Name 7zip | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Type -eq "msi" }
-$appVersion = $Evergreen.Version
-$appURL = $Evergreen.URI
+$Nevergreen = Get-NevergreenApp -Name 7zip | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi" }
+$appVersion = $Nevergreen.Version
+$appURL = $Nevergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appLanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2)
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/7-Zip/7-Zip-$appLanguage.mst"
@@ -94,12 +93,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appVersion
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup)) {
-        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
+        #$Evergreen | Save-EvergreenApp -CustomPath .\
     }
     Else {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
+
 
     Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
@@ -112,7 +113,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Download required transform file
     If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
     {
-        Write-Log -Message "Downloading $appVendor $appName Transform.." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appName Transform.." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptDirectory\$appTransform
     }
     Else
