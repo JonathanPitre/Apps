@@ -107,7 +107,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-Location -Path $appVersion
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Remove-MSIApplications -Name $appName -Parameters $appInstallParameters -ContinueOnError $True
+    Remove-MSIApplications -Name $appName -Parameters $appInstallParameters -ContinueOnError
     Get-Process -Name $appProcesses | Stop-Process -Force
 
     # Download latest setup file(s)
@@ -175,7 +175,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Copy-File -Path $appScriptDirectory\*.igtheme -Destination $appDestination\Themes
 
     # Remove desktop shortcut
-    Remove-File -Path $envCommonDesktop\$appName.lnk -ContinueOnError $True
+    Remove-File -Path $envCommonDesktop\$appName.lnk -ContinueOnError
 
     # Go back to the parent folder
     Set-Location ..
