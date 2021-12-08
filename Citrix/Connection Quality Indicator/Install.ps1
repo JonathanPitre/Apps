@@ -114,6 +114,7 @@ Function Get-CitrixCQI
         }
     }
 }
+
 Function Get-CitrixDownload
 {
     <#
@@ -225,6 +226,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         # Download latest version
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Get-CitrixDownload -CitrixKB $appCitrixKB -CitrixFile $appZip -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -FilePath $appScriptDirectory\$appVersion
+        Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appVersion
+        Remove-File -Path $appZip
     }
     Else
     {
