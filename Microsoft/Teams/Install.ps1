@@ -114,7 +114,7 @@ $appURL = $Nevergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\Microsoft\Teams\current"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-$appInstalledVersion = If ($IsAppInstalled) { Get-FileVersion $appDestination\Teams.exe }
+$appInstalledVersion = If ($IsAppInstalled) { Get-FileVersion -File "$appDestination\Teams.exe" }
 
 Function Search-Registry
 {
