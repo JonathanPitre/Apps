@@ -97,8 +97,8 @@ Function Get-MicrosoftVisualCPlusPlusVersion
     }
     Finally
     {
-        $RegEx= "(Visual C\+\+ \d{4} Redistributable) - ((?:\d+\.)+(?:\d+))"
-        $Version = ($DownloadText | Select-String -Pattern $RegExURL).Matches.Groups[2].Value
+        $RegEx = "(Visual C\+\+ \d{4} Redistributable) - ((?:\d+\.)+(?:\d+))"
+        $Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[2].Value
     }
     return $Version
 }
