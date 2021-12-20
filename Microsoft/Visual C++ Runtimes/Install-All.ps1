@@ -50,7 +50,6 @@ Function Initialize-Module
 	}
 	Else
  {
-
 		# If module is not imported, but available on disk then import
 		If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
 		{
@@ -69,22 +68,32 @@ Function Initialize-Module
 		}
 		Else
 		{
+			# Install Nuget
+			If (-not(Get-PackageProvider -ListAvailable -Name NuGet))
+			{
+				Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+				Write-Host -Object "Package provider NuGet was installed." -ForegroundColor Green
+			}
+
+			# Add the Powershell Gallery as trusted repository
+			If ((Get-PSRepository -Name "PSGallery").InstallationPolicy -eq "Untrusted")
+			{
+				Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+				Write-Host -Object "PowerShell Gallery is now a trusted repository." -ForegroundColor Green
+			}
+
+			# Update PowerShellGet
+			$InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
+			$PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
+			If ($PSGetVersion -gt $InstalledPSGetVersion)
+			{
+				Install-PackageProvider -Name PowerShellGet -Force
+				Write-Host -Object "PowerShellGet Gallery was updated." -ForegroundColor Green
+			}
 
 			# If module is not imported, not available on disk, but is in online gallery then install and import
 			If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
 			{
-
-				# Add the Powershell Gallery as trusted repository
-				Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-
-				# Install Nuget
-				If (-not(Get-PackageProvider -ListAvailable -Name Nuget -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name Nuget -Force }
-				# Update PowerShellGet
-				$InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
-				$PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
-				If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
-
-
 				# Install and import module
 				Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
 				Import-Module -Name $Module -Force -Global -DisableNameChecking
@@ -92,7 +101,6 @@ Function Initialize-Module
 			}
 			Else
 			{
-
 				# If the module is not imported, not available and not in the online gallery then abort
 				Write-Host -Object "Module $Module was not imported, not available and not in an online gallery, exiting." -ForegroundColor Red
 				EXIT 1
@@ -128,34 +136,34 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $app
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
-    Set-Location -Path $appScriptDirectory
+	Set-Location -Path $appScriptDirectory
 
-    # Uninstall previous versions
-    Remove-MSIApplications -Name "$appVendor $appName" -ContinueOnError
+	# Uninstall previous versions
+	Remove-MSIApplications -Name "$appVendor $appName" -ContinueOnError
 
-    # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appMajorVersion\x64\RTM\$appSetup))
-    {
-        Write-Log -Message "Downloading $appVendor $appName Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Save-VcRedist -VcList $VcList -Path $appScriptDirectory
-    }
-    Else
-    {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
+	# Download latest setup file(s)
+	If (-Not(Test-Path -Path $appScriptDirectory\$appMajorVersion\x64\RTM\$appSetup))
+ {
+		Write-Log -Message "Downloading $appVendor $appName Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
+		Save-VcRedist -VcList $VcList -Path $appScriptDirectory
+	}
+	Else
+ {
+		Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+	}
 
-    # Install latest version
-    Write-Log -Message "Installing $appVendor $appName Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Install-VcRedist -Path $appScriptDirectory -VcList $VcList
+	# Install latest version
+	Write-Log -Message "Installing $appVendor $appName Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
+	Install-VcRedist -Path $appScriptDirectory -VcList $VcList
 
-    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+	Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
-    # Go back to the parent folder
-    Set-Location ..
+	# Go back to the parent folder
+	Set-Location ..
 
-    Write-Log -Message "$appVendor $appName Runtimes were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+	Write-Log -Message "$appVendor $appName Runtimes were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
 {
-    Write-Log -Message "$appVendor $appName $appMajorVersion $appInstalledVersion Runtimes are already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+	Write-Log -Message "$appVendor $appName $appMajorVersion $appInstalledVersion Runtimes are already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
