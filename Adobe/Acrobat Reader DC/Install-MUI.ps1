@@ -232,7 +232,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Fix application Start Menu shorcut
     Copy-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -Destination "$envCommonStartMenuPrograms\$appVendor $appName $appShortVersion.lnk" -ContinueFileCopyOnError $True
-    Remove-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -ContinueOnError
+    Remove-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -ContinueOnError $True
 
     # Remove Active Setup
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Active Setup\Installed Components\{A6EADE66-0000-0000-484E-7E8A45000000}" -Name "StubPath"

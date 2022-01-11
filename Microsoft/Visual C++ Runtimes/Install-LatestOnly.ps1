@@ -139,9 +139,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-Location -Path $appScriptDirectory
 
     # Uninstall previous versions
-    Remove-MSIApplications -Name "$appVendor $appName 2015" -ContinueOnError
-    Remove-MSIApplications -Name "$appVendor $appName 2017" -ContinueOnError
-    Remove-MSIApplications -Name "$appVendor $appName 2015-2019" -ContinueOnError
+    Remove-MSIApplications -Name "$appVendor $appName 2015" -ContinueOnError $True
+    Remove-MSIApplications -Name "$appVendor $appName 2017" -ContinueOnError $True
+    Remove-MSIApplications -Name "$appVendor $appName 2015-2019" -ContinueOnError $True
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appMajorVersion\x64\RTM\$appSetup))

@@ -100,11 +100,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appVersion
 
     # Delete machine policies to prevent issue during installation
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\Update" -Recurse -ContinueOnError
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\$appName" -Recurse -ContinueOnError
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\Temp" -Recurse -ContinueOnError
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\Update" -Recurse -ContinueOnError
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\$appName" -Recurse -ContinueOnError
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\Update" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\$appName" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\Temp" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\Update" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\$appName" -Recurse -ContinueOnError $True
 
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
@@ -117,30 +117,30 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Uninstall Google Update
     If (Test-Path -Path "$env%LocalAppData\$appVendor\Update\$($appVendor)Update.exe") {
         Write-Log -Message "Removing previous $appVendor $appName $appLongName folder to fix issues with new installation." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-Process -Path "$envLocalAppData\$appVendor\Update\$($appVendor)Update.exe" -Parameters "-uninstall" -IgnoreExitCodes 1606220281 -ContinueOnError
+        Execute-Process -Path "$envLocalAppData\$appVendor\Update\$($appVendor)Update.exe" -Parameters "-uninstall" -IgnoreExitCodes 1606220281 -ContinueOnError $True
     }
     If (Test-Path -Path "$envProgramFilesX86\$appVendor\Update\$($appVendor)Update.exe") {
         Write-Log -Message "Removing previous $appVendor $appName $appLongName folder to fix issues with new installation." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-Process -Path "$envProgramFilesX86\$appVendor\Update\$($appVendor)Update.exe" -Parameters "-uninstall" -IgnoreExitCodes 1606220281 -ContinueOnError
+        Execute-Process -Path "$envProgramFilesX86\$appVendor\Update\$($appVendor)Update.exe" -Parameters "-uninstall" -IgnoreExitCodes 1606220281 -ContinueOnError $True
     }
 
     # Remove previous install folders
-    Remove-Folder -Path "$envLocalAppData\$appVendor\$appName" -ContinueOnError
-    Remove-Folder -Path "$envLocalAppData\$appVendor\Update" -ContinueOnError
-    Remove-Folder -Path "$envLocalAppData\$appVendor\Software Reporter Tool" -ContinueOnError
-    Remove-Folder -Path "$envLocalAppData\$appVendor\Policies" -ContinueOnError
-    Remove-Folder -Path "$envLocalAppData\$appVendor\Temp" -ContinueOnError
-    Remove-Folder -Path "$envLocalAppData\$appVendor\CrashReports" -ContinueOnError
-    Remove-Folder -Path "$envProgramFilesX86\$appVendor\$appName" -ContinueOnError
-    Remove-Folder -Path "$envProgramFilesX86\$appVendor\Update" -ContinueOnError
-    Remove-Folder -Path "$envProgramFilesX86\$appVendor\Policies" -ContinueOnError
-    Remove-Folder -Path "$envProgramFilesX86\$appVendor\Temp" -ContinueOnError
-    Remove-Folder -Path "$envProgramFilesX86\$appVendor\CrashReports" -ContinueOnError
-    Remove-Folder -Path "$envProgramFiles\$appVendor\$appName" -ContinueOnError
-    Remove-Folder -Path "$envProgramFiles\$appVendor\Update" -ContinueOnError
-    Remove-Folder -Path "$envProgramFiles\$appVendor\Policies" -ContinueOnError
-    Remove-Folder -Path "$envProgramFiles\$appVendor\Temp" -ContinueOnError
-    Remove-Folder -Path "$envProgramFiles\$appVendor\CrashReports" -ContinueOnError
+    Remove-Folder -Path "$envLocalAppData\$appVendor\$appName" -ContinueOnError $True
+    Remove-Folder -Path "$envLocalAppData\$appVendor\Update" -ContinueOnError $True
+    Remove-Folder -Path "$envLocalAppData\$appVendor\Software Reporter Tool" -ContinueOnError $True
+    Remove-Folder -Path "$envLocalAppData\$appVendor\Policies" -ContinueOnError $True
+    Remove-Folder -Path "$envLocalAppData\$appVendor\Temp" -ContinueOnError $True
+    Remove-Folder -Path "$envLocalAppData\$appVendor\CrashReports" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFilesX86\$appVendor\$appName" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFilesX86\$appVendor\Update" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFilesX86\$appVendor\Policies" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFilesX86\$appVendor\Temp" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFilesX86\$appVendor\CrashReports" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFiles\$appVendor\$appName" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFiles\$appVendor\Update" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFiles\$appVendor\Policies" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFiles\$appVendor\Temp" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFiles\$appVendor\CrashReports" -ContinueOnError $True
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup)) {
@@ -169,7 +169,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
     If (Get-ChildItem -Path $appScriptDirectory -Filter *.zip) {
         Get-ChildItem -Path $appScriptDirectory -Filter *.zip | Expand-Archive -DestinationPath $appScriptDirectory\PolicyDefinitions -Force
-        Remove-File -Path $appScriptDirectory\*.zip -ContinueOnError
+        Remove-File -Path $appScriptDirectory\*.zip -ContinueOnError $True
     }
     Move-Item -Path $appScriptDirectory\PolicyDefinitions\GoogleUpdateAdmx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
     Move-Item -Path $appScriptDirectory\PolicyDefinitions\windows\admx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
@@ -203,7 +203,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
 
     # Remove desktop shortcut for all users
-    #Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError
+    #Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
     # Go back to the parent folder
     Set-Location ..

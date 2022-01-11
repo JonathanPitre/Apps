@@ -209,12 +209,12 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Get-ScheduledTask -TaskName "$appVendor $appName Update Task" | Disable-ScheduledTask
 
     # Stop and disable unneeded services
-    Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest -ContinueOnError
-    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError
+    Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest -ContinueOnError $True
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
 
     # Remove unneeded applications from running at start-up
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeAAMUpdater-1.0" -ContinueOnError
-    #Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeGCInvoker-1.0" -ContinueOnError
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeAAMUpdater-1.0" -ContinueOnError $True
+    #Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeGCInvoker-1.0" -ContinueOnError $True
 
     # Remove Active Setup
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Active Setup\Installed Components\{AC76BA86-0000-0000-7760-7E8A45000000}" -Name "StubPath"

@@ -286,7 +286,7 @@ If ($appVersion -gt $appInstalledVersion)
 
     # Stop and disable unneeded services
     Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest
-    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
 
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\User Profile Manager\UserProfileManager.exe" -Force
