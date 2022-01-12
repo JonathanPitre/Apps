@@ -338,8 +338,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
     Rename-Item -Path "$envCommonStartMenuPrograms\OneNote 2016.lnk" -NewName "$envCommonStartMenuPrograms\OneNote.lnk"
-    Get-ScheduledTask -TaskName "$appName*" | Stop-ScheduledTask
-    Get-ScheduledTask -TaskName "$appName*" | Disable-ScheduledTask
+    Get-ScheduledTask -TaskName "Office*" | Stop-ScheduledTask
+    Get-ScheduledTask -TaskName "Office*" | Disable-ScheduledTask
 
     # Go back to the parent folder
     Set-Location ..
