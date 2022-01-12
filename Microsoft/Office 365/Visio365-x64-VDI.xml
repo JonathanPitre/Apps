@@ -1,21 +1,28 @@
-<Configuration ID="ec7fdd32-3d4c-4006-a88e-d8b908f34a90">
+<Configuration ID="d08c5044-e4e4-4ecb-94bd-ba48bf814b37">
   <Info Description="Visio 365 Optimized for VDI" />
-  <Add OfficeClientEdition="64" Channel="Current">
+  <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
     <Product ID="VisioProRetail">
-      <Language ID="fr-fr" />
+      <Language ID="MatchOS" />
       <Language ID="en-us" />
+      <Language ID="fr-fr" />
       <ExcludeApp ID="Groove" />
       <ExcludeApp ID="OneDrive" />
     </Product>
   </Add>
   <Property Name="SharedComputerLicensing" Value="1" />
   <Property Name="PinIconsToTaskbar" Value="TRUE" />
-  <Property Name="SCLCacheOverride" Value="0" />
-  <Property Name="AUTOACTIVATE" Value="1" />
   <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
   <Property Name="DeviceBasedLicensing" Value="0" />
+  <Property Name="SCLCacheOverride" Value="0" />
+  <Property Name="AUTOACTIVATE" Value="1" />
   <Updates Enabled="FALSE" />
-  <RemoveMSI />
+  <RemoveMSI>
+    <IgnoreProduct ID="InfoPath" />
+    <IgnoreProduct ID="InfoPathR" />
+    <IgnoreProduct ID="PrjPro" />
+    <IgnoreProduct ID="PrjStd" />
+    <IgnoreProduct ID="SharePointDesigner" />
+  </RemoveMSI>
   <AppSettings>
     <Setup Name="Company" Value="" />
     <User Key="software\microsoft\office\16.0\common\toolbars" Name="customuiroaming" Value="1" Type="REG_DWORD" App="office16" Id="L_AllowRoamingQuickAccessToolBarRibbonCustomizations" />
@@ -40,5 +47,4 @@
     <User Key="software\microsoft\office\16.0\common\general" Name="disablecomingsoon" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableComingSoon" />
   </AppSettings>
   <Display Level="Full" AcceptEULA="TRUE" />
-  <Logging Level="Standard" Path="%TEMP%" />
 </Configuration>
