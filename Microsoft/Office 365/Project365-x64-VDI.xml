@@ -1,9 +1,10 @@
 <Configuration ID="fc53b730-0e59-45e2-8194-8db03ba97810">
   <Info Description="Project 365 Optimized for VDI" />
-  <Add OfficeClientEdition="64" Channel="Current">
+  <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
     <Product ID="ProjectProRetail">
-      <Language ID="fr-fr" />
+      <Language ID="MatchOS" />
       <Language ID="en-us" />
+      <Language ID="fr-fr" />
     </Product>
   </Add>
   <Property Name="SharedComputerLicensing" Value="1" />
@@ -37,5 +38,4 @@
     <User Key="software\microsoft\office\16.0\common\general" Name="disablecomingsoon" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableComingSoon" />
   </AppSettings>
   <Display Level="Full" AcceptEULA="TRUE" />
-  <Logging Level="Standard" Path="%TEMP%" />
 </Configuration>
