@@ -291,7 +291,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-Location -Path $appScriptDirectory
 
     # Download latest setup file(s)
-    Write-Log -Message "Downloading the latest version of  $appVendor $appName Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Downloading the latest version of $appVendor Office Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
     Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     $appSetupVersion = (Get-Command .\$appSetup).FileVersionInfo.FileVersion
 
