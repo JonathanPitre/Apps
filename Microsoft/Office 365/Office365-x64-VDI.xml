@@ -1,8 +1,10 @@
-<Configuration ID="7dad9b9c-b133-48df-9ee1-fac7f92f0449">
+<Configuration ID="9aa29537-1c97-4510-85e0-7e9b18d7b310">
   <Info Description="Office 365 Optimized for VDI" />
   <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
     <Product ID="O365ProPlusRetail">
       <Language ID="en-us" />
+      <Language ID="MatchOS" />
+      <Language ID="fr-fr" />
       <ExcludeApp ID="Groove" />
       <ExcludeApp ID="Lync" />
       <ExcludeApp ID="OneDrive" />
@@ -10,16 +12,16 @@
       <ExcludeApp ID="Bing" />
     </Product>
     <Product ID="LanguagePack">
-      <Language ID="MatchOS" />
       <Language ID="en-us" />
+      <Language ID="MatchOS" />
+      <Language ID="fr-fr" />
+      <ExcludeApp ID="Bing" />
     </Product>
   </Add>
   <Property Name="SharedComputerLicensing" Value="1" />
-  <Property Name="PinIconsToTaskbar" Value="TRUE" />
-  <Property Name="SCLCacheOverride" Value="0" />
-  <Property Name="AUTOACTIVATE" Value="1" />
   <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
   <Property Name="DeviceBasedLicensing" Value="0" />
+  <Property Name="SCLCacheOverride" Value="0" />
   <Updates Enabled="FALSE" />
   <RemoveMSI />
   <AppSettings>
@@ -47,6 +49,7 @@
     <User Key="software\microsoft\office\16.0\common\feedback" Name="includescreenshot" Value="0" Type="REG_DWORD" App="office16" Id="L_Screenshot" />
     <User Key="software\microsoft\office\16.0\common\licensing" Name="hidemanageaccountlink" Value="1" Type="REG_DWORD" App="office16" Id="L_HideManageAccountLink" />
     <User Key="software\microsoft\office\16.0\common\general" Name="disableboottoofficestart" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableOfficeStartGlobal" />
+    <User Key="software\microsoft\office\16.0\common" Name="autoorgidgetkey" Value="1" Type="REG_DWORD" App="office16" Id="L_AutoOrgIDGetKey" />
     <User Key="software\microsoft\office\16.0\firstrun" Name="disablemovie" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableMovie" />
     <User Key="software\microsoft\office\16.0\firstrun" Name="bootedrtm" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableOfficeFirstrun" />
     <User Key="software\microsoft\office\16.0\excel" Name="dontshowwhatsnew" Value="1" Type="REG_DWORD" App="office16" Id="L_DontShowWhatsNewInformationExcel" />
@@ -77,5 +80,4 @@
     <User Key="software\microsoft\office\16.0\word\options" Name="animatescreenmove" Value="0" Type="REG_DWORD" App="word16" Id="L_Providefeedbackwithanimation" />
   </AppSettings>
   <Display Level="Full" AcceptEULA="TRUE" />
-  <Logging Level="Standard" Path="%TEMP%" />
 </Configuration>
