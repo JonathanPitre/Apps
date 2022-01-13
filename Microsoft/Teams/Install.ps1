@@ -247,7 +247,7 @@ $appArchitecture = "x64"
 $appLanguage = "fr-CA"
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/Teams.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
-$appTeamsConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/desktop-config.json"
+$appTeamsConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Teams/desktop-config.json"
 $appTeamsConfig = Split-Path -Path $appTeamsConfigURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
@@ -324,8 +324,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Remove Teams registry entries from all user profiles - https://www.reddit.com/r/MicrosoftTeams/comments/gbq8rg/what_prevents_teams_from_reinstalling_or_how_to
     [scriptblock]$HKCURegistrySettings = {
-        Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Teams" -Recurse -ContinueOnError $True -SID $UserProfile.SID
-        Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Microsoft\Office\Teams" -Recurse -ContinueOnError $True -SID $UserProfile.SID
+        Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Teams" -Recurse -ContinueOnError $True
+        Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Microsoft\Office\Teams" -Recurse -ContinueOnError $True -
     }
     Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings
 
