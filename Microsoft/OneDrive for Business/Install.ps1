@@ -120,6 +120,24 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
+Function Get-MicrosoftOneDriveAdmx
+{
+    try
+    {
+        If (Test-Path -Path "$appDestination\$appVersion\adm\$appName.admx")
+        {
+            Write-Log -Message "Copying $appVendor $appName $appLongName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
+            Copy-File -Path "$appDestination\$appVersion\adm\$appName.admx" -Destination "$appScriptDirectory\PolicyDefinitions" -ContinueOnError $True
+            Copy-File -Path "$appDestination\$appVersion\adm\$appName.adml" -Destination "$appScriptDirectory\PolicyDefinitions\en-US" -ContinueOnError $True
+            Copy-File -Path "$appDestination\$appVersion\adm\fr\$appName.adml" -Destination "$appScriptDirectory\PolicyDefinitions\fr-FR" -ContinueOnError $True
+        }
+    }
+    catch
+    {
+        Throw $_
+    }
+}
+
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Microsoft"
@@ -140,7 +158,9 @@ $appDestination = "${env:ProgramFiles}\Microsoft OneDrive"
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
 $appUninstallString = ((Get-InstalledApplication -Name "$appVendor $appName").UninstallString).Split("/")[0]
 $appUninstallParameters = ((Get-InstalledApplication -Name "$appVendor $appName").UninstallString).TrimStart($appUninstallString)
-##*===============================================
+
+#-----------------------------------------------------------[Execution]------------------------------------------------------------
+
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -275,13 +295,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-Item -Path "$envSystemDrive\Users\Default\*.regtrans-ms" -Force
 
     # Get latest policy definitions
-    If (Test-Path -Path "$appDestination\$appVersion\adm\$appName.admx")
-    {
-        Write-Log -Message "Copying $appVendor $appName $appLongName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Copy-File -Path "$appDestination\$appVersion\adm\$appName.admx" -Destination "$appScriptDirectory\PolicyDefinitions" -ContinueOnError $True
-        Copy-File -Path "$appDestination\$appVersion\adm\$appName.adml" -Destination "$appScriptDirectory\PolicyDefinitions\en-US" -ContinueOnError $True
-        Copy-File -Path "$appDestination\$appVersion\adm\fr\$appName.adml" -Destination "$appScriptDirectory\PolicyDefinitions\fr-FR" -ContinueOnError $True
-    }
+    Get-MicrosoftOneDriveAdmx
 
     # Stop and disable unneeded scheduled tasks
     Get-ScheduledTask -TaskName "$appName*" | Stop-ScheduledTask
