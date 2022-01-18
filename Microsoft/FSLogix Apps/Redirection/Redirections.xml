@@ -89,6 +89,7 @@
     <Exclude Copy="0">AppData\Local\Microsoft\Teams\packages</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Teams\previous</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Terminal Server Client\Cache</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\TokenBroker</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\TokenBroker\Cache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\UEV</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\WINMSIPC\csr\Logs</Exclude>
@@ -125,6 +126,8 @@
     <Exclude Copy="0">AppData\Local\Packages\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\AC\MicrosoftEdge\IECompatCache</Exclude>
     <Exclude Copy="0">AppData\Local\Packages\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\AC\MicrosoftEdge\IECompatUaCache</Exclude>
     <Exclude Copy="0">AppData\Local\Packages\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\AC\Temp</Exclude>
+    <Exclude Copy="0">AppData\Local\Packages\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy</Exclude>
+    <Exclude Copy="0">AppData\Local\Packages\Packages\Microsoft.Windows.CloudExperienceHost_cw5n1h2txyewy</Exclude>
     <Exclude Copy="0">AppData\Local\SCOM\LOGS</Exclude>
     <Exclude Copy="0">AppData\Local\Spotify\Browser\Cache</Exclude>
     <Exclude Copy="0">AppData\Local\Spotify\Browser\GPUCache</Exclude>
@@ -207,7 +210,6 @@
     <Include Copy="3">AppData\Local\Microsoft\Credentials</Include>
     <Include Copy="3">AppData\Local\Microsoft\OneAuth</Include>
     <Include Copy="3">AppData\Local\Microsoft\Windows\Caches</Include>
-    <Include Copy="3">AppData\Local\Packages\Microsoft.AAD.BrokerPlugin_cw5n1h2txyewy</Include>
     <Include Copy="3">AppData\Roaming\Microsoft\Credentials</Include>
     <Include Copy="3">AppData\Roaming\Microsoft\Crypto</Include>
     <Include Copy="3">AppData\Roaming\Microsoft\Protect</Include>
