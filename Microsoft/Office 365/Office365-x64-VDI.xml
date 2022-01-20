@@ -4,7 +4,7 @@
     <Product ID="O365ProPlusRetail">
       <Language ID="en-us" />
       <Language ID="MatchOS" />
-      <Language ID="fr-fr" />
+      <Language ID="fr-ca" />
       <ExcludeApp ID="Groove" />
       <ExcludeApp ID="Lync" />
       <ExcludeApp ID="OneDrive" />
@@ -14,7 +14,7 @@
     <Product ID="LanguagePack">
       <Language ID="en-us" />
       <Language ID="MatchOS" />
-      <Language ID="fr-fr" />
+      <Language ID="fr-ca" />
       <ExcludeApp ID="Bing" />
     </Product>
   </Add>
