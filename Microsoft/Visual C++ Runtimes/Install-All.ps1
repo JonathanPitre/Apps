@@ -125,7 +125,7 @@ Foreach ($Module in $Modules)
 $appVendor = "Microsoft"
 $appName = "Visual C++"
 $appMajorVersion = ( Get-VcList | Select-Object -Last 1).Release
-$VcList = Get-VcList | Where-Object {$_.Release -eq $appMajorVersion}
+$VcList = Get-VcList
 $VcListVersion = ($VcList | Where-Object {$_.Release -eq $appMajorVersion -and $_.Architecture -eq "x64" }).Version
 $appVersion = $VcListVersion.Substring(0, $VcListVersion.Length - 2)
 $appSetup = Split-Path -Path ($VcList).Download -Leaf
