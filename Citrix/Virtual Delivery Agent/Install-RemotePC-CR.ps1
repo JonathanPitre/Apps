@@ -277,9 +277,9 @@ If ($appVersion -gt $appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    # Copy $appSetup to C:\Installs\VDA to avoid install issue
-    Copy-File -Path ".\$appSetup" -Destination "$env:SystemDrive\Installs\VDA" -Recurse
-    Set-Location -Path "$env:SystemDrive\Installs\VDA"
+    # Copy $appSetup to $envTemp\Install to avoid install issue
+    Copy-File -Path ".\$appSetup" -Destination "$envTemp\Install" -Recurse
+    Set-Location -Path "$envTemp\Install"
 
     # Uninstall previous versions
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -355,8 +355,7 @@ If ($appVersion -gt $appInstalledVersion)
     # Enable WOL
     # https://www.cyberdrain.com/monitoring-with-powershell-monitor-and-enabling-wol-for-hp-lenovo-dell
 
-    Set-Location -Path $appScriptDirectory
-    Remove-Folder -Path "$env:SystemDrive\Installs"
+    Remove-Folder -Path "$envTemp\Install"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
