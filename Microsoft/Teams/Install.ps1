@@ -355,7 +355,12 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     # Required if not using the custom MST
     #New-Item -Path "HKLM:\SOFTWARE\Citrix" -Name "PortICA" -Force
-    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters -Transform "$appScriptDirectory\$appTransform"
+
+    # Copy setup files to $envTemp\Install to avoid install issue
+    Copy-File -Path ".\$appSetup" -Destination "$envTemp\Install" -Recurse
+    Copy-File -Path "$appScriptDirectory\$appTransform" -Destination "$envTemp\Install" -Recurse
+
+    Execute-MSI -Action Install -Path $envTemp\Install\$appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters -Transform $envTemp\Install\$appTransform
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
@@ -432,6 +437,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "UNLOAD HKLM\DefaultUser" -WindowStyle Hidden
 
     # Cleanup temp files
+    Remove-Folder -Path "$envTemp\Install"
     Remove-Item -Path "$envSystemDrive\Users\Default\*.LOG1" -Force
     Remove-Item -Path "$envSystemDrive\Users\Default\*.LOG2" -Force
     Remove-Item -Path "$envSystemDrive\Users\Default\*.blf" -Force
