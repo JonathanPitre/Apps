@@ -153,7 +153,7 @@ Function Get-AdobeCreativeCloud
     if ($Version64Enterprise -and $URL64Enterprise)
     {
         [PSCustomObject]@{
-            Version      = $Version64Enterprise
+            Version      = $VersionDesktop
             Architecture = 'x64'
             Edition      = 'Enterprise'
             Type         = 'Exe'
@@ -164,7 +164,7 @@ Function Get-AdobeCreativeCloud
     if ($Version64Enterprise -and $URL64ZipEnterprise)
     {
         [PSCustomObject]@{
-            Version      = $Version64Enterprise
+            Version      = $VersionDesktop
             Architecture = 'x64'
             Edition      = 'Enterprise'
             Type         = 'Zip'
@@ -186,7 +186,7 @@ Function Get-AdobeCreativeCloud
     if ($VersionARM64Enterprise -and $URLARM64Enterprise)
     {
         [PSCustomObject]@{
-            Version      = $VersionARM64Enterprise
+            Version      = $VersionDesktop
             Architecture = 'ARM64'
             Edition      = 'Enterprise'
             Type         = 'Zip'
@@ -214,7 +214,7 @@ $appZip = Split-Path -Path $appURL -Leaf
 $appSetup = "Set-up.exe"
 $appDestination = "${env:ProgramFiles(x86)}\Adobe\Adobe Creative Cloud\Utils"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
+$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion).Substring(0, 9)
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
