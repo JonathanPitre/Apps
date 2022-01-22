@@ -3,52 +3,15 @@
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
-# Custom package providers list
-$PackageProviders = @("Nuget")
-
-# Custom modules list
-$Modules = @("PSADT", "Nevergreen")
-
-Write-Verbose -Message "Importing custom modules..." -Verbose
+#---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
+$ProgressPreference = "SilentlyContinue"
+$ErrorActionPreference = "SilentlyContinue"
+$env:SEE_MASK_NOZONECHECKS = 1
+$Modules = @("PSADT", "Evergreen") # Modules list
 
-# Install custom package providers list
-Foreach ($PackageProvider in $PackageProviders)
-{
-    If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
-}
-
-# Add the Powershell Gallery as trusted repository
-Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-
-# Update PowerShellGet
-$InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
-$PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
-If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
-
-# Install and import custom modules list
-Foreach ($Module in $Modules)
-{
-    If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-    Else
-    {
-        $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
-        $ModuleVersion = (Find-Module -Name $Module).Version
-        $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
-        $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
-        {
-            Update-Module -Name $Module -Force
-            Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
-        }
-    }
-}
-
-Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
-
-# Get the current script directory
 Function Get-ScriptDirectory
 {
     Remove-Variable appScriptDirectory
@@ -59,34 +22,112 @@ Function Get-ScriptDirectory
         ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
         Else
         {
-            Write-Host -ForegroundColor Red "Cannot resolve script file's path"
+            Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
             Exit 1
         }
     }
     Catch
     {
-        Write-Host -ForegroundColor Red "Caught Exception: $($Error[0].Exception.Message)"
+        Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
         Exit 2
     }
 }
 
-# Variables Declaration
-# Generic
-$ProgressPreference = "SilentlyContinue"
-$ErrorActionPreference = "SilentlyContinue"
-$env:SEE_MASK_NOZONECHECKS = 1
+Function Initialize-Module
+{
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory = $true)]
+        [string]$Module
+    )
+    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+
+    # If module is imported say that and do nothing
+    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    {
+        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+    }
+    Else
+    {
+        # If module is not imported, but available on disk then import
+        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        {
+            $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
+            $ModuleVersion = (Find-Module -Name $Module).Version
+            $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
+            $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
+            If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
+            {
+                Update-Module -Name $Module -Force
+                Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
+                Write-Host -Object "Module $Module was updated." -ForegroundColor Green
+            }
+            Import-Module -Name $Module -Force -Global -DisableNameChecking
+            Write-Host -Object "Module $Module was imported." -ForegroundColor Green
+        }
+        Else
+        {
+            # Install Nuget
+            If (-not(Get-PackageProvider -ListAvailable -Name NuGet))
+            {
+                Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+                Write-Host -Object "Package provider NuGet was installed." -ForegroundColor Green
+            }
+
+            # Add the Powershell Gallery as trusted repository
+            If ((Get-PSRepository -Name "PSGallery").InstallationPolicy -eq "Untrusted")
+            {
+                Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+                Write-Host -Object "PowerShell Gallery is now a trusted repository." -ForegroundColor Green
+            }
+
+            # Update PowerShellGet
+            $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
+            $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
+            If ($PSGetVersion -gt $InstalledPSGetVersion)
+            {
+                Install-PackageProvider -Name PowerShellGet -Force
+                Write-Host -Object "PowerShellGet Gallery was updated." -ForegroundColor Green
+            }
+
+            # If module is not imported, not available on disk, but is in online gallery then install and import
+            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            {
+                # Install and import module
+                Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
+                Import-Module -Name $Module -Force -Global -DisableNameChecking
+                Write-Host -Object "Module $Module was installed and imported." -ForegroundColor Green
+            }
+            Else
+            {
+                # If the module is not imported, not available and not in the online gallery then abort
+                Write-Host -Object "Module $Module was not imported, not available and not in an online gallery, exiting." -ForegroundColor Red
+                EXIT 1
+            }
+        }
+    }
+}
+
+# Get the current script directory
 $appScriptDirectory = Get-ScriptDirectory
 
-# Application related
-##*===============================================
+# Install and import modules list
+Foreach ($Module in $Modules)
+{
+    Initialize-Module -Module $Module
+}
+
+#-----------------------------------------------------------[Functions]------------------------------------------------------------
+
 Function Get-AdobeCreativeCloud
 {
     [OutputType([System.Management.Automation.PSObject])]
     [CmdletBinding()]
     Param()
 
-    $VersionDesktop = ((Invoke-WebRequest 'https://helpx.adobe.com/ie/creative-cloud/release-note/cc-release-notes.html' -UseBasicParsing).Content | Select-String -Pattern '((?:\d+\.)+\d+).+mandatory release').Matches.Groups[1].Value
     $URLDesktop = 'https://prod-rel-ffc-ccm.oobesaas.adobe.com/adobe-ffc-external/core/v1/wam/download?sapCode=KCCC&productName=Creative%20Cloud&os=win&environment=prod&api_key=CCHomeWeb1'
+    $VersionDesktop = ((Invoke-WebRequest 'https://helpx.adobe.com/ie/creative-cloud/release-note/cc-release-notes.html' -UseBasicParsing).Content | Select-String -Pattern '((?:\d+\.)+\d+).+mandatory release').Matches.Groups[1].Value
 
     $URL64ZipEnterprise = ((Invoke-WebRequest -Uri 'https://helpx.adobe.com/ca/download-install/kb/creative-cloud-desktop-app-download.html' -UseBasicParsing).Links | Where-Object href -Like '*win64*')[0].href
     $Version64Enterprise = ($URL64ZipEnterprise | Select-String -Pattern 'ACCCx((?:\d+_)+(?:\d+)).zip$').Matches.Groups[1] -replace ("_", ".")
@@ -101,7 +142,7 @@ Function Get-AdobeCreativeCloud
     if ($VersionDesktop -and $URLDesktop)
     {
         [PSCustomObject]@{
-            Version      = $Version64Enterprise
+            Version      = $VersionDesktop
             Architecture = 'x64'
             Edition      = 'Desktop'
             Type         = 'Exe'
@@ -154,9 +195,10 @@ Function Get-AdobeCreativeCloud
     }
 }
 
+#----------------------------------------------------------[Declarations]----------------------------------------------------------
+
 $appVendor = "Adobe"
 $appName = "Creative Cloud"
-$appSetup = "Creative_Cloud_Set-Up.exe"
 $appProcesses = @("ccxprocess", "Creative Cloud", "Creative Cloud Helper", "CRWindowsClientService", "AdobeNotificationHelper", "Adobe Application Updater", "adobe_licensing_helper", "AdobeExtensionsService",
     "HDHelper", "AdobeUpdateService", "Adobe Update Helper", "Adobe Desktop Service", "AdobeIPCBroker", "ACToolMain", "AdobeGCClient", "AGMService", "AGSService", "AGCInvokerUtility")
 $appServices = @("AdobeUpdateService", "AGMService", "AGSService")
@@ -165,13 +207,17 @@ $appInstallParameters = "--silent" #--INSTALLLANGUAGE=<ProductInstallLanguage>
 $appURLCleanerTool = "https://swupmf.adobe.com/webfeed/CleanerTool/win/AdobeCreativeCloudCleanerTool.exe"
 $appCleanerTool = Split-Path -Path $appURLCleanerTool -Leaf
 $appCleanerToolParameters = "--cleanupXML=$appScriptDirectory\cleanup.xml"
-$Nevergreen = Get-AdobeCreativeCloud | Where-Object {$_.Architecture -eq "x64" -and $_.Edition -eq 'Enterprise' -and $_.Type -eq 'Exe'}
+$Nevergreen = Get-AdobeCreativeCloud | Where-Object {$_.Architecture -eq "x64" -and $_.Edition -eq 'Enterprise' -and $_.Type -eq 'Zip'}
 $appVersion = $Nevergreen.Version
 $appURL = $Nevergreen.URI
+$appZip = Split-Path -Path $appURL -Leaf
+$appSetup = "Set-up.exe"
 $appDestination = "${env:ProgramFiles(x86)}\Adobe\Adobe Creative Cloud\Utils"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
-##*===============================================
+
+#-----------------------------------------------------------[Execution]------------------------------------------------------------
+
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -200,11 +246,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Wait-Process -Name "Creative Cloud Uninstaller"
     }
 
-    # Download latest file installer
+    # Download latest version
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
     {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
+        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
+        Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appVersion
+        Remove-File -Path $appZip
     }
     Else
     {
@@ -232,12 +280,12 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Get-ScheduledTask -TaskName "$($appVendor)GCInvoker-1.0" | Disable-ScheduledTask
 
     # Stop and disable unneeded services
-    Stop-ServiceAndDependencies -Name $appServices[0]
-    Stop-ServiceAndDependencies -Name $appServices[1]
-    Stop-ServiceAndDependencies -Name $appServices[2]
-    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
-    Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled"
-    Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled"
+    Stop-ServiceAndDependencies -Name $appServices[0] -ContinueOnError $True
+    Stop-ServiceAndDependencies -Name $appServices[1] -ContinueOnError $True
+    Stop-ServiceAndDependencies -Name $appServices[2] -ContinueOnError $True
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
+    Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled" -ContinueOnError $True
+    Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled" -ContinueOnError $True
 
     # Remove unneeded applications from running at start-up
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "Adobe Creative Cloud" -ContinueOnError $True
