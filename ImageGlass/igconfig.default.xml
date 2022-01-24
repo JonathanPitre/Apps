@@ -5,6 +5,7 @@
       <Item key="IsSlideshow" value="False" />
       <Item key="IsShowSlideshowCountdown" value="True" />
       <Item key="IsRandomSlideshowInterval" value="False" />
+      <Item key="IsPlayImageChangeSound" value="False" />
       <Item key="IsFullScreen" value="False" />
       <Item key="IsShowThumbnail" value="False" />
       <Item key="IsCenterImage" value="True" />
@@ -26,17 +27,17 @@
       <Item key="IsPreserveModifiedDate" value="True" />
       <Item key="IsDisplayBasenameOfImage" value="False" />
       <Item key="IsCenterToolbar" value="True" />
-      <Item key="IsOpenLastSeenImage" value="True" />
+      <Item key="IsOpenLastSeenImage" value="False" />
       <Item key="IsApplyColorProfileForAll" value="False" />
       <Item key="IsShowNavigationButtons" value="False" />
       <Item key="IsShowCheckerboardOnlyImageRegion" value="False" />
-      <Item key="IsRecursiveLoading" value="True" />
+      <Item key="IsRecursiveLoading" value="False" />
       <Item key="IsUseFileExplorerSortOrder" value="True" />
-      <Item key="IsGroupImagesByDirectory" value="True" />
+      <Item key="IsGroupImagesByDirectory" value="False" />
       <Item key="IsShowingHiddenImages" value="False" />
       <Item key="IsShowColorPickerOnStartup" value="False" />
       <Item key="IsShowPageNavOnStartup" value="False" />
-      <Item key="IsShowPageNavAuto" value="True" />
+      <Item key="IsShowPageNavAuto" value="False" />
       <Item key="IsWindowFit" value="False" />
       <Item key="IsCenterWindowFit" value="True" />
       <Item key="IsShowToast" value="True" />
@@ -44,22 +45,31 @@
       <Item key="IsHideTooltips" value="False" />
       <Item key="IsExifToolAlwaysOnTop" value="True" />
       <Item key="IsUseEmptyTitleBar" value="False" />
+      <Item key="IsUseRawThumbnail" value="False" />
+      <Item key="IsHideToolbarInFullscreen" value="False" />
+      <Item key="IsHideThumbnailBarInFullscreen" value="False" />
+      <Item key="IsContinueRunningBackground" value="False" />
+      <Item key="IsStartWithOs" value="False" />
       <Item key="FirstLaunchVersion" value="5" />
       <Item key="SlideShowInterval" value="5" />
       <Item key="SlideShowIntervalTo" value="5" />
+      <Item key="ThumbnailDimension" value="96" />
+      <Item key="ThumbnailBarWidth" value="96" />
       <Item key="ImageBoosterCachedCount" value="1" />
+      <Item key="NumberImagesNotify" value="5" />
+      <Item key="ZoomLockValue" value="-1" />
       <Item key="ToolbarIconHeight" value="22" />
       <Item key="ImageEditQuality" value="100" />
-      <Item key="FrmMainWindowState" value="Maximized" />
+      <Item key="FrmMainWindowState" value="Normal" />
       <Item key="FrmSettingsWindowState" value="Normal" />
       <Item key="FrmExifToolWindowState" value="Normal" />
       <Item key="ImageLoadingOrder" value="Name" />
       <Item key="ImageLoadingOrderType" value="Asc" />
       <Item key="MouseWheelAction" value="Zoom" />
-      <Item key="MouseWheelCtrlAction" value="DoNothing" />
+      <Item key="MouseWheelCtrlAction" value="ScrollVertically" />
       <Item key="MouseWheelShiftAction" value="ScrollHorizontally" />
       <Item key="MouseWheelAltAction" value="DoNothing" />
-      <Item key="ZoomMode" value="LockZoomRatio" />
+      <Item key="ZoomMode" value="AutoZoom" />
       <Item key="ZoomOptimizationMethod" value="Auto" />
       <Item key="ToolbarPosition" value="Top" />
       <Item key="AfterEditingAction" value="Nothing" />
@@ -68,14 +78,11 @@
       <Item key="ExifToolExePath" value="" />
       <Item key="ExifToolCommandArgs" value="" />
       <Item key="ZoomLevels" value="5;10;15;20;30;40;50;60;70;80;90;100;125;150;175;200;250;300;350;400;500;600;700;800;1000;1200;1500;1800;2100;2500;3000;3500" />
-      <Item key="KeyComboActions" value="LeftRight:PrevNextImage;PageUpDown:PrevNextImage;SpaceBack:PauseSlideshow;UpDown:PanUpDown;" />
-      <Item key="BackgroundColor" value="#232A30" />
-      <Item key="Language" value="French.iglang" />
-      <Item key="Theme" value="Kobe" />
-      <Item key="IsUseRawThumbnail" value="False" />
-      <Item key="IsHideToolbarInFullscreen" value="False" />
-      <Item key="IsHideThumbnailBarInFullscreen" value="False" />
       <Item key="SinglePageFormats" value="*.heic;*.heif;*.psd;" />
+      <Item key="KeyComboActions" value="LeftRight:PrevNextImage;PageUpDown:PrevNextImage;SpaceBack:PauseSlideshow;UpDown:PauseSlideshow;" />
+      <Item key="BackgroundColor" value="#232A30" />
+      <Item key="Language" value="French.v8.5.iglang" />
+      <Item key="Theme" value="Kobe" />
     </Content>
   </Configuration>
 </ImageGlass>
