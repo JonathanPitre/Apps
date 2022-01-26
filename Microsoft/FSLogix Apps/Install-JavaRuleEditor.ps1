@@ -120,6 +120,48 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
+Function Get-MicrosoftFSLogixApps
+{
+    <#
+    .NOTES
+        Author: Jonathan Pitre
+        Twitter: @PitreJonathan
+    #>
+
+    [OutputType([System.Management.Automation.PSObject])]
+    [CmdletBinding()]
+    Param()
+
+
+    $PreviewVersion = "2.9.8048.43478"
+
+    Try
+    {
+        $DownloadURL = "https://aka.ms/fslogix/downloadpreview"
+    }
+    Catch
+    {
+        Throw "Failed to connect to URL: $DownloadURL with error $_."
+        Break
+    }
+    Finally
+    {
+
+        if ($PreviewVersion -and $DownloadURL)
+        {
+            [PSCustomObject]@{
+                Version      = $PreviewVersion
+                Date         = "24/01/2022"
+                Channel      = 'Preview'
+                Uri          = $DownloadURL
+            }
+        }
+
+        Get-EvergreenApp MicrosoftFSLogixApps
+
+    }
+}
+
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Microsoft"
@@ -127,10 +169,10 @@ $appName = "FSLogix Apps Java RuleEditor"
 $appSetup = "FSLogixAppsJavaRuleEditorSetup.exe"
 $appProcesses = @("JavaRuleEditor")
 $appInstallParameters = "/install /quiet /norestart"
-$Evergreen = Get-EvergreenApp MicrosoftFSLogixApps | Where-Object { $_.Channel -eq "Production" }
+$Evergreen = Get-MicrosoftFSLogixApps| Where-Object { $_.Channel -eq "Preview" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appZip = Split-Path -Path $appURL -Leaf
+$appZip = "FSLogix_Apps_$appVersion.zip"
 $appDestination = "$env:ProgramFiles\FSLogix\Apps"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact) | Select-Object -Last 1
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -Last 1
