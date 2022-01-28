@@ -99,7 +99,6 @@ $Nevergreen = Get-NevergreenApp -Name AdobeAcrobatReader| Where-Object { $_.Arch
 $appPatchVersion = $Nevergreen.Version
 $appPatchURL = $Nevergreen.Uri
 $appPatch = Split-Path -Path $appPatchURL -Leaf
-
 $appDestination = "$env:ProgramFiles\$appVendor\$appName $appShortVersion\$appName"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.* $appShortVersion .*" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion (64-bit)" -Exact).DisplayVersion
