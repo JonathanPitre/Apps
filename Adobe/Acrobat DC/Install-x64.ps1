@@ -258,6 +258,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 	Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
 
 	# Remove unneeded applications from running at start-up
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "Acrobat Assistant 8.0" -ContinueOnError $True
 	Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeAAMUpdater-1.0" -ContinueOnError $True
 	#Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeGCInvoker-1.0" -ContinueOnError $True
 
