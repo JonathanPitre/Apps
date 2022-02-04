@@ -352,7 +352,9 @@ If ($appVersion -gt $appInstalledVersion)
     # Enable EDT MTU Discovery on the VDA - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/technical-overview/hdx/adaptive-transport.html
     Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "MtuDiscovery" -Type "DWord" -Value "1"
 
-Remove-Folder -Path "$envTemp\Install"
+    # Go back to the parent folder
+    Set-Location ..
+    Remove-Folder -Path "$envTemp\Install\"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 

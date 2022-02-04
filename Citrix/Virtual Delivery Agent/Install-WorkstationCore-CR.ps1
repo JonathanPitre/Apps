@@ -338,7 +338,9 @@ If ($appVersion -gt $appInstalledVersion)
     # The timeout for enforcing the Remote PC Access mode is 30 seconds (decimal) by default - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/remote-pc-access.html
     # Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA\RemotePC" -Name "RpcaTimeout" -Type "DWord" -Value "45"
 
-Remove-Folder -Path "$envTemp\Install"
+    # Go back to the parent folder
+    Set-Location ..
+    Remove-Folder -Path "$envTemp\Install\"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 

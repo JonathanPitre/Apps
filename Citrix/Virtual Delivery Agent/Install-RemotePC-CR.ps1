@@ -334,7 +334,7 @@ If ($appVersion -gt $appInstalledVersion)
     }
     Else
     {
-        # Disconnected sessions might remain open on a physical machine even after the time specified under "Disconnect session timer interval" has passed
+        # Disconnected sessions might remain open on a p ysical machine even after the time specified under "Disconnect session timer interval" has passed
         # https://discussions.citrix.com/topic/410389-sessions-to-physical-pcs-do-not-go-into-disconnected-state
         # https://docs.citrix.com/en-us/legacy-archive/downloads/xenapp-and-xendesktop-7.6-long-term-service-release-(ltsr).pdf
         #Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA" -Name "ForceDisableRemotePC" -Type "DWord" -Value "1"
@@ -355,7 +355,9 @@ If ($appVersion -gt $appInstalledVersion)
     # Enable WOL
     # https://www.cyberdrain.com/monitoring-with-powershell-monitor-and-enabling-wol-for-hp-lenovo-dell
 
-    Remove-Folder -Path "$envTemp\Install"
+    # Go back to the parent folder
+    Set-Location ..
+    Remove-Folder -Path "$envTemp\Install\"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
