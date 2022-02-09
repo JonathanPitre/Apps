@@ -138,7 +138,7 @@ Function Get-CitrixWorkspaceApp
     }
     Finally
     {
-        $VersionRegEx = "Version\:\&nbsp\;((?:\d+\.)+(?:\d+)) \(((?:\d+\.)+(?:\d+))\)"
+        $VersionRegEx = "Version\:\&nbsp\;((?:\d+\.)+(?:\d+)) \((.+)\)"
         $LongVersion = ($DownloadText | Select-String -Pattern $VersionRegEx).Matches.Groups[1].Value
         $ShortVersion = ($DownloadText | Select-String -Pattern $VersionRegEx).Matches.Groups[2].Value
         $URLRegEx = '\/\/downloads\.citrix\.com.+CitrixWorkspaceApp\.exe.+\=\w+'
@@ -179,7 +179,7 @@ $appInstalledVersion = ($appInstalled).DisplayName.Trim("Citrix Workspace ") + "
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ($appVersion -gt $appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion
