@@ -259,7 +259,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         $Trigger.Subscription = "<QueryList><Query Id=`"0`" Path=`"Application`"><Select Path=`"Application`">*[System[Provider[@Name='Microsoft-Windows-Search-ProfileNotify'] and EventID=2]]</Select></Query></QueryList>"
 
         # Define additional variables containing scheduled task action and scheduled task principal
-        $A = New-ScheduledTaskAction –Execute powershell.exe -Argument "Restart-Service Wsearch"
+        $A = New-ScheduledTaskAction -Execute powershell.exe -Argument "Restart-Service Wsearch"
         $P = New-ScheduledTaskPrincipal -UserId "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount
         $S = New-ScheduledTaskSettingsSet
 
