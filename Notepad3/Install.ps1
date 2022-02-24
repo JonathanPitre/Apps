@@ -139,7 +139,6 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersio
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptDirectory
