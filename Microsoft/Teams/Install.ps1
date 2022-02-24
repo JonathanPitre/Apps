@@ -247,8 +247,8 @@ $appArchitecture = "x64"
 $appLanguage = "fr-CA"
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/Teams.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
-$appTeamsConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Teams/desktop-config.json"
-$appTeamsConfig = Split-Path -Path $appTeamsConfigURL -Leaf
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Teams/desktop-config.json"
+$appConfig= Split-Path -Path $appConfigURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
 $Evergreen = Get-EvergreenApp $appVendor$appName | Where-Object {$_.Ring -eq $appRing -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi"}
@@ -383,11 +383,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Execute-Process -Path "$envWinDir\SysWOW64\regsvr32.exe" -Parameters "/s /n /i:user `"$appX64DLL`"" -ContinueOnError $True
     Execute-Process -Path "$envWinDir\SysWOW64\regsvr32.exe" -Parameters "/s /n /i:user `"$appX86DLL`"" -ContinueOnError $True
 
-    # Download required Microsoft Teams config file
+    # Download required config file
     If (-Not(Test-Path -Path $appScriptDirectory\$appTeamsConfig))
     {
         Write-Log -Message "Downloading $appVendor $appName config file..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appTeamsConfigURL -OutFile $appScriptDirectory\$appTeamsConfig
+        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appTeamsConfig
     }
     Else
     {
@@ -397,11 +397,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Change language into desktop-config.json
     If (Test-Path -Path $appScriptDirectory\$appTeamsConfig)
     {
-        $json = Get-Content -Path $appScriptDirectory\$appTeamsConfig -Raw | ConvertFrom-Json
+        $json = Get-Content -Path $appScriptDirectory\$appConfig-Raw | ConvertFrom-Json
         If ($json.currentWebLanguage -ne $appLanguage)
         {
             $json.currentWebLanguage = $appLanguage
-            $json | ConvertTo-Json | Out-File $appScriptDirectory\$appTeamsConfig -Encoding utf8
+            $json | ConvertTo-Json | Out-File $appScriptDirectory\$appConfig-Encoding utf8
             Write-Log -Message "$appVendor $appName config file was modified successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
         }
     }
@@ -411,27 +411,26 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "$appVendor $appName settings were configured for the Default User profile." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Register Teams as the chat app for Office
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\IM Providers\Teams" -Name "FriendlyName" -Type "String" -Value "Microsoft Teams"
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\IM Providers\Teams" -Name "GUID" -Type "String" -Value "{00425F68-FFC1-445F-8EDF-EF78B84BA1C7}"
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\IM Providers\Teams" -Name "ProcessName" -Type "String" -Value "Teams.exe"
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\IM Providers\Teams" -Name "FriendlyName" -Type "String" -Value "Microsoft Teams"
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\IM Providers\Teams" -Name "GUID" -Type "String" -Value "{00425F68-FFC1-445F-8EDF-EF78B84BA1C7}"
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\IM Providers\Teams" -Name "ProcessName" -Type "String" -Value "Teams.exe"
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\IM Providers\Teams" -Name "FriendlyName" -Value "Microsoft Teams" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\IM Providers\Teams" -Name "GUID" -Value "{00425F68-FFC1-445F-8EDF-EF78B84BA1C7}" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\IM Providers\Teams" -Name "ProcessName" -Value "Teams.exe" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\IM Providers\Teams" -Name "FriendlyName" -Value "Microsoft Teams" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\IM Providers\Teams" -Name "GUID" -Value "{00425F68-FFC1-445F-8EDF-EF78B84BA1C7}" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\IM Providers\Teams" -Name "ProcessName" -Value "Teams.exe" -Type String
 
     # Load the Default User registry hive
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "LOAD HKLM\DefaultUser $envSystemDrive\Users\Default\NTUSER.DAT" -WindowStyle Hidden
 
     # Set Microsoft Teams as the default chat app for Office - https://www.msoutlook.info/question/setting-skype-or-other-im-client-to-integrate-with-outlook
-    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\IM Providers" -Name "DefaultIMApp" -Type String -Value "Teams"
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\IM Providers" -Name "DefaultIMApp" -Value "Teams" -Type String
 
     # Open Microsoft Teams links without prompts - https://james-rankin.com/articles/microsoft-teams-on-citrix-virtual-apps-and-desktops-part-2-default-settings-and-json-wrangling
-    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\msteams\shell\open\command" -Name "(Default)" -Type String -Value "`"C:\Program Files (x86)\Microsoft\Teams\current\Teams.exe`" `"%1`""
-    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\TeamsURL\shell\open\command" -Name "(Default)" -Type String -Value "`"C:\Program Files (x86)\Microsoft\Teams\current\Teams.exe`" `"%1`""
-    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\msteams" -Name "DefaultIMApp" -Type String -Value "URL:msteams"
-    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\ApplicationAssociationToasts" -Name "msteams_msteams" -Type DWord -Value "00000000"
-    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\msteams" -Name "URL Protocol" -Type String -Value ""
-    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Internet Explorer\ProtocolExecute\msteams" -Name "WarnOnOpen" -Type String -Value "00000000"
-
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\msteams" -Name "DefaultIMApp" -Value "URL:msteams" -Type String
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\msteams" -Name "URL Protocol" -Value "" -Type String
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\msteams\shell\open\command" -Name "(Default)" -Value "`"C:\Program Files (x86)\Microsoft\Teams\current\Teams.exe`" `"%1`"" -Type String
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\TeamsURL\shell\open\command" -Name "(Default)" -Value "`"C:\Program Files (x86)\Microsoft\Teams\current\Teams.exe`" `"%1`"" -Type String
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\ApplicationAssociationToasts" -Name "msteams_msteams" -Value "0" -Type DWord
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Internet Explorer\ProtocolExecute\msteams" -Name "WarnOnOpen" -Value "0" -Type DWord
     # Unload the Default User registry hive
     Start-Sleep -Seconds 3
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "UNLOAD HKLM\DefaultUser" -WindowStyle Hidden
