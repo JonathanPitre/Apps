@@ -401,7 +401,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         If ($json.currentWebLanguage -ne $appLanguage)
         {
             $json.currentWebLanguage = $appLanguage
-            $json | ConvertTo-Json | Out-File $appScriptDirectory\$appConfig-Encoding utf8
+            $json | ConvertTo-Json | Out-File $appScriptDirectory\$appConfig -Encoding utf8
             Write-Log -Message "$appVendor $appName config file was modified successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
         }
     }
@@ -428,6 +428,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\msteams" -Name "DefaultIMApp" -Value "URL:msteams" -Type String
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\msteams" -Name "URL Protocol" -Value "" -Type String
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\msteams\shell\open\command" -Name "(Default)" -Value "`"C:\Program Files (x86)\Microsoft\Teams\current\Teams.exe`" `"%1`"" -Type String
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\ms-teams" -Name "DefaultIMApp" -Value "URL:msteams" -Type String
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\ms-teams" -Name "URL Protocol" -Value "" -Type String
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\ms-teams\shell\open\command" -Name "(Default)" -Value "`"C:\Program Files (x86)\Microsoft\Teams\current\Teams.exe`" `"%1`"" -Type String
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\TeamsURL\shell\open\command" -Name "(Default)" -Value "`"C:\Program Files (x86)\Microsoft\Teams\current\Teams.exe`" `"%1`"" -Type String
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\ApplicationAssociationToasts" -Name "msteams_msteams" -Value "0" -Type DWord
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Internet Explorer\ProtocolExecute\msteams" -Name "WarnOnOpen" -Value "0" -Type DWord
