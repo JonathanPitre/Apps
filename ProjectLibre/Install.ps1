@@ -195,6 +195,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Removes software notification
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\JavaSoft\Prefs\com\projectlibre1\dialog" -Name "validated/License" -Value "true" -Type String
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\JavaSoft\Prefs\com\projectlibre1\dialog" -Name "user/Email" -Value "true" -Type String
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\JavaSoft\Prefs\com\projectlibre1\dialog" -Name "/Show/Tip/On/Startup" -Value "false" -Type String
 
     # Unload the Default User registry hive
