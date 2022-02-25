@@ -127,6 +127,8 @@ $appName = "VLC media player"
 $appProcesses = @("vlc", "vlc-cache-gen")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/VLC%20Player/vlcrc"
+$appConfig = Split-Path -Path $appConfigURL -Leaf
 $Evergreen = Get-EvergreenApp -Name VideoLanVlcPlayer | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Type -eq "msi" }
 $appVersion = $Evergreen.Version + ".0"
 $appURL = $Evergreen.URI
@@ -144,6 +146,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion
 
+    # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
     {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -154,6 +157,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled)
     {
@@ -161,11 +165,35 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Remove-MSIApplications -Name $appName -Parameters $appInstallParameters
     }
 
+    # Download required config file
+    If (-Not(Test-Path -Path $appScriptDirectory\$appConfig))
+    {
+        Write-Log -Message "Downloading $appName config file..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    Write-Log -Message "Applying $appName settings to the Default User profile." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Copy config file to the default profile
+    New-Folder -Path "$envSystemDrive\Users\Default\AppData\Roaming\vlc"
+    Copy-File -Path "$appScriptDirectory\$appConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\vlc\vlcrc"
+
+    # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Remove desktop shortcut for all users
     Remove-File -Path $envCommonDesktop\$appName.lnk -ContinueOnError $True
+
+    # Fix Start Menu shortcut
+    Copy-File -Path $envCommonStartMenuPrograms\$appVendor\VLC\$appName.lnk -Destination $envCommonStartMenuPrograms
+    Remove-Folder -Path $envCommonStartMenuPrograms\$appVendor
 
     # Go back to the parent folder
     Set-Location ..
