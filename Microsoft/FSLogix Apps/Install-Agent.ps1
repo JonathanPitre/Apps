@@ -120,6 +120,285 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
+Function Resolve-Uri
+{
+    <#
+    .SYNOPSIS
+        Resolves a URI and also returns the filename and last modified date if found.
+
+    .DESCRIPTION
+        Resolves a URI and also returns the filename and last modified date if found.
+
+    .NOTES
+        Site: https://packageology.com
+        Author: Dan Gough
+        Twitter: @packageologist
+
+    .LINK
+        https://github.com/DanGough/Nevergreen
+
+    .PARAMETER Uri
+        The URI resolve. Accepts an array of strings or pipeline input.
+
+    .PARAMETER UserAgent
+        Optional parameter to provide a user agent for Invoke-WebRequest to use. Examples are:
+
+        Googlebot: 'Googlebot/2.1 (+http://www.google.com/bot.html)'
+        Microsoft Edge: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'
+
+    .EXAMPLE
+        Resolve-Uri -Uri 'http://somewhere.com/somefile.exe'
+
+        Description:
+        Returns the absolute redirected URI, filename and last modified date.
+    #>
+    [CmdletBinding(SupportsShouldProcess = $False)]
+    param (
+        [Parameter(
+            Mandatory = $true,
+            Position = 0,
+            ValueFromPipeline,
+            ValueFromPipelineByPropertyName)]
+        [ValidatePattern('^(http|https)://')]
+        [Alias('Url')]
+        [String[]] $Uri,
+        [Parameter(
+            Mandatory = $false,
+            Position = 1)]
+        [String] $UserAgent
+    )
+
+    begin
+    {
+        $ProgressPreference = 'SilentlyContinue'
+    }
+
+    process
+    {
+
+        foreach ($UriToResolve in $Uri)
+        {
+
+            try
+            {
+
+                $ParamHash = @{
+                    Uri              = $UriToResolve
+                    Method           = 'Head'
+                    UseBasicParsing  = $True
+                    DisableKeepAlive = $True
+                    ErrorAction      = 'Stop'
+                }
+
+                if ($UserAgent)
+                {
+                    $ParamHash.UserAgent = $UserAgent
+                }
+
+                $Response = Invoke-WebRequest @ParamHash
+
+                if ($IsCoreCLR)
+                {
+                    $ResolvedUri = $Response.BaseResponse.RequestMessage.RequestUri.AbsoluteUri
+                }
+                else
+                {
+                    $ResolvedUri = $Response.BaseResponse.ResponseUri.AbsoluteUri
+                }
+
+                Write-Verbose "$($MyInvocation.MyCommand): URI resolved to: $ResolvedUri"
+
+                #PowerShell 7 returns each header value as single unit arrays instead of strings which messes with the -match operator coming up, so use Select-Object:
+                $ContentDisposition = $Response.Headers.'Content-Disposition' | Select-Object -First 1
+
+                if ($ContentDisposition -match 'filename="?([^\\/:\*\?"<>\|]+)')
+                {
+                    $FileName = $matches[1]
+                    Write-Verbose "$($MyInvocation.MyCommand): Content-Disposition header found: $ContentDisposition"
+                    Write-Verbose "$($MyInvocation.MyCommand): File name determined from Content-Disposition header: $FileName"
+                }
+                else
+                {
+                    $Slug = [uri]::UnescapeDataString($ResolvedUri.Split('?')[0].Split('/')[-1])
+                    if ($Slug -match '^[^\\/:\*\?"<>\|]+\.[^\\/:\*\?"<>\|]+$')
+                    {
+                        Write-Verbose "$($MyInvocation.MyCommand): URI slug is a valid file name: $FileName"
+                        $FileName = $Slug
+                    }
+                    else
+                    {
+                        $FileName = $null
+                    }
+                }
+
+                try
+                {
+                    $LastModified = [DateTime]($Response.Headers.'Last-Modified' | Select-Object -First 1)
+                    Write-Verbose "$($MyInvocation.MyCommand): Last modified date: $LastModified"
+                }
+                catch
+                {
+                    Write-Verbose "$($MyInvocation.MyCommand): Unable to parse date from last modified header: $($Response.Headers.'Last-Modified')"
+                    $LastModified = $null
+                }
+
+            }
+            catch
+            {
+                Throw "$($MyInvocation.MyCommand): Unable to resolve URI: $($_.Exception.Message)"
+            }
+
+            if ($ResolvedUri)
+            {
+                [PSCustomObject]@{
+                    Uri          = $ResolvedUri
+                    FileName     = $FileName
+                    LastModified = $LastModified
+                }
+            }
+
+        }
+    }
+
+    end
+    {
+    }
+
+}
+
+Function Get-Version
+{
+    <#
+    .SYNOPSIS
+        Extracts a version number from either a string or the content of a web page using a chosen or pre-defined match pattern.
+
+    .DESCRIPTION
+        Extracts a version number from either a string or the content of a web page using a chosen or pre-defined match pattern.
+
+    .NOTES
+        Site: https://packageology.com
+        Author: Dan Gough
+        Twitter: @packageologist
+
+    .LINK
+        https://github.com/DanGough/Nevergreen
+
+    .PARAMETER String
+        The string to process.
+
+    .PARAMETER Uri
+        The Uri to load web content from to process.
+
+    .PARAMETER UserAgent
+        Optional parameter to provide a user agent for Invoke-WebRequest to use. Examples are:
+
+        Googlebot: 'Googlebot/2.1 (+http://www.google.com/bot.html)'
+        Microsoft Edge: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'
+
+    .PARAMETER Pattern
+        Optional RegEx pattern to use for version matching. Pattern to return must be included in parentheses.
+
+    .PARAMETER ReplaceWithDot
+        Switch to automatically replace characters - or _ with . in detected version.
+
+    .EXAMPLE
+        Get-Version -String 'http://somewhere.com/somefile_1.2.3.exe'
+
+        Description:
+        Returns '1.2.3'
+    #>
+    [CmdletBinding(SupportsShouldProcess = $False)]
+    param (
+        [Parameter(
+            Mandatory = $true,
+            Position = 0,
+            ValueFromPipeline = $true,
+            ParameterSetName = 'String')]
+        [ValidateNotNullOrEmpty()]
+        [String[]] $String,
+        [Parameter(
+            Mandatory = $true,
+            ParameterSetName = 'Uri')]
+        [ValidatePattern('^(http|https)://')]
+        [String] $Uri,
+        [Parameter(
+            Mandatory = $false,
+            ParameterSetName = 'Uri')]
+        [String] $UserAgent,
+        [Parameter(
+            Mandatory = $false,
+            Position = 1)]
+        [ValidateNotNullOrEmpty()]
+        [String] $Pattern = '((?:\d+\.)+\d+)',
+        [Switch] $ReplaceWithDot
+    )
+
+    begin
+    {
+
+    }
+
+    process
+    {
+
+        if ($PsCmdlet.ParameterSetName -eq 'Uri')
+        {
+
+            $ProgressPreference = 'SilentlyContinue'
+
+            try
+            {
+                $ParamHash = @{
+                    Uri              = $Uri
+                    Method           = 'GET'
+                    UseBasicParsing  = $True
+                    DisableKeepAlive = $True
+                    ErrorAction      = 'Stop'
+                }
+
+                if ($UserAgent)
+                {
+                    $ParamHash.UserAgent = $UserAgent
+                }
+
+                $String = (Invoke-WebRequest @ParamHash).Content
+            }
+            catch
+            {
+                Write-Error "Unable to query URL '$Uri': $($_.Exception.Message)"
+            }
+
+        }
+
+        foreach ($CurrentString in $String)
+        {
+
+            if ($CurrentString -match $Pattern)
+            {
+                if ($ReplaceWithDot)
+                {
+                    $matches[1].Replace('-', '.').Replace('_', '.')
+                }
+                else
+                {
+                    $matches[1]
+                }
+            }
+            else
+            {
+                Write-Warning "No version found within $CurrentString using pattern $Pattern"
+            }
+
+        }
+
+    }
+
+    end
+    {
+    }
+
+}
+
 Function Get-MicrosoftFSLogixApps
 {
     <#
@@ -133,11 +412,12 @@ Function Get-MicrosoftFSLogixApps
     Param()
 
 
-    $PreviewVersion = "2.9.8048.43478"
 
     Try
     {
         $DownloadURL = "https://aka.ms/fslogix/downloadpreview"
+        $DownloadURL = Resolve-Uri -Uri $DownloadURL | Select-Object -ExpandProperty Uri
+        $PreviewVersion = Get-Version -String $DownloadURL
     }
     Catch
     {
@@ -150,10 +430,10 @@ Function Get-MicrosoftFSLogixApps
         if ($PreviewVersion -and $DownloadURL)
         {
             [PSCustomObject]@{
-                Version      = $PreviewVersion
-                Date         = "24/01/2022"
-                Channel      = 'Preview'
-                Uri          = $DownloadURL
+                Version = $PreviewVersion
+                Date    = "24/02/2022"
+                Channel = 'Preview'
+                Uri     = $DownloadURL
             }
         }
 
@@ -233,21 +513,21 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         # Limit Windows Search to a single cpu core - https://social.technet.microsoft.com/Forums/en-US/88725f57-67ed-4c09-8ae6-780ff785e555/problems-with-search-service-on-server-2012-r2-rds?forum=winserverTS
         #Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "CoreCount" -Type "DWord" -Value "1"
         # Configure multi-user search - https://docs.microsoft.com/en-us/fslogix/configure-search-roaming-ht
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Type "DWord" -Value "2"
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Type "DWord" -Value "2"
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Type "DWord" -Value "0"
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Value "2" -Type DWord
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Value "2" -Type DWord
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Value "0" -Type DWord
     }
     If ($envOSName -like "*Windows Server 2019*" -or $envOSName -like "*Windows Server 2022*" -or $envOSName -like "*Windows 10 Enterprise for Virtual Desktops")
     {
         # Limit Windows Search to a single cpu core - https://social.technet.microsoft.3.com/Forums/en-US/88725f57-67ed-4c09-8ae6-780ff785e555/problems-with-search-service-on-server-2012-r2-rds?forum=winserverTS
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "CoreCount" -Type "DWord" -Value "1"
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "CoreCount" -Value "1" -Type DWord
         # Enable Windows per user search catalog since FSLogix search indexing functionality is not recommended on Windows Server 2019 and Windows 10 multi-session
         # https://docs.microsoft.com/en-us/fslogix/configure-search-roaming-ht
         # https://jkindon.com/2020/03/15/windows-search-in-server-2019-and-multi-session-windows-10
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "EnablePerUserCatalog" -Value 1 -Type "DWord"
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Type "DWord" -Value "0"
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Type "DWord" -Value "0"
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Type "DWord" -Value "0"
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "EnablePerUserCatalog" -Value 1 -Type DWord
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Value "0" -Type DWord
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Value "0" -Type DWord
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Value "0" -Type DWord
     }
     If ($envOSName -like "*Windows Server 2019*" -or $envOSName -like "*Windows Server 2022*")
     {
@@ -278,9 +558,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
     If ($envOSName -like "*Windows 10*" -and $envOSName -ne "*Windows 10 Enterprise for Virtual Desktops")
     {
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Type "DWord" -Value "1"
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Type "DWord" -Value "1"
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Type "DWord" -Value "0"
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Value "1" -Type DWord
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Value "1" -Type DWord
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Value "0" -Type DWord
     }
 
     # Configure Windows Search service auto-start and start it
@@ -293,14 +573,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If ((Test-Path -Path "HKLM:\SYSTEM\CurrentControlSet\Services\unifltr") -and (Get-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\frxdrvvt\Instances\frxdrvvt" -Value "Altitude") -ne 138010)
     {
         Write-Log -Message "Modifying $appVendor $appName altitude setting to be compatible with Citrix App Layering..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\frxdrvvt\Instances\frxdrvvt" -Name "Altitude" -Value "138010" -Type "String"
+        Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\frxdrvvt\Instances\frxdrvvt" -Name "Altitude" -Value "138010" -Type String
     }
 
     # Disable Citrix Profile Management if detected
     If ((Test-Path -Path "HKLM:\SYSTEM\CurrentControlSet\Services\ctxProfile") -and (Get-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Value "PSEnabled") -ne "0")
     {
         Write-Log -Message "Disabling Citrix Profile Management..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Name "PSEnabled" -Value "0" -Type "DWord"
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Name "PSEnabled" -Value "0" -Type DWord
     }
 
     # Enable frxrobocopy - https://docs.microsoft.com/en-us/fslogix/fslogix-installed-components-functions-reference
