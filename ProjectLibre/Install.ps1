@@ -185,6 +185,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     New-Folder -Path "$envSystemDrive\Users\Default\.projectlibre"
     Copy-File -Path "$appScriptDirectory\$appConfig" -Destination "$envSystemDrive\Users\Default\.projectlibre\projectlibre.conf"
 
+    # Install latest version
     Write-Log -Message "Installing $appName..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
 
