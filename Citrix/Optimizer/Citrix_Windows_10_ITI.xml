@@ -8,7 +8,7 @@
     <description>Windows 10 versions 20H2, 21H2, 21H2 (2009) from ITI</description>
     <category>OS Optimizations</category>
     <author>Jonathan Pitre</author>
-    <lastupdatedate>12/06/2021</lastupdatedate>
+    <lastupdatedate>2/25/2022</lastupdatedate>
   </metadata>
   <group>
     <id>DisableServices</id>
@@ -515,7 +515,7 @@ DOES NOT SUPPORT ROLLBACK!</description>
     <entry>
       <name>Microsoft.DesktopAppInstaller</name>
       <description>Microsoft.DesktopAppInstaller</description>
-      <execute>1</execute>
+      <execute>0</execute>
       <action>
         <plugin>UWP</plugin>
         <params>
@@ -1708,7 +1708,7 @@ This can have significant impact on performance.</description>
     <entry>
       <name>Disable Storage Sense</name>
       <description>Disable Storage Sense.</description>
-      <execute>1</execute>
+      <execute>0</execute>
       <action>
         <plugin>Registry</plugin>
         <params>
@@ -1994,7 +1994,7 @@ For more information, please refer to official Microsoft documentation: https://
     <entry>
       <name>Microsoft.StorePurchaseApp</name>
       <description>Microsoft Store application. Do not remove it if you're planning to use UWP applications. After removed, it is not possible to fix it without reverting to previous backup / snapshot or resetting operating system.</description>
-      <execute>1</execute>
+      <execute>0</execute>
       <action>
         <plugin>UWP</plugin>
         <params>
@@ -2007,7 +2007,7 @@ For more information, please refer to official Microsoft documentation: https://
       <description>Adds support for video codec VP9 (part of WebM project by Google)
 
 Note: This is required to support HDR video streaming</description>
-      <execute>0</execute>
+      <execute>1</execute>
       <action>
         <plugin>UWP</plugin>
         <params>
@@ -2018,7 +2018,7 @@ Note: This is required to support HDR video streaming</description>
     <entry>
       <name>Microsoft.WindowsCalculator</name>
       <description>Built-in Windows Calculator. If your users are using it (mostly desktop sessions rather than published applications), do not remove it unless you have a replacement calculator app.</description>
-      <execute>1</execute>
+      <execute>0</execute>
       <action>
         <plugin>UWP</plugin>
         <params>
@@ -2029,7 +2029,7 @@ Note: This is required to support HDR video streaming</description>
     <entry>
       <name>Microsoft.WindowsStore</name>
       <description>Microsoft Store application. Do not remove it if you're planning to use UWP applications. After removed, it is not possible to fix it without reverting to previous backup / snapshot or resetting operating system.</description>
-      <execute>1</execute>
+      <execute>0</execute>
       <action>
         <plugin>UWP</plugin>
         <params>
@@ -2064,7 +2064,7 @@ Note: This is required to support HDR video streaming</description>
     <entry>
       <name>Windows Search</name>
       <description>Provides content indexing, property caching, and search results for files, e-mail, and other content. Consider disabling it as it has a high impact on server density.</description>
-      <execute>1</execute>
+      <execute>0</execute>
       <action>
         <plugin>Services</plugin>
         <params>
@@ -2083,7 +2083,7 @@ Note: This is required to support HDR video streaming</description>
       <description>11/17/2020 - Stopping this service prevents Microsoft Defender ATP from working properly.
 
 This entry restores the system to the original state and fixes this issue.</description>
-      <execute>0</execute>
+      <execute>1</execute>
       <action>
         <plugin>Services</plugin>
         <params>
@@ -2097,7 +2097,7 @@ This entry restores the system to the original state and fixes this issue.</desc
       <description>11/17/2020 - Disabling this service prevents defragmentation (UI) from working.
 
 This entry restores the system to the original state and fixes this issue.</description>
-      <execute>0</execute>
+      <execute>1</execute>
       <action>
         <plugin>Services</plugin>
         <params>
@@ -2111,7 +2111,7 @@ This entry restores the system to the original state and fixes this issue.</desc
       <description>11/17/2020 - Disabling this service impacts some UI elements (e.g. Format menu for DVD writers) and can also cause event log entries by AppX packages.
 
 This entry restores the system to the original state and fixes this issue.</description>
-      <execute>0</execute>
+      <execute>1</execute>
       <action>
         <plugin>Services</plugin>
         <params>
