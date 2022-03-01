@@ -145,6 +145,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion
 
+    # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
     {
         Write-Log -Message "Downloading $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -156,6 +157,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled)
     {
@@ -176,6 +178,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Install latest version
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -Transform "$appScriptDirectory\$appTransform"
 
