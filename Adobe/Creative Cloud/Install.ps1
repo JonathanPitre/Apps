@@ -293,7 +293,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeGCInvoker-1.0" -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeAAMUpdater-1.0" -ContinueOnError $True
 
-    # Configure application Start Menu shortcut
+    # Configure application shortcut
     Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
     # Go back to the parent folder
