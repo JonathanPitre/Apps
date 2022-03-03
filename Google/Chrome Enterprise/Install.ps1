@@ -202,7 +202,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Creates a pinned taskbar icons for all users
     New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
 
-    # Remove desktop shortcut for all users
+    # Configure application shortcut
     #Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
     # Go back to the parent folder

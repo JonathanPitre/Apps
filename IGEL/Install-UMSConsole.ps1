@@ -110,7 +110,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
-    # Fix application Start Menu shorcut
+    # Configure application shortcut
     Remove-File -Path "$envCommonStartMenuPrograms\$appName $appMajorVersion\Uninstall $appName.lnk" -ContinueOnError $True
     Rename-Item -Path "$envCommonStartMenuPrograms\$appName $appMajorVersion" -NewName "$envCommonStartMenuPrograms\$appVendor" -Force
     Rename-Item -Path "$envCommonStartMenuPrograms\$appVendor\UMS Console.lnk" -NewName "$envCommonStartMenuPrograms\$appVendor\$appVendor UMS Console.lnk" -Force

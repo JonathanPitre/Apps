@@ -125,14 +125,14 @@ Function Install-WinGet
 {
 	[CmdletBinding()]
 	# Install latest WinGet
-	$MSDesktopAppInstaller = Get-AppPackage -name 'Microsoft.DesktopAppInstaller'
-	If (-Not$MSDesktopAppInstaller -or [version]$MSDesktopAppInstaller.Version -lt [version]"1.1.12653")
+	$MSDesktopAppInstaller = Get-AppPackage -Name 'Microsoft.DesktopAppInstaller'
+	If (-Not $MSDesktopAppInstaller -or [version]$MSDesktopAppInstaller.Version -lt [version]"1.1.12653")
  {
 		Write-Host -Object "Installing WinGet Dependencies..." -ForegroundColor Green
 		Add-AppxPackage -Path 'https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx'
 		$releases_url = 'https://api.github.com/repos/microsoft/winget-cli/releases/latest'
 		$releases = Invoke-RestMethod -uri $releases_url
-		$latestRelease = $releases.assets | Where { $_.browser_download_url.EndsWith('msixbundle') } | Select -First 1
+		$latestRelease = $releases.assets | Where-Object { $_.browser_download_url.EndsWith('msixbundle') } | Select-Object -First 1
 		Write-Host -Object "Installing WinGet from $($latestRelease.browser_download_url)..." -ForegroundColor Green
 		Add-AppxPackage -Path $latestRelease.browser_download_url
 	}
@@ -169,10 +169,9 @@ Function Install-WinGet
     Write-Host -Object "WinGet was configured!" -ForegroundColor Green
 }
 
-Install-WinGet
-
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+Install-WinGet
 $appVendor = "Google"
 $appName = "Earth Pro"
 $appProcesses = @("googleearthpro")
@@ -239,7 +238,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-Item -Path "$envSystemDrive\Users\Default\*.blf" -Force
     Remove-Item -Path "$envSystemDrive\Users\Default\*.regtrans-ms" -Force
 
-    # Remove desktop shortcut for all users
+    # Configure application shortcut
     Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
 	# Go back to the parent folder

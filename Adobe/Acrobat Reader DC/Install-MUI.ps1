@@ -230,7 +230,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Get-ScheduledTask -TaskName "$appVendor Acrobat Update Task" | Stop-ScheduledTask
     Get-ScheduledTask -TaskName "$appVendor Acrobat Update Task" | Disable-ScheduledTask
 
-    # Fix application Start Menu shorcut
+    # Configure application shortcut
     Copy-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -Destination "$envCommonStartMenuPrograms\$appVendor $appName $appShortVersion.lnk" -ContinueFileCopyOnError $True
     Remove-File -Path "$envCommonStartMenuPrograms\$appName $appShortVersion.lnk" -ContinueOnError $True
 

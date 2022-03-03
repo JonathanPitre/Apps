@@ -483,7 +483,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
-    # Fix application Start Menu shorcut
+    # Configure application shortcut
     Copy-File -Path "$envCommonStartMenu\$appShortName\*" -Destination "$envCommonStartMenuPrograms\$appShortName" -ContinueFileCopyOnError $True
     Remove-Folder -Path "$envCommonStartMenu\$appShortName" -ContinueOnError $True
 

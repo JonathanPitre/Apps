@@ -188,10 +188,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
-    # Remove desktop shortcut for all users
+    # Configure application shortcut
     Remove-File -Path $envCommonDesktop\$appName.lnk -ContinueOnError $True
-
-    # Fix Start Menu shortcut
     Copy-File -Path $envCommonStartMenuPrograms\$appVendor\VLC\$appName.lnk -Destination $envCommonStartMenuPrograms
     Remove-Folder -Path $envCommonStartMenuPrograms\$appVendor
 

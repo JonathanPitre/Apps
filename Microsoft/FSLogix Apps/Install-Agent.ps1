@@ -498,7 +498,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # https://docs.microsoft.com/en-us/fslogix/disk-management-utility-reference
     Execute-Process -Path $appDestination\frxcontext.exe -Parameters "--install"
 
-    # Add shortcut on the Start Menu
+    # Configure application shortcut
     New-Folder -Path "$envCommonStartMenuPrograms\Troubleshooting Tools" -ContinueOnError $True
     New-Shortcut -Path "$envCommonStartMenuPrograms\Troubleshooting Tools\FSLogix Tray Icon.lnk" -TargetPath "$appDestination\frxtray.exe" -IconLocation "$appDestination\frxtray.exe" -Description "FSLogix Tray Icon" -WorkingDirectory "$appDestination"
 

@@ -184,6 +184,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
+    # Configure application shortcut
+    Copy-File -Path "$envCommonStartMenuPrograms\$appName\$appName File Manager.lnk" -Destination "$envCommonStartMenuPrograms" -ContinueFileCopyOnError $True
+    Remove-Folder -Path "$envCommonStartMenuPrograms\$appName" -ContinueOnError $True
+
     # Go back to the parent folder
     Set-Location ..
 

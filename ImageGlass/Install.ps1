@@ -221,7 +221,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Copy themes files - https://github.com/d2phap/ImageGlass/issues/1112
     #Copy-File -Path $appScriptDirectory\*.igtheme -Destination $appDestination\Themes
 
-    # Remove desktop shortcut
+    # Configure application shortcut
     Remove-File -Path $envCommonDesktop\$appName.lnk -ContinueOnError $True
 
     # Go back to the parent folder

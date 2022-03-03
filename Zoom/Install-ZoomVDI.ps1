@@ -250,7 +250,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
-    # Remove desktop shortcut for all users
+    #9Configure application shortcut
     Remove-File -Path "$envCommonDesktop\$appShortName VDI.lnk" -ContinueOnError $True
 
     # Go back to the parent folder

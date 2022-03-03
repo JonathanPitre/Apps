@@ -209,7 +209,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-Item -Path "$envSystemDrive\Users\Default\*.blf" -Force
     Remove-Item -Path "$envSystemDrive\Users\Default\*.regtrans-ms" -Force
 
-    # Remove desktop shortcut for all users
+    # Configure application shortcut
     Remove-File -Path "$envCommonDesktop\$appName.lnk" -ContinueOnError $True
 
     # Go back to the parent folder
