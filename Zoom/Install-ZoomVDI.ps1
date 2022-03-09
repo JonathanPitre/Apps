@@ -147,6 +147,7 @@ Function Get-ZoomAdmx
 $appShortName = "Zoom"
 $appName = "Zoom Client for VDI"
 $appProcesses = @("Zoom", "Zoom_launcher", "ZoomOutlookIMPlugin")
+$appServices = @("ZoomCptService")
 $appInstallParameters = "/QB"
 # https://support.zoom.us/hc/en-us/articles/201362163-Mass-Installation-and-Configuration-for-Windows
 $appAddParameters = "zNoDesktopShortCut=1"
@@ -250,6 +251,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
+    # Stop and disable unneeded services
+    Stop-ServiceAndDependencies -Name $appServices[0]
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Manual"
+    
     # Configure application shortcut
     Remove-File -Path "$envCommonDesktop\$appShortName VDI.lnk" -ContinueOnError $True
     Move-Item -Path "$envCommonStartMenuPrograms\$appShortName VDI\$appShortName VDI.lnk" -Destination "$envCommonStartMenuPrograms\$appShortName VDI.lnk" -Force
