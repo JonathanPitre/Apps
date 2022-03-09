@@ -250,8 +250,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
-    #9Configure application shortcut
+    # Configure application shortcut
     Remove-File -Path "$envCommonDesktop\$appShortName VDI.lnk" -ContinueOnError $True
+    Move-Item -Path "$envCommonStartMenuPrograms\$appShortName VDI\$appShortName VDI.lnk" -Destination "$envCommonStartMenuPrograms\$appShortName VDI.lnk" -Force
+    Remove-Folder -Path "$envCommonStartMenuPrograms\$appShortName VDI" -ContinueOnError $True
 
     # Go back to the parent folder
     Set-Location ..
