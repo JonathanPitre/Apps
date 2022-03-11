@@ -165,7 +165,7 @@ $appName = "Workspace"
 $appName2 = "app"
 $appProcesses = @("wfica32", "wfcrun32", "redirector", "CDViewer", "HdxBrowser", "HdxTeams", "HdxBrowserCef", "concentr", "cpviewer", "PseudoContainer2", "PseudoContainer", "CtxCFRUI", "ssonsvr", "WebHelper", "SelfServicePlugin", "SelfService", "Receiver", "Ceip", "AuthManSvr", "CWAUpdaterService")
 # https://docs.citrix.com/en-us/citrix-workspace-app-for-windows/install.html
-$appInstallParameters = "EnableCEIP=false EnableTracing=false /forceinstall /noreboot /silent /includeSSON /AutoUpdateCheck=disabled"
+$appInstallParameters = "EnableCEIP=false EnableTracing=false /forceinstall /noreboot /silent /includeSSON /AutoUpdateCheck=disabled /InstallEmbeddedBrowser=N"
 $Evergreen = Get-CitrixWorkspaceApp
 $appVersion = $Evergreen.ShortVersion
 $appURL = $Evergreen.Uri
