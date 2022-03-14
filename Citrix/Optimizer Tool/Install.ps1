@@ -112,7 +112,7 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
-Function Get-CitrixOptimizer
+Function Get-CitrixOptimizerTool
 {
     [OutputType([System.Management.Automation.PSObject])]
     [CmdletBinding()]
@@ -132,13 +132,13 @@ Function Get-CitrixOptimizer
     {
         $RegExVersion = "v((?:\d+\.)+(?:\d+))"
         $Version = ($DownloadText | Select-String -Pattern $RegExVersion).Matches.Groups[1].Value
-        $RegExURL = "https.+CitrixOptimizer\.zip"
+        $RegExURL = "https.+CitrixOptimizerTool\.zip"
         $URL = ($DownloadText | Select-String -Pattern $RegExURL).Matches.Value
 
         if ($Version -and $URL)
         {
             [PSCustomObject]@{
-                Name         = 'Citrix Optimizer'
+                Name         = 'Citrix Optimizer Tool'
                 Architecture = 'x86'
                 Type         = 'Zip'
                 Version      = $Version
@@ -217,18 +217,18 @@ Function Get-CitrixDownload
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Citrix"
-$appName = "Optimizer"
+$appName = "Optimizer Tool"
 $appProcesses = @("CitrixOptimizer")
-$Evergreen = Get-CitrixOptimizer
+$Evergreen = Get-CitrixOptimizerTool
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.Uri
 $appZip = Split-Path -Path $appURL -Leaf
-$appSetup = "CitrixOptimizer.exe"
+$appSetup = "CitrixOptimizerTool.exe"
 $appCitrixKB = "224676"
-$appDestination = "$env:ProgramFiles\Citrix\Optimizer"
+$appDestination = "$env:ProgramFiles\Citrix\Optimizer Tool"
 [boolean]$IsAppInstalled = Test-Path -Path "$appDestination\$appSetup"
 $appInstalledVersion = If ($IsAppInstalled) { Get-FileVersion -File "$appDestination\$appSetup" }
-$appTemplateURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Citrix/Optimizer/Citrix_Windows_$($envOSVersionMajor)_ITI.xml"
+$appTemplateURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Citrix/Optimizer Tool/Citrix_Windows_$($envOSVersionMajor)_ITI.xml"
 $appTemplate = Split-Path -Path $appTemplateURL -Leaf
 $appInstallParameters = "-Source `"$appDestination\Templates\$appTemplate`" -Mode Execute -OutputLogFolder `"$appDestination\Logs`" -OutputHtml `"$appDestination\Reports\Report.html`" -OutputXml `"$appDestination\Rollback\Rollback.xml`""
 
@@ -288,6 +288,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Remove-Folder -Path "$env:ProgramFiles\Citrix\Optimizer" -ContinueOnError $True
     Copy-File -Path "$appScriptDirectory\$appVersion\*" -Destination $appDestination -Recurse
     Copy-File -Path "$appScriptDirectory\$appTemplate" -Destination "$appDestination\Templates"
     New-Folder -Path "$appDestination\Logs"
