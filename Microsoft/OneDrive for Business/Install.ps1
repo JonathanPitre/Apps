@@ -153,14 +153,18 @@ $Evergreen = (Get-EvergreenApp -Name MicrosoftOneDrive | Where-Object {$_.Archit
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
+$appModuleURL = "https://github.com/rodneyviana/ODSyncService/raw/master/Binaries/PowerShell/OneDriveLib.dll"
+$GitHubReleases = "https://api.github.com/repos/rodneyviana/ODSyncService/releases"
+$appModuleVersion = (Invoke-WebRequest -UseBasicParsing -Uri $GitHubReleases | ConvertFrom-Json)[0].tag_name
+$appModule = Split-Path -Path $appModuleURL -Leaf
 $appDestination = "${env:ProgramFiles}\Microsoft OneDrive"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
 $appUninstallString = ((Get-InstalledApplication -Name "$appVendor $appName").UninstallString).Split("/")[0]
 $appUninstallParameters = ((Get-InstalledApplication -Name "$appVendor $appName").UninstallString).TrimStart($appUninstallString)
 
-#-----------------------------------------------------------[Execution]------------------------------------------------------------
 
+#-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -304,6 +308,23 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Stop and disable unneeded services
     Stop-ServiceAndDependencies -Name $appServices[0]
     Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
+
+    # Download OneDrive Status powershell module - https://github.com/rodneyviana/ODSyncService/tree/master/Binaries/PowerShell
+    If (-Not(Test-Path -Path $appScriptDirectory\PSModule\$appModuleVersion\$appModule))
+    {
+        Write-Log -Message "Downloading $appVendor $appName $appLongName $appModule..." -Severity 1 -LogType CMTrace -WriteHost $True
+        New-Folder -Path "$appScriptDirectory\PSModule\$appModuleVersion"
+        Invoke-WebRequest -UseBasicParsing -Uri $appModuleURL -OutFile $appScriptDirectory\PSModule\$appModuleVersion\$appModule
+        If (-Not(Test-Path -Path "$envProgramFiles\WindowsPowerShell\Modules\ODStatus\$appModule"))
+        {
+            Copy-File -Path "$appScriptDirectory\PSModule\$appModuleVersion\$appModule" -Destination "$envProgramFiles\WindowsPowerShell\Modules\ODStatus"
+        }
+
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
 
     # Go back to the parent folder
     Set-Location ..
