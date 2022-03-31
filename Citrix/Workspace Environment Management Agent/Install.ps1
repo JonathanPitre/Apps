@@ -321,33 +321,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMCmdAgent.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMUIAgent.exe" -Force
 
-    # Create schedule task to reset Citrix WEM Cache when Event ID 0 'Cache sync failed with error: SyncFailed' occurs.
-    # https://support.citrix.com/article/CTX247927
-
-    # Define CIM object variables
-    # This is needed for accessing the non-default trigger settings when creating a schedule task using Powershell
-    $Class = cimclass MSFT_TaskEventTrigger root/Microsoft/Windows/TaskScheduler
-    $Trigger = $class | New-CimInstance -ClientOnly
-    $Trigger.Enabled = $true
-    $Trigger.Subscription = "<QueryList><Query Id=`"0`" Path=`"WEM Agent Service`"><Select Path=`"WEM Agent Service`">*[System[(Level=2) and (EventID=0)]] and *[EventData[(Data='Cache sync failed with error: SyncFailed')]]</Select></Query></QueryList>"
-    # Define additional variables containing scheduled task action and scheduled task principal
-    $A = New-ScheduledTaskAction –Execute powershell.exe -Argument "-NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -File C:\Scripts\Reset-WEMCache.ps1"
-    $P = New-ScheduledTaskPrincipal -UserId "NT AUTHORITY\SYSTEM" -LogonType ServiceAccount
-    $S = New-ScheduledTaskSettingsSet
-
-    # Cook it all up and create the scheduled task
-    $RegSchTaskParameters = @{
-        TaskName    = "Reset Citrix WEM Cache"
-        Description = "Reset Citrix WEM Cache when event id 0 'Cache sync failed with error: SyncFailed' occurs"
-        TaskPath    = "\"
-        Action      = $A
-        Principal   = $P
-        Settings    = $S
-        Trigger     = $Trigger
-    }
-    Register-ScheduledTask @RegSchTaskParameters
-    Write-Log -Message "Scheduled Task to reset Citrix WEM Cache was registered!" -Severity 1 -LogType CMTrace -WriteHost $True
-
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }
