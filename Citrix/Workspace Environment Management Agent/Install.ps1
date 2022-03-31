@@ -241,8 +241,6 @@ $appURL = $Evergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf
 $appSetup = "Citrix Workspace Environment Management Agent.exe"
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
-$appScriptURL = "https://raw.githubusercontent.com/JonathanPitre/Scripts/master/Citrix/Reset-WEMCache/Reset-WEMCache.ps1"
-$appScript = Split-Path -Path $appScriptURL -Leaf
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
 
@@ -295,19 +293,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
-
-    # Download required script
-    If (-Not(Test-Path -Path $appScriptDirectory\$appScript))
-    {
-        Write-Log -Message "Downloading $appName script..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appScriptURL -OutFile $appScriptDirectory\$appScript
-        Copy-File -Path "$appScriptDirectory\$appScript" -Destination "$env:SystemDrive\Scripts" -Recurse
-    }
-    Else
-    {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-        Copy-File -Path "$appScriptDirectory\$appScript" -Destination "$env:SystemDrive\Scripts" -Recurse
-    }
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters
