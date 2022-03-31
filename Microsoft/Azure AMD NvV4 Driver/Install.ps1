@@ -170,7 +170,6 @@ Function Get-AMDAzureNVv4Driver
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
-
 $appVendor = "AMD"
 $appVendor2 = "Microsoft"
 $appName = "Software"
