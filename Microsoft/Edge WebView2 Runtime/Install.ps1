@@ -124,7 +124,7 @@ Foreach ($Module in $Modules)
 
 $appVendor = "Microsoft"
 $appName = "Edge WebView2 Runtime"
-$appProcesses = @("msedgewebview2", "msedge")
+$appProcesses = @("msedgewebview2", "msedge", "concentr")
 $appInstallParameters = "/silent /install"
 $appArchitecture = "x64"
 $Evergreen = Get-EvergreenApp -Name MicrosoftEdgeWebView2Runtime | Where-Object { $_.Architecture -eq $appArchitecture }
@@ -153,7 +153,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If ($IsAppInstalled)
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-Process -Path $appUninstaller -Parameters $appUninstallParameters -IgnoreExitCodes 19
+        Execute-Process -Path $appUninstaller -Parameters $appUninstallParameters -IgnoreExitCodes 19, 60002
 
     }
 
