@@ -120,16 +120,126 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
+Function Get-CitrixWEMAgent
+{
+    [OutputType([System.Management.Automation.PSObject])]
+    [CmdletBinding()]
+    Param ()
+    $DownloadURL = "https://docs.citrix.com/en-us/workspace-environment-management/service/whats-new.html"
+
+    Try
+    {
+        $DownloadText = (Invoke-WebRequest -Uri $DownloadURL -DisableKeepAlive -UseBasicParsing).RawContent
+    }
+    Catch
+    {
+        Throw "Failed to connect to URL: $DownloadURL with error $_."
+        Break
+    }
+    Finally
+    {
+        $RegEx = "Minimum agent version required: ((?:\d+\.)+(?:\d+))"
+        $Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[1].Value
+        $ZipVersion = $Version.Substring(0, $Version.Length - 4)
+        $URL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=$($appDlNumber)&URL=https://downloads.citrix.com/$($appDlNumber)/Workspace-Environment-Management-Agent-$($ZipVersion).zip"
+
+        if ($Version -and $URL)
+        {
+            [PSCustomObject]@{
+                Name    = 'Citrix Workspace Environment Agent'
+                Version = $Version
+                Uri     = $URL
+            }
+        }
+    }
+
+}
+
+Function Get-CitrixDownload
+{
+    <#
+.SYNOPSIS
+  Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
+.DESCRIPTION
+  Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
+  Ryan Butler 2/6/2020 https://github.com/ryancbutler/Citrix/tree/master/XenDesktop/AutoDownload
+.PARAMETER dlNumber
+  Number assigned to binary download
+.PARAMETER dlEXE
+  File to be downloaded
+.PARAMETER dlPath
+  Path to store downloaded file. Must contain following slash (C:\Temp\)
+.PARAMETER CitrixUserName
+  Citrix.com username
+.PARAMETER CitrixPassword
+  Citrix.com password
+.EXAMPLE
+  Get-CitrixDownload -dlNumber "16834" -dlEXE "Citrix_Virtual_Apps_and_Desktops_7_1912.iso" -CitrixUserName "MyCitrixUsername" -CitrixPassword "MyCitrixPassword" -dlPath "C:\Temp\"
+#>
+    Param(
+        [Parameter(Mandatory = $true)]$dlNumber,
+        [Parameter(Mandatory = $true)]$dlEXE,
+        [Parameter(Mandatory = $true)]$dlPath,
+        [Parameter(Mandatory = $true)]$CitrixUserName,
+        [Parameter(Mandatory = $true)]$CitrixPassword
+    )
+    #Initialize Session
+    Invoke-WebRequest "https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response" -SessionVariable websession -UseBasicParsing | Out-Null
+
+    #Set Form
+    $Form = @{
+        "persistent" = "on"
+        "userName"   = $CitrixUserName
+        "password"   = $CitrixPassword
+    }
+
+    #Authenticate
+    Try
+    {
+        Invoke-WebRequest -Uri ("https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response") -WebSession $websession -Method POST -Body $form -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -ErrorAction Stop | Out-Null
+    }
+    Catch
+    {
+        If ($_.Exception.Response.StatusCode.Value__ -eq 500)
+        {
+            Write-Verbose "500 returned on auth. Ignoring"
+            Write-Verbose $_.Exception.Response
+            Write-Verbose $_.Exception.Message
+        }
+        Else
+        {
+            Throw $_
+        }
+    }
+
+    $dlURL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=${dlNumber}&URL=https://downloads.citrix.com/${dlNumber}/${dlEXE}"
+    $Download = Invoke-WebRequest -Uri $dlURL -WebSession $WebSession -UseBasicParsing -Method GET
+    $Webform = @{
+        "chkAccept"            = "on"
+        "clbAccept"            = "Accept"
+        "__VIEWSTATEGENERATOR" = ($Download.InputFields | Where-Object { $_.id -eq "__VIEWSTATEGENERATOR" }).value
+        "__VIEWSTATE"          = ($Download.InputFields | Where-Object { $_.id -eq "__VIEWSTATE" }).value
+        "__EVENTVALIDATION"    = ($Download.InputFields | Where-Object { $_.id -eq "__EVENTVALIDATION" }).value
+    }
+
+    $OutFile = ($dlPath + $dlEXE)
+    #Download
+    Invoke-WebRequest -Uri $dlURL -WebSession $WebSession -Method POST -Body $Webform -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -OutFile $OutFile
+    return $OutFile
+}
+
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Citrix"
 $appName = "Workspace Environment Management Agent"
 $appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
 $appInstallParameters = "/quiet Cloud=1" # OnPrem 0 Cloud 1
-#$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Workspace Environment Management 21*"} | Sort-Object Version -Descending | Select-Object -First 1
-$appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
-#$appURL = $Evergreen.URI
-$appSetup = Get-ChildItem $appScriptDirectory\$appVersion -Filter "$appVendor $appName*" | Select-Object -ExpandProperty Name
+$appDlNumber = "16122"
+$Evergreen = Get-CitrixWEMAgent
+$appVersion = $Evergreen.Version
+$appURL = $Evergreen.URI
+$appZip = Split-Path -Path $appURL -Leaf
+$appSetup = "Citrix Workspace Environment Management Agent.exe"
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
 $appScriptURL = "https://raw.githubusercontent.com/JonathanPitre/Scripts/master/Citrix/Reset-WEMCache/Reset-WEMCache.ps1"
 $appScript = Split-Path -Path $appScriptURL -Leaf
@@ -144,15 +254,44 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion
 
-    <#
-    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup)) {
-        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
+    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup) -or (Get-ChildItem).Length -lt 1024kb)
+    {
+        Write-Log -Message "Citrix credentials for downloading the $appVendor $appName2" -Severity 1 -LogType CMTrace -WriteHost $True
+        $CitrixUserName = Read-Host -Prompt "Please supply your Citrix.com username"
+        $CitrixPassword1 = Read-Host -Prompt "Please supply your Citrix.com password" -AsSecureString
+        $CitrixPassword2 = Read-Host -Prompt "Please supply your Citrix.com password once more" -AsSecureString
+        $CitrixPassword1Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword1))
+        $CitrixPassword2Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword2))
+
+        If ($CitrixPassword1Temp -ne $CitrixPassword2Temp)
+        {
+            Write-Log -Message "The supplied Citrix passwords missmatch!" -Severity 3 -LogType CMTrace -WriteHost $True
+            Exit-Script -ExitCode 1
+        }
+
+        Remove-Variable -Name CitrixPassword1Temp, CitrixPassword2Temp
+        $CitrixCredentials = New-Object System.Management.Automation.PSCredential ($CitrixUserName, $CitrixPassword1)
+
+        # Verify Citrix credentials
+        $CitrixUserName = $CitrixCredentials.UserName
+        $CitrixPassword = $CitrixCredentials.GetNetworkCredential().Password
+
+        # Download latest version
+        Write-Log -Message "Downloading $appVendor $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
+        Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appVersion
+        # Move the policy definitions files
+        Copy-File -Path "$appScriptDirectory\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptDirectory\PolicyDefinitions" -Recurse
+        Copy-File -Path "$appScriptDirectory\$appVersion\Configuration Templates" -Destination "$appScriptDirectory" -Recurse
+        # Cleanup
+        Remove-Folder -Path "$appScriptDirectory\$appVersion\Agent Group Policies"
+        Remove-Folder -Path "$appScriptDirectory\$appVersion\Configuration Templates"
+        Remove-File -Path $appZip
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
-    #>
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
