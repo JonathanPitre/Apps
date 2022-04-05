@@ -119,7 +119,40 @@ Foreach ($Module in $Modules)
 }
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
+Function Get-CitrixCQI
+{
+    <#
+    .SYNOPSIS
+    Returns latest Version and Uri for Citrix Connect Quality Indicator
+    #>
 
+    $DownloadURL = "https://support.citrix.com/article/CTX220774"
+
+    Try
+    {
+        $DownloadText = (Invoke-WebRequest -Uri $DownloadURL -DisableKeepAlive -UseBasicParsing).RawContent
+    }
+    Catch
+    {
+        Throw "Failed to connect to URL: $DownloadURL with error $_."
+        Break
+    }
+    Finally
+    {
+        $RegExVersion = "What's New in ((?:\d+\.)+(?:\d+))"
+        $Version = ($DownloadText | Select-String -Pattern $RegExVersion).Matches.Groups[1].Value
+        $RegExURL = "https.+CitrixCQI\.zip"
+        $URL = ($DownloadText | Select-String -Pattern $RegExURL).Matches.Value
+
+        if ($Version -and $URL)
+        {
+            [PSCustomObject]@{
+                Version      = $Version
+                URI          = $URL
+            }
+        }
+    }
+}
 Function Get-CitrixDownload
 {
     <#
