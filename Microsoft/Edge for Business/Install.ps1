@@ -139,7 +139,6 @@ function Get-MicrosoftEdgePolicyOnline
     }
 
 }
-
 function Get-MicrosoftEdgeAdmx
 {
     <#
