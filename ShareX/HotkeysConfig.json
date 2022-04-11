@@ -278,7 +278,7 @@
           },
           "FFmpegOptions": {
             "OverrideCLIPath": false,
-            "CLIPath": "%ApplicationData%\\ShareX\\Tools\\ffmpeg.exe",
+            "CLIPath": "C:\\Program Files\\FFmpeg\ffmpeg.exe",
             "VideoSource": "GDI grab",
             "AudioSource": "None",
             "VideoCodec": "libx264",
@@ -783,7 +783,7 @@
           },
           "FFmpegOptions": {
             "OverrideCLIPath": false,
-            "CLIPath": "%ApplicationData%\\ShareX\\Tools\\ffmpeg.exe",
+            "CLIPath": "C:\\Program Files\\FFmpeg\ffmpeg.exe",
             "VideoSource": "GDI grab",
             "AudioSource": "None",
             "VideoCodec": "libx264",
@@ -1288,7 +1288,7 @@
           },
           "FFmpegOptions": {
             "OverrideCLIPath": false,
-            "CLIPath": "%ApplicationData%\\ShareX\\Tools\\ffmpeg.exe",
+            "CLIPath": "C:\\Program Files\\FFmpeg\ffmpeg.exe",
             "VideoSource": "GDI grab",
             "AudioSource": "None",
             "VideoCodec": "libx264",
@@ -1793,7 +1793,7 @@
           },
           "FFmpegOptions": {
             "OverrideCLIPath": false,
-            "CLIPath": "%ApplicationData%\\ShareX\\Tools\\ffmpeg.exe",
+            "CLIPath": "C:\\Program Files\\FFmpeg\ffmpeg.exe",
             "VideoSource": "GDI grab",
             "AudioSource": "None",
             "VideoCodec": "libx264",
@@ -2298,7 +2298,7 @@
           },
           "FFmpegOptions": {
             "OverrideCLIPath": false,
-            "CLIPath": "%ApplicationData%\\ShareX\\Tools\\ffmpeg.exe",
+            "CLIPath": "C:\\Program Files\\FFmpeg\ffmpeg.exe",
             "VideoSource": "GDI grab",
             "AudioSource": "None",
             "VideoCodec": "libx264",

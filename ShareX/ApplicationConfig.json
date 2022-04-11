@@ -19,7 +19,7 @@
     "OverrideCustomUploader": false,
     "CustomUploaderIndex": 0,
     "OverrideScreenshotsFolder": false,
-    "ScreenshotsFolder": recen"",
+    "ScreenshotsFolder": "",
     "UseDefaultGeneralSettings": true,
     "GeneralSettings": {
       "PlaySoundAfterCapture": false,
@@ -172,7 +172,7 @@
         "IsFixedSize": false,
         "FixedSize": "250, 250",
         "ShowFPS": false,
-        "MenuIconSize": 16,
+        "MenuIconSize": 0,
         "MenuLocked": false,
         "RememberMenuState": false,
         "MenuCollapsed": false,
@@ -272,7 +272,7 @@
       },
       "FFmpegOptions": {
         "OverrideCLIPath": false,
-        "CLIPath": "%ApplicationData%\\ShareX\\Tools\\ffmpeg.exe",
+        "CLIPath": "C:\\Program Files\\FFmpeg\\ffmpeg.exe",
         "VideoSource": "GDI grab",
         "AudioSource": "None",
         "VideoCodec": "libx264",
@@ -342,9 +342,9 @@
       "UseCustomTimeZone": false,
       "CustomTimeZone": {
         "Id": "UTC",
-        "DisplayName": "(UTC) Coordinated Universal Time",
-        "StandardName": "Coordinated Universal Time",
-        "DaylightName": "Coordinated Universal Time",
+        "DisplayName": "UTC",
+        "StandardName": "UTC",
+        "DaylightName": "UTC",
         "BaseUtcOffset": "00:00:00",
         "AdjustmentRules": null,
         "SupportsDaylightSavingTime": false
@@ -529,7 +529,7 @@
     "WatchFolderEnabled": false,
     "WatchFolderList": []
   },
-  "FirstTimeRunDate": "2022-04-11T18:53:31.605561Z",
+  "FirstTimeRunDate": "2022-04-11T21:50:17.4950179Z",
   "FileUploadDefaultDirectory": "",
   "NameParserAutoIncrementNumber": 0,
   "QuickTaskPresets": [
@@ -589,7 +589,7 @@
   "TaskbarProgressEnabled": true,
   "UseWhiteShareXIcon": false,
   "RememberMainFormPosition": false,
-  "MainFormPosition": "420, 417",
+  "MainFormPosition": "0, 0",
   "RememberMainFormSize": false,
   "MainFormSize": "0, 0",
   "TrayLeftClickAction": "RectangleRegion",
@@ -798,6 +798,7 @@
   ],
   "HistorySaveTasks": true,
   "HistoryCheckURL": false,
+  "RecentTasks": null,
   "RecentTasksSave": true,
   "RecentTasksMaxCount": 10,
   "RecentTasksShowInMainWindow": true,
