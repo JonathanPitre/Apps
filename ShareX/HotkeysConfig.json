@@ -24,14 +24,29 @@
         "FTPIndex": 0,
         "OverrideCustomUploader": false,
         "CustomUploaderIndex": 0,
+        "OverrideScreenshotsFolder": false,
+        "ScreenshotsFolder": "",
         "UseDefaultGeneralSettings": true,
         "GeneralSettings": {
           "PlaySoundAfterCapture": true,
-          "ShowAfterCaptureTasksForm": false,
-          "ShowBeforeUploadForm": false,
           "PlaySoundAfterUpload": true,
-          "PopUpNotification": "ToastNotification",
-          "ShowAfterUploadForm": false
+          "ShowToastNotificationAfterTaskCompleted": true,
+          "ToastWindowDuration": 3.0,
+          "ToastWindowFadeDuration": 1.0,
+          "ToastWindowPlacement": "BottomRight",
+          "ToastWindowSize": "400, 300",
+          "ToastWindowLeftClickAction": "OpenUrl",
+          "ToastWindowRightClickAction": "CloseNotification",
+          "ToastWindowMiddleClickAction": "AnnotateImage",
+          "UseCustomCaptureSound": false,
+          "CustomCaptureSoundPath": "",
+          "UseCustomTaskCompletedSound": false,
+          "CustomTaskCompletedSoundPath": "",
+          "UseCustomErrorSound": false,
+          "CustomErrorSoundPath": "",
+          "DisableNotifications": false,
+          "DisableNotificationsOnFullscreen": false,
+          "PopUpNotification": "ToastNotification"
         },
         "UseDefaultImageSettings": true,
         "ImageSettings": {
@@ -41,6 +56,7 @@
           "ImageGIFQuality": "Default",
           "ImageAutoUseJPEG": true,
           "ImageAutoUseJPEGSize": 2048,
+          "ImageAutoJPEGQuality": false,
           "FileExistAction": "Ask",
           "ImageEffectPresets": [
             {
@@ -49,17 +65,19 @@
                 {
                   "$type": "ShareX.ImageEffectsLib.Canvas, ShareX.ImageEffectsLib",
                   "Margin": "0, 0, 0, 30",
+                  "MarginMode": "AbsoluteSize",
                   "Color": "Transparent",
                   "Enabled": true
                 },
                 {
                   "$type": "ShareX.ImageEffectsLib.DrawText, ShareX.ImageEffectsLib",
+                  "Text": "Text watermark",
                   "Placement": "BottomRight",
                   "Offset": "0, 0",
-                  "AutoHide": true,
-                  "Text": "Text watermark",
+                  "AutoHide": false,
                   "TextFont": "Arial, 11.25pt",
-                  "TextColor": "White",
+                  "TextRenderingMode": "SystemDefault",
+                  "TextColor": "235, 235, 235",
                   "DrawTextShadow": true,
                   "TextShadowColor": "Black",
                   "TextShadowOffset": "-1, -1",
@@ -69,11 +87,8 @@
                   "BorderColor": "Black",
                   "BorderSize": 1,
                   "DrawBackground": true,
-                  "BackgroundColor": "10, 110, 230",
+                  "BackgroundColor": "42, 47, 56",
                   "UseGradient": true,
-                  "GradientType": "Vertical",
-                  "BackgroundColor2": "0, 30, 80",
-                  "UseCustomGradient": true,
                   "Gradient": {
                     "Type": "Vertical",
                     "Colors": [
@@ -114,7 +129,7 @@
           "ScreenshotDelay": 0.0,
           "CaptureTransparent": false,
           "CaptureShadow": true,
-          "CaptureShadowOffset": 20,
+          "CaptureShadowOffset": 100,
           "CaptureClientArea": false,
           "CaptureAutoHideTaskbar": false,
           "CaptureCustomRegion": "0, 0, 0, 0",
@@ -163,9 +178,12 @@
             "IsFixedSize": false,
             "FixedSize": "250, 250",
             "ShowFPS": false,
+            "MenuIconSize": 0,
+            "MenuLocked": false,
             "RememberMenuState": false,
             "MenuCollapsed": false,
             "MenuPosition": "0, 0",
+            "InputDelay": 500,
             "SwitchToDrawingToolAfterSelection": false,
             "SwitchToSelectionToolAfterDrawing": false,
             "AnnotationOptions": {
@@ -180,13 +198,14 @@
               "RegionCornerRadius": 0,
               "BorderColor": "242, 60, 60",
               "BorderSize": 4,
+              "BorderStyle": "Solid",
               "FillColor": "0, 0, 0, 0",
               "DrawingCornerRadius": 3,
               "Shadow": true,
               "ShadowColor": "125, 0, 0, 0",
               "ShadowOffset": "0, 1",
               "LineCenterPointCount": 1,
-              "ArrowHeadsBothSide": false,
+              "ArrowHeadDirection": "End",
               "TextOutlineOptions": {
                 "Font": "Arial",
                 "Size": 25,
@@ -198,7 +217,8 @@
                 "AlignmentVertical": "Center",
                 "Gradient": false,
                 "Color2": "240, 240, 240",
-                "GradientMode": "Vertical"
+                "GradientMode": "Vertical",
+                "EnterKeyNewLine": false
               },
               "TextOutlineBorderColor": "242, 60, 60",
               "TextOutlineBorderSize": 5,
@@ -213,7 +233,8 @@
                 "AlignmentVertical": "Center",
                 "Gradient": false,
                 "Color2": "240, 240, 240",
-                "GradientMode": "Vertical"
+                "GradientMode": "Vertical",
+                "EnterKeyNewLine": false
               },
               "TextBorderColor": "White",
               "TextBorderSize": 0,
@@ -223,7 +244,7 @@
               "StepBorderSize": 0,
               "StepFillColor": "242, 60, 60",
               "StepFontSize": 18,
-              "StepUseLetters": false,
+              "StepType": "Numbers",
               "MagnifyStrength": 200,
               "StickerSize": 64,
               "LastStickerPath": null,
@@ -235,7 +256,12 @@
             "LastAnnotationTool": "DrawingRectangle",
             "LastEditorTool": "DrawingRectangle",
             "ImageEditorStartMode": "AutoSize",
-            "ImageEditorWindowState": {},
+            "ImageEditorWindowState": {
+              "Location": "0, 0",
+              "Size": "0, 0",
+              "IsMaximized": false
+            },
+            "EditorAutoCopyImage": false,
             "AutoCloseEditorOnTask": false,
             "ShowEditorPanTip": true,
             "ImageEditorResizeInterpolationMode": "Bicubic",
@@ -244,11 +270,15 @@
             "EditorNewImageBackgroundColor": "White",
             "EditorCanvasColor": "Transparent",
             "ImageEffectPresets": [],
-            "SelectedImageEffectPreset": 0
+            "SelectedImageEffectPreset": 0,
+            "ColorPickerOptions": {
+              "RecentColorsSelected": true
+            },
+            "ScreenColorPickerInfoText": ""
           },
           "FFmpegOptions": {
             "OverrideCLIPath": false,
-            "CLIPath": "%MyDocuments%\\ShareX\\Tools\\ffmpeg.exe",
+            "CLIPath": "%ApplicationData%\\ShareX\\Tools\\ffmpeg.exe",
             "VideoSource": "GDI grab",
             "AudioSource": "None",
             "VideoCodec": "libx264",
@@ -256,7 +286,6 @@
             "UserArgs": "",
             "UseCustomCommands": false,
             "CustomCommands": "",
-            "ShowError": true,
             "x264_Preset": "ultrafast",
             "x264_CRF": 28,
             "VPx_bitrate": 3000,
@@ -265,11 +294,13 @@
             "NVENC_bitrate": 3000,
             "GIFStatsMode": "full",
             "GIFDither": "sierra2_4a",
+            "GIFBayerScale": 2,
             "AMF_usage": "transcoding",
             "AMF_quality": "speed",
             "QSV_preset": "fast",
             "QSV_bitrate": 3000,
             "AAC_bitrate": 128,
+            "Opus_bitrate": 128,
             "Vorbis_qscale": 3,
             "MP3_qscale": 4
           },
@@ -282,6 +313,7 @@
           "ScreenRecordDuration": 3.0,
           "ScreenRecordTwoPassEncoding": false,
           "ScreenRecordAskConfirmationOnAbort": false,
+          "ScreenRecordTransparentRegion": false,
           "ScrollingCaptureOptions": {
             "TrimLeftEdge": 0,
             "TrimTopEdge": 0,
@@ -305,6 +337,7 @@
           "OCROptions": {
             "Permission": false,
             "DefaultLanguage": "eng",
+            "DefaultSite": "GoogleTranslate",
             "Silent": false,
             "ProcessOnLoad": true,
             "AutoCopy": false
@@ -324,9 +357,11 @@
           },
           "NameFormatPattern": "%ra{10}",
           "NameFormatPatternActiveWindow": "%pn_%ra{10}",
-          "RegionCaptureUseWindowPattern": true,
           "FileUploadUseNamePattern": false,
           "FileUploadReplaceProblematicCharacters": false,
+          "URLRegexReplace": false,
+          "URLRegexReplacePattern": "^https?://(.+)$",
+          "URLRegexReplaceReplacement": "https://$1",
           "ClipboardUploadURLContents": false,
           "ClipboardUploadShortenURL": false,
           "ClipboardUploadShareURL": false,
@@ -338,6 +373,8 @@
         "UseDefaultToolsSettings": true,
         "ToolsSettings": {
           "ScreenColorPickerFormat": "$hex",
+          "ScreenColorPickerFormatCtrl": "$r255, $g255, $b255",
+          "ScreenColorPickerInfoText": "RGB: $r255, $g255, $b255$nHex: $hex$nX: $x Y: $y",
           "IndexerSettings": {
             "Output": "Html",
             "SkipHiddenFolders": true,
@@ -348,13 +385,27 @@
             "IndentationText": "|___",
             "AddEmptyLineAfterFolders": false,
             "UseCustomCSSFile": false,
+            "DisplayPath": false,
+            "DisplayPathLimited": false,
             "CustomCSSFilePath": "",
             "UseAttribute": true,
             "CreateParseableJson": true
           },
           "ImageCombinerOptions": {
             "Orientation": "Vertical",
-            "Space": 0
+            "Alignment": "LeftOrTop",
+            "Space": 0,
+            "AutoFillBackground": false
+          },
+          "VideoConverterOptions": {
+            "InputFilePath": null,
+            "OutputFolderPath": null,
+            "OutputFileName": null,
+            "VideoCodec": "x264",
+            "VideoQuality": 23,
+            "UseCustomArguments": false,
+            "CustomArguments": "",
+            "AutoOpenFolder": true
           },
           "VideoThumbnailOptions": {
             "DefaultOutputDirectory": null,
@@ -377,24 +428,22 @@
             "AddTimestamp": true,
             "DrawShadow": true,
             "DrawBorder": true
+          },
+          "BorderlessWindowSettings": {
+            "RememberWindowTitle": true,
+            "WindowTitle": null,
+            "AutoCloseWindow": false,
+            "ExcludeTaskbarArea": false
           }
         },
         "UseDefaultAdvancedSettings": true,
         "AdvancedSettings": {
+          "CapturePath": null,
           "ProcessImagesDuringFileUpload": false,
           "ProcessImagesDuringClipboardUpload": false,
           "UseAfterCaptureTasksDuringFileUpload": true,
           "TextTaskSaveAsFile": true,
           "AutoClearClipboard": false,
-          "UseCustomCaptureSound": false,
-          "CustomCaptureSoundPath": "",
-          "SpeechCapture": "",
-          "UseCustomTaskCompletedSound": false,
-          "CustomTaskCompletedSoundPath": "",
-          "SpeechTaskCompleted": "",
-          "UseCustomErrorSound": false,
-          "CustomErrorSoundPath": "",
-          "CapturePath": null,
           "RegionCaptureDisableAnnotation": false,
           "ImageExtensions": [
             "jpg",
@@ -406,7 +455,6 @@
             "tif",
             "tiff"
           ],
-          "EarlyCopyURL": false,
           "TextExtensions": [
             "txt",
             "log",
@@ -439,25 +487,17 @@
             "go",
             "gohtml"
           ],
+          "EarlyCopyURL": false,
+          "TextFileExtension": "txt",
+          "TextFormat": "text",
+          "TextCustom": "",
+          "TextCustomEncodeInput": true,
           "ResultForceHTTPS": false,
           "ClipboardContentFormat": "$result",
           "BalloonTipContentFormat": "$result",
           "OpenURLFormat": "$result",
           "AutoShortenURLLength": 0,
-          "DisableNotifications": false,
-          "DisableNotificationsOnFullscreen": false,
-          "ToastWindowDuration": 3.0,
-          "ToastWindowFadeDuration": 1.0,
-          "ToastWindowPlacement": "BottomRight",
-          "ToastWindowClickAction": "OpenUrl",
-          "ToastWindowRightClickAction": "CloseNotification",
-          "ToastWindowMiddleClickAction": "AnnotateImage",
-          "ToastWindowSize": "400, 300",
           "AutoCloseAfterUploadForm": false,
-          "TextFileExtension": "txt",
-          "TextFormat": "text",
-          "TextCustom": "",
-          "TextCustomEncodeInput": true,
           "NamePatternMaxLength": 100,
           "NamePatternMaxTitleLength": 50
         },
@@ -489,14 +529,29 @@
         "FTPIndex": 0,
         "OverrideCustomUploader": false,
         "CustomUploaderIndex": 0,
+        "OverrideScreenshotsFolder": false,
+        "ScreenshotsFolder": "",
         "UseDefaultGeneralSettings": true,
         "GeneralSettings": {
           "PlaySoundAfterCapture": true,
-          "ShowAfterCaptureTasksForm": false,
-          "ShowBeforeUploadForm": false,
           "PlaySoundAfterUpload": true,
-          "PopUpNotification": "ToastNotification",
-          "ShowAfterUploadForm": false
+          "ShowToastNotificationAfterTaskCompleted": true,
+          "ToastWindowDuration": 3.0,
+          "ToastWindowFadeDuration": 1.0,
+          "ToastWindowPlacement": "BottomRight",
+          "ToastWindowSize": "400, 300",
+          "ToastWindowLeftClickAction": "OpenUrl",
+          "ToastWindowRightClickAction": "CloseNotification",
+          "ToastWindowMiddleClickAction": "AnnotateImage",
+          "UseCustomCaptureSound": false,
+          "CustomCaptureSoundPath": "",
+          "UseCustomTaskCompletedSound": false,
+          "CustomTaskCompletedSoundPath": "",
+          "UseCustomErrorSound": false,
+          "CustomErrorSoundPath": "",
+          "DisableNotifications": false,
+          "DisableNotificationsOnFullscreen": false,
+          "PopUpNotification": "ToastNotification"
         },
         "UseDefaultImageSettings": true,
         "ImageSettings": {
@@ -506,6 +561,7 @@
           "ImageGIFQuality": "Default",
           "ImageAutoUseJPEG": true,
           "ImageAutoUseJPEGSize": 2048,
+          "ImageAutoJPEGQuality": false,
           "FileExistAction": "Ask",
           "ImageEffectPresets": [
             {
@@ -514,17 +570,19 @@
                 {
                   "$type": "ShareX.ImageEffectsLib.Canvas, ShareX.ImageEffectsLib",
                   "Margin": "0, 0, 0, 30",
+                  "MarginMode": "AbsoluteSize",
                   "Color": "Transparent",
                   "Enabled": true
                 },
                 {
                   "$type": "ShareX.ImageEffectsLib.DrawText, ShareX.ImageEffectsLib",
+                  "Text": "Text watermark",
                   "Placement": "BottomRight",
                   "Offset": "0, 0",
-                  "AutoHide": true,
-                  "Text": "Text watermark",
+                  "AutoHide": false,
                   "TextFont": "Arial, 11.25pt",
-                  "TextColor": "White",
+                  "TextRenderingMode": "SystemDefault",
+                  "TextColor": "235, 235, 235",
                   "DrawTextShadow": true,
                   "TextShadowColor": "Black",
                   "TextShadowOffset": "-1, -1",
@@ -534,11 +592,8 @@
                   "BorderColor": "Black",
                   "BorderSize": 1,
                   "DrawBackground": true,
-                  "BackgroundColor": "10, 110, 230",
+                  "BackgroundColor": "42, 47, 56",
                   "UseGradient": true,
-                  "GradientType": "Vertical",
-                  "BackgroundColor2": "0, 30, 80",
-                  "UseCustomGradient": true,
                   "Gradient": {
                     "Type": "Vertical",
                     "Colors": [
@@ -579,7 +634,7 @@
           "ScreenshotDelay": 0.0,
           "CaptureTransparent": false,
           "CaptureShadow": true,
-          "CaptureShadowOffset": 20,
+          "CaptureShadowOffset": 100,
           "CaptureClientArea": false,
           "CaptureAutoHideTaskbar": false,
           "CaptureCustomRegion": "0, 0, 0, 0",
@@ -628,9 +683,12 @@
             "IsFixedSize": false,
             "FixedSize": "250, 250",
             "ShowFPS": false,
+            "MenuIconSize": 0,
+            "MenuLocked": false,
             "RememberMenuState": false,
             "MenuCollapsed": false,
             "MenuPosition": "0, 0",
+            "InputDelay": 500,
             "SwitchToDrawingToolAfterSelection": false,
             "SwitchToSelectionToolAfterDrawing": false,
             "AnnotationOptions": {
@@ -645,13 +703,14 @@
               "RegionCornerRadius": 0,
               "BorderColor": "242, 60, 60",
               "BorderSize": 4,
+              "BorderStyle": "Solid",
               "FillColor": "0, 0, 0, 0",
               "DrawingCornerRadius": 3,
               "Shadow": true,
               "ShadowColor": "125, 0, 0, 0",
               "ShadowOffset": "0, 1",
               "LineCenterPointCount": 1,
-              "ArrowHeadsBothSide": false,
+              "ArrowHeadDirection": "End",
               "TextOutlineOptions": {
                 "Font": "Arial",
                 "Size": 25,
@@ -663,7 +722,8 @@
                 "AlignmentVertical": "Center",
                 "Gradient": false,
                 "Color2": "240, 240, 240",
-                "GradientMode": "Vertical"
+                "GradientMode": "Vertical",
+                "EnterKeyNewLine": false
               },
               "TextOutlineBorderColor": "242, 60, 60",
               "TextOutlineBorderSize": 5,
@@ -678,7 +738,8 @@
                 "AlignmentVertical": "Center",
                 "Gradient": false,
                 "Color2": "240, 240, 240",
-                "GradientMode": "Vertical"
+                "GradientMode": "Vertical",
+                "EnterKeyNewLine": false
               },
               "TextBorderColor": "White",
               "TextBorderSize": 0,
@@ -688,7 +749,7 @@
               "StepBorderSize": 0,
               "StepFillColor": "242, 60, 60",
               "StepFontSize": 18,
-              "StepUseLetters": false,
+              "StepType": "Numbers",
               "MagnifyStrength": 200,
               "StickerSize": 64,
               "LastStickerPath": null,
@@ -700,7 +761,12 @@
             "LastAnnotationTool": "DrawingRectangle",
             "LastEditorTool": "DrawingRectangle",
             "ImageEditorStartMode": "AutoSize",
-            "ImageEditorWindowState": {},
+            "ImageEditorWindowState": {
+              "Location": "0, 0",
+              "Size": "0, 0",
+              "IsMaximized": false
+            },
+            "EditorAutoCopyImage": false,
             "AutoCloseEditorOnTask": false,
             "ShowEditorPanTip": true,
             "ImageEditorResizeInterpolationMode": "Bicubic",
@@ -709,11 +775,15 @@
             "EditorNewImageBackgroundColor": "White",
             "EditorCanvasColor": "Transparent",
             "ImageEffectPresets": [],
-            "SelectedImageEffectPreset": 0
+            "SelectedImageEffectPreset": 0,
+            "ColorPickerOptions": {
+              "RecentColorsSelected": true
+            },
+            "ScreenColorPickerInfoText": ""
           },
           "FFmpegOptions": {
             "OverrideCLIPath": false,
-            "CLIPath": "%MyDocuments%\\ShareX\\Tools\\ffmpeg.exe",
+            "CLIPath": "%ApplicationData%\\ShareX\\Tools\\ffmpeg.exe",
             "VideoSource": "GDI grab",
             "AudioSource": "None",
             "VideoCodec": "libx264",
@@ -721,7 +791,6 @@
             "UserArgs": "",
             "UseCustomCommands": false,
             "CustomCommands": "",
-            "ShowError": true,
             "x264_Preset": "ultrafast",
             "x264_CRF": 28,
             "VPx_bitrate": 3000,
@@ -730,11 +799,13 @@
             "NVENC_bitrate": 3000,
             "GIFStatsMode": "full",
             "GIFDither": "sierra2_4a",
+            "GIFBayerScale": 2,
             "AMF_usage": "transcoding",
             "AMF_quality": "speed",
             "QSV_preset": "fast",
             "QSV_bitrate": 3000,
             "AAC_bitrate": 128,
+            "Opus_bitrate": 128,
             "Vorbis_qscale": 3,
             "MP3_qscale": 4
           },
@@ -747,6 +818,7 @@
           "ScreenRecordDuration": 3.0,
           "ScreenRecordTwoPassEncoding": false,
           "ScreenRecordAskConfirmationOnAbort": false,
+          "ScreenRecordTransparentRegion": false,
           "ScrollingCaptureOptions": {
             "TrimLeftEdge": 0,
             "TrimTopEdge": 0,
@@ -770,6 +842,7 @@
           "OCROptions": {
             "Permission": false,
             "DefaultLanguage": "eng",
+            "DefaultSite": "GoogleTranslate",
             "Silent": false,
             "ProcessOnLoad": true,
             "AutoCopy": false
@@ -780,18 +853,20 @@
           "UseCustomTimeZone": false,
           "CustomTimeZone": {
             "Id": "UTC",
-            "DisplayName": "(UTC) Coordinated Universal Time",
-            "StandardName": "Coordinated Universal Time",
-            "DaylightName": "Coordinated Universal Time",
+            "DisplayName": "UTC",
+            "StandardName": "UTC",
+            "DaylightName": "UTC",
             "BaseUtcOffset": "00:00:00",
             "AdjustmentRules": null,
             "SupportsDaylightSavingTime": false
           },
           "NameFormatPattern": "%ra{10}",
           "NameFormatPatternActiveWindow": "%pn_%ra{10}",
-          "RegionCaptureUseWindowPattern": true,
           "FileUploadUseNamePattern": false,
           "FileUploadReplaceProblematicCharacters": false,
+          "URLRegexReplace": false,
+          "URLRegexReplacePattern": "^https?://(.+)$",
+          "URLRegexReplaceReplacement": "https://$1",
           "ClipboardUploadURLContents": false,
           "ClipboardUploadShortenURL": false,
           "ClipboardUploadShareURL": false,
@@ -799,21 +874,12 @@
           "UploaderFilters": []
         },
         "UseDefaultActions": true,
-        "ExternalPrograms": [
-          {
-            "IsActive": false,
-            "Name": "Paint",
-            "Path": "C:\\Windows\\system32\\mspaint.exe",
-            "Args": "%input",
-            "OutputExtension": null,
-            "Extensions": null,
-            "HiddenWindow": false,
-            "DeleteInputFile": false
-          }
-        ],
+        "ExternalPrograms": [],
         "UseDefaultToolsSettings": true,
         "ToolsSettings": {
           "ScreenColorPickerFormat": "$hex",
+          "ScreenColorPickerFormatCtrl": "$r255, $g255, $b255",
+          "ScreenColorPickerInfoText": "RGB: $r255, $g255, $b255$nHex: $hex$nX: $x Y: $y",
           "IndexerSettings": {
             "Output": "Html",
             "SkipHiddenFolders": true,
@@ -824,13 +890,27 @@
             "IndentationText": "|___",
             "AddEmptyLineAfterFolders": false,
             "UseCustomCSSFile": false,
+            "DisplayPath": false,
+            "DisplayPathLimited": false,
             "CustomCSSFilePath": "",
             "UseAttribute": true,
             "CreateParseableJson": true
           },
           "ImageCombinerOptions": {
             "Orientation": "Vertical",
-            "Space": 0
+            "Alignment": "LeftOrTop",
+            "Space": 0,
+            "AutoFillBackground": false
+          },
+          "VideoConverterOptions": {
+            "InputFilePath": null,
+            "OutputFolderPath": null,
+            "OutputFileName": null,
+            "VideoCodec": "x264",
+            "VideoQuality": 23,
+            "UseCustomArguments": false,
+            "CustomArguments": "",
+            "AutoOpenFolder": true
           },
           "VideoThumbnailOptions": {
             "DefaultOutputDirectory": null,
@@ -853,24 +933,22 @@
             "AddTimestamp": true,
             "DrawShadow": true,
             "DrawBorder": true
+          },
+          "BorderlessWindowSettings": {
+            "RememberWindowTitle": true,
+            "WindowTitle": null,
+            "AutoCloseWindow": false,
+            "ExcludeTaskbarArea": false
           }
         },
         "UseDefaultAdvancedSettings": true,
         "AdvancedSettings": {
+          "CapturePath": null,
           "ProcessImagesDuringFileUpload": false,
           "ProcessImagesDuringClipboardUpload": false,
           "UseAfterCaptureTasksDuringFileUpload": true,
           "TextTaskSaveAsFile": true,
           "AutoClearClipboard": false,
-          "UseCustomCaptureSound": false,
-          "CustomCaptureSoundPath": "",
-          "SpeechCapture": "",
-          "UseCustomTaskCompletedSound": false,
-          "CustomTaskCompletedSoundPath": "",
-          "SpeechTaskCompleted": "",
-          "UseCustomErrorSound": false,
-          "CustomErrorSoundPath": "",
-          "CapturePath": null,
           "RegionCaptureDisableAnnotation": false,
           "ImageExtensions": [
             "jpg",
@@ -882,7 +960,6 @@
             "tif",
             "tiff"
           ],
-          "EarlyCopyURL": false,
           "TextExtensions": [
             "txt",
             "log",
@@ -915,25 +992,17 @@
             "go",
             "gohtml"
           ],
+          "EarlyCopyURL": false,
+          "TextFileExtension": "txt",
+          "TextFormat": "text",
+          "TextCustom": "",
+          "TextCustomEncodeInput": true,
           "ResultForceHTTPS": false,
           "ClipboardContentFormat": "$result",
           "BalloonTipContentFormat": "$result",
           "OpenURLFormat": "$result",
           "AutoShortenURLLength": 0,
-          "DisableNotifications": false,
-          "DisableNotificationsOnFullscreen": false,
-          "ToastWindowDuration": 3.0,
-          "ToastWindowFadeDuration": 1.0,
-          "ToastWindowPlacement": "BottomRight",
-          "ToastWindowClickAction": "OpenUrl",
-          "ToastWindowRightClickAction": "CloseNotification",
-          "ToastWindowMiddleClickAction": "AnnotateImage",
-          "ToastWindowSize": "400, 300",
           "AutoCloseAfterUploadForm": false,
-          "TextFileExtension": "txt",
-          "TextFormat": "text",
-          "TextCustom": "",
-          "TextCustomEncodeInput": true,
           "NamePatternMaxLength": 100,
           "NamePatternMaxTitleLength": 50
         },
@@ -965,14 +1034,29 @@
         "FTPIndex": 0,
         "OverrideCustomUploader": false,
         "CustomUploaderIndex": 0,
+        "OverrideScreenshotsFolder": false,
+        "ScreenshotsFolder": "",
         "UseDefaultGeneralSettings": true,
         "GeneralSettings": {
           "PlaySoundAfterCapture": true,
-          "ShowAfterCaptureTasksForm": false,
-          "ShowBeforeUploadForm": false,
           "PlaySoundAfterUpload": true,
-          "PopUpNotification": "ToastNotification",
-          "ShowAfterUploadForm": false
+          "ShowToastNotificationAfterTaskCompleted": true,
+          "ToastWindowDuration": 3.0,
+          "ToastWindowFadeDuration": 1.0,
+          "ToastWindowPlacement": "BottomRight",
+          "ToastWindowSize": "400, 300",
+          "ToastWindowLeftClickAction": "OpenUrl",
+          "ToastWindowRightClickAction": "CloseNotification",
+          "ToastWindowMiddleClickAction": "AnnotateImage",
+          "UseCustomCaptureSound": false,
+          "CustomCaptureSoundPath": "",
+          "UseCustomTaskCompletedSound": false,
+          "CustomTaskCompletedSoundPath": "",
+          "UseCustomErrorSound": false,
+          "CustomErrorSoundPath": "",
+          "DisableNotifications": false,
+          "DisableNotificationsOnFullscreen": false,
+          "PopUpNotification": "ToastNotification"
         },
         "UseDefaultImageSettings": true,
         "ImageSettings": {
@@ -982,6 +1066,7 @@
           "ImageGIFQuality": "Default",
           "ImageAutoUseJPEG": true,
           "ImageAutoUseJPEGSize": 2048,
+          "ImageAutoJPEGQuality": false,
           "FileExistAction": "Ask",
           "ImageEffectPresets": [
             {
@@ -990,17 +1075,19 @@
                 {
                   "$type": "ShareX.ImageEffectsLib.Canvas, ShareX.ImageEffectsLib",
                   "Margin": "0, 0, 0, 30",
+                  "MarginMode": "AbsoluteSize",
                   "Color": "Transparent",
                   "Enabled": true
                 },
                 {
                   "$type": "ShareX.ImageEffectsLib.DrawText, ShareX.ImageEffectsLib",
+                  "Text": "Text watermark",
                   "Placement": "BottomRight",
                   "Offset": "0, 0",
-                  "AutoHide": true,
-                  "Text": "Text watermark",
+                  "AutoHide": false,
                   "TextFont": "Arial, 11.25pt",
-                  "TextColor": "White",
+                  "TextRenderingMode": "SystemDefault",
+                  "TextColor": "235, 235, 235",
                   "DrawTextShadow": true,
                   "TextShadowColor": "Black",
                   "TextShadowOffset": "-1, -1",
@@ -1010,11 +1097,8 @@
                   "BorderColor": "Black",
                   "BorderSize": 1,
                   "DrawBackground": true,
-                  "BackgroundColor": "10, 110, 230",
+                  "BackgroundColor": "42, 47, 56",
                   "UseGradient": true,
-                  "GradientType": "Vertical",
-                  "BackgroundColor2": "0, 30, 80",
-                  "UseCustomGradient": true,
                   "Gradient": {
                     "Type": "Vertical",
                     "Colors": [
@@ -1055,7 +1139,7 @@
           "ScreenshotDelay": 0.0,
           "CaptureTransparent": false,
           "CaptureShadow": true,
-          "CaptureShadowOffset": 20,
+          "CaptureShadowOffset": 100,
           "CaptureClientArea": false,
           "CaptureAutoHideTaskbar": false,
           "CaptureCustomRegion": "0, 0, 0, 0",
@@ -1104,9 +1188,12 @@
             "IsFixedSize": false,
             "FixedSize": "250, 250",
             "ShowFPS": false,
+            "MenuIconSize": 0,
+            "MenuLocked": false,
             "RememberMenuState": false,
             "MenuCollapsed": false,
             "MenuPosition": "0, 0",
+            "InputDelay": 500,
             "SwitchToDrawingToolAfterSelection": false,
             "SwitchToSelectionToolAfterDrawing": false,
             "AnnotationOptions": {
@@ -1121,13 +1208,14 @@
               "RegionCornerRadius": 0,
               "BorderColor": "242, 60, 60",
               "BorderSize": 4,
+              "BorderStyle": "Solid",
               "FillColor": "0, 0, 0, 0",
               "DrawingCornerRadius": 3,
               "Shadow": true,
               "ShadowColor": "125, 0, 0, 0",
               "ShadowOffset": "0, 1",
               "LineCenterPointCount": 1,
-              "ArrowHeadsBothSide": false,
+              "ArrowHeadDirection": "End",
               "TextOutlineOptions": {
                 "Font": "Arial",
                 "Size": 25,
@@ -1139,7 +1227,8 @@
                 "AlignmentVertical": "Center",
                 "Gradient": false,
                 "Color2": "240, 240, 240",
-                "GradientMode": "Vertical"
+                "GradientMode": "Vertical",
+                "EnterKeyNewLine": false
               },
               "TextOutlineBorderColor": "242, 60, 60",
               "TextOutlineBorderSize": 5,
@@ -1154,7 +1243,8 @@
                 "AlignmentVertical": "Center",
                 "Gradient": false,
                 "Color2": "240, 240, 240",
-                "GradientMode": "Vertical"
+                "GradientMode": "Vertical",
+                "EnterKeyNewLine": false
               },
               "TextBorderColor": "White",
               "TextBorderSize": 0,
@@ -1164,7 +1254,7 @@
               "StepBorderSize": 0,
               "StepFillColor": "242, 60, 60",
               "StepFontSize": 18,
-              "StepUseLetters": false,
+              "StepType": "Numbers",
               "MagnifyStrength": 200,
               "StickerSize": 64,
               "LastStickerPath": null,
@@ -1176,7 +1266,12 @@
             "LastAnnotationTool": "DrawingRectangle",
             "LastEditorTool": "DrawingRectangle",
             "ImageEditorStartMode": "AutoSize",
-            "ImageEditorWindowState": {},
+            "ImageEditorWindowState": {
+              "Location": "0, 0",
+              "Size": "0, 0",
+              "IsMaximized": false
+            },
+            "EditorAutoCopyImage": false,
             "AutoCloseEditorOnTask": false,
             "ShowEditorPanTip": true,
             "ImageEditorResizeInterpolationMode": "Bicubic",
@@ -1185,11 +1280,15 @@
             "EditorNewImageBackgroundColor": "White",
             "EditorCanvasColor": "Transparent",
             "ImageEffectPresets": [],
-            "SelectedImageEffectPreset": 0
+            "SelectedImageEffectPreset": 0,
+            "ColorPickerOptions": {
+              "RecentColorsSelected": true
+            },
+            "ScreenColorPickerInfoText": ""
           },
           "FFmpegOptions": {
             "OverrideCLIPath": false,
-            "CLIPath": "%MyDocuments%\\ShareX\\Tools\\ffmpeg.exe",
+            "CLIPath": "%ApplicationData%\\ShareX\\Tools\\ffmpeg.exe",
             "VideoSource": "GDI grab",
             "AudioSource": "None",
             "VideoCodec": "libx264",
@@ -1197,7 +1296,6 @@
             "UserArgs": "",
             "UseCustomCommands": false,
             "CustomCommands": "",
-            "ShowError": true,
             "x264_Preset": "ultrafast",
             "x264_CRF": 28,
             "VPx_bitrate": 3000,
@@ -1206,11 +1304,13 @@
             "NVENC_bitrate": 3000,
             "GIFStatsMode": "full",
             "GIFDither": "sierra2_4a",
+            "GIFBayerScale": 2,
             "AMF_usage": "transcoding",
             "AMF_quality": "speed",
             "QSV_preset": "fast",
             "QSV_bitrate": 3000,
             "AAC_bitrate": 128,
+            "Opus_bitrate": 128,
             "Vorbis_qscale": 3,
             "MP3_qscale": 4
           },
@@ -1223,6 +1323,7 @@
           "ScreenRecordDuration": 3.0,
           "ScreenRecordTwoPassEncoding": false,
           "ScreenRecordAskConfirmationOnAbort": false,
+          "ScreenRecordTransparentRegion": false,
           "ScrollingCaptureOptions": {
             "TrimLeftEdge": 0,
             "TrimTopEdge": 0,
@@ -1246,6 +1347,7 @@
           "OCROptions": {
             "Permission": false,
             "DefaultLanguage": "eng",
+            "DefaultSite": "GoogleTranslate",
             "Silent": false,
             "ProcessOnLoad": true,
             "AutoCopy": false
@@ -1265,9 +1367,11 @@
           },
           "NameFormatPattern": "%ra{10}",
           "NameFormatPatternActiveWindow": "%pn_%ra{10}",
-          "RegionCaptureUseWindowPattern": true,
           "FileUploadUseNamePattern": false,
           "FileUploadReplaceProblematicCharacters": false,
+          "URLRegexReplace": false,
+          "URLRegexReplacePattern": "^https?://(.+)$",
+          "URLRegexReplaceReplacement": "https://$1",
           "ClipboardUploadURLContents": false,
           "ClipboardUploadShortenURL": false,
           "ClipboardUploadShareURL": false,
@@ -1279,6 +1383,8 @@
         "UseDefaultToolsSettings": true,
         "ToolsSettings": {
           "ScreenColorPickerFormat": "$hex",
+          "ScreenColorPickerFormatCtrl": "$r255, $g255, $b255",
+          "ScreenColorPickerInfoText": "RGB: $r255, $g255, $b255$nHex: $hex$nX: $x Y: $y",
           "IndexerSettings": {
             "Output": "Html",
             "SkipHiddenFolders": true,
@@ -1289,13 +1395,27 @@
             "IndentationText": "|___",
             "AddEmptyLineAfterFolders": false,
             "UseCustomCSSFile": false,
+            "DisplayPath": false,
+            "DisplayPathLimited": false,
             "CustomCSSFilePath": "",
             "UseAttribute": true,
             "CreateParseableJson": true
           },
           "ImageCombinerOptions": {
             "Orientation": "Vertical",
-            "Space": 0
+            "Alignment": "LeftOrTop",
+            "Space": 0,
+            "AutoFillBackground": false
+          },
+          "VideoConverterOptions": {
+            "InputFilePath": null,
+            "OutputFolderPath": null,
+            "OutputFileName": null,
+            "VideoCodec": "x264",
+            "VideoQuality": 23,
+            "UseCustomArguments": false,
+            "CustomArguments": "",
+            "AutoOpenFolder": true
           },
           "VideoThumbnailOptions": {
             "DefaultOutputDirectory": null,
@@ -1318,24 +1438,22 @@
             "AddTimestamp": true,
             "DrawShadow": true,
             "DrawBorder": true
+          },
+          "BorderlessWindowSettings": {
+            "RememberWindowTitle": true,
+            "WindowTitle": null,
+            "AutoCloseWindow": false,
+            "ExcludeTaskbarArea": false
           }
         },
         "UseDefaultAdvancedSettings": true,
         "AdvancedSettings": {
+          "CapturePath": null,
           "ProcessImagesDuringFileUpload": false,
           "ProcessImagesDuringClipboardUpload": false,
           "UseAfterCaptureTasksDuringFileUpload": true,
           "TextTaskSaveAsFile": true,
           "AutoClearClipboard": false,
-          "UseCustomCaptureSound": false,
-          "CustomCaptureSoundPath": "",
-          "SpeechCapture": "",
-          "UseCustomTaskCompletedSound": false,
-          "CustomTaskCompletedSoundPath": "",
-          "SpeechTaskCompleted": "",
-          "UseCustomErrorSound": false,
-          "CustomErrorSoundPath": "",
-          "CapturePath": null,
           "RegionCaptureDisableAnnotation": false,
           "ImageExtensions": [
             "jpg",
@@ -1347,7 +1465,6 @@
             "tif",
             "tiff"
           ],
-          "EarlyCopyURL": false,
           "TextExtensions": [
             "txt",
             "log",
@@ -1380,25 +1497,17 @@
             "go",
             "gohtml"
           ],
+          "EarlyCopyURL": false,
+          "TextFileExtension": "txt",
+          "TextFormat": "text",
+          "TextCustom": "",
+          "TextCustomEncodeInput": true,
           "ResultForceHTTPS": false,
           "ClipboardContentFormat": "$result",
           "BalloonTipContentFormat": "$result",
           "OpenURLFormat": "$result",
           "AutoShortenURLLength": 0,
-          "DisableNotifications": false,
-          "DisableNotificationsOnFullscreen": false,
-          "ToastWindowDuration": 3.0,
-          "ToastWindowFadeDuration": 1.0,
-          "ToastWindowPlacement": "BottomRight",
-          "ToastWindowClickAction": "OpenUrl",
-          "ToastWindowRightClickAction": "CloseNotification",
-          "ToastWindowMiddleClickAction": "AnnotateImage",
-          "ToastWindowSize": "400, 300",
           "AutoCloseAfterUploadForm": false,
-          "TextFileExtension": "txt",
-          "TextFormat": "text",
-          "TextCustom": "",
-          "TextCustomEncodeInput": true,
           "NamePatternMaxLength": 100,
           "NamePatternMaxTitleLength": 50
         },
@@ -1430,14 +1539,29 @@
         "FTPIndex": 0,
         "OverrideCustomUploader": false,
         "CustomUploaderIndex": 0,
+        "OverrideScreenshotsFolder": false,
+        "ScreenshotsFolder": "",
         "UseDefaultGeneralSettings": true,
         "GeneralSettings": {
           "PlaySoundAfterCapture": true,
-          "ShowAfterCaptureTasksForm": false,
-          "ShowBeforeUploadForm": false,
           "PlaySoundAfterUpload": true,
-          "PopUpNotification": "ToastNotification",
-          "ShowAfterUploadForm": false
+          "ShowToastNotificationAfterTaskCompleted": true,
+          "ToastWindowDuration": 3.0,
+          "ToastWindowFadeDuration": 1.0,
+          "ToastWindowPlacement": "BottomRight",
+          "ToastWindowSize": "400, 300",
+          "ToastWindowLeftClickAction": "OpenUrl",
+          "ToastWindowRightClickAction": "CloseNotification",
+          "ToastWindowMiddleClickAction": "AnnotateImage",
+          "UseCustomCaptureSound": false,
+          "CustomCaptureSoundPath": "",
+          "UseCustomTaskCompletedSound": false,
+          "CustomTaskCompletedSoundPath": "",
+          "UseCustomErrorSound": false,
+          "CustomErrorSoundPath": "",
+          "DisableNotifications": false,
+          "DisableNotificationsOnFullscreen": false,
+          "PopUpNotification": "ToastNotification"
         },
         "UseDefaultImageSettings": true,
         "ImageSettings": {
@@ -1447,6 +1571,7 @@
           "ImageGIFQuality": "Default",
           "ImageAutoUseJPEG": true,
           "ImageAutoUseJPEGSize": 2048,
+          "ImageAutoJPEGQuality": false,
           "FileExistAction": "Ask",
           "ImageEffectPresets": [
             {
@@ -1455,17 +1580,19 @@
                 {
                   "$type": "ShareX.ImageEffectsLib.Canvas, ShareX.ImageEffectsLib",
                   "Margin": "0, 0, 0, 30",
+                  "MarginMode": "AbsoluteSize",
                   "Color": "Transparent",
                   "Enabled": true
                 },
                 {
                   "$type": "ShareX.ImageEffectsLib.DrawText, ShareX.ImageEffectsLib",
+                  "Text": "Text watermark",
                   "Placement": "BottomRight",
                   "Offset": "0, 0",
-                  "AutoHide": true,
-                  "Text": "Text watermark",
+                  "AutoHide": false,
                   "TextFont": "Arial, 11.25pt",
-                  "TextColor": "White",
+                  "TextRenderingMode": "SystemDefault",
+                  "TextColor": "235, 235, 235",
                   "DrawTextShadow": true,
                   "TextShadowColor": "Black",
                   "TextShadowOffset": "-1, -1",
@@ -1475,11 +1602,8 @@
                   "BorderColor": "Black",
                   "BorderSize": 1,
                   "DrawBackground": true,
-                  "BackgroundColor": "10, 110, 230",
+                  "BackgroundColor": "42, 47, 56",
                   "UseGradient": true,
-                  "GradientType": "Vertical",
-                  "BackgroundColor2": "0, 30, 80",
-                  "UseCustomGradient": true,
                   "Gradient": {
                     "Type": "Vertical",
                     "Colors": [
@@ -1520,7 +1644,7 @@
           "ScreenshotDelay": 0.0,
           "CaptureTransparent": false,
           "CaptureShadow": true,
-          "CaptureShadowOffset": 20,
+          "CaptureShadowOffset": 100,
           "CaptureClientArea": false,
           "CaptureAutoHideTaskbar": false,
           "CaptureCustomRegion": "0, 0, 0, 0",
@@ -1569,9 +1693,12 @@
             "IsFixedSize": false,
             "FixedSize": "250, 250",
             "ShowFPS": false,
+            "MenuIconSize": 0,
+            "MenuLocked": false,
             "RememberMenuState": false,
             "MenuCollapsed": false,
             "MenuPosition": "0, 0",
+            "InputDelay": 500,
             "SwitchToDrawingToolAfterSelection": false,
             "SwitchToSelectionToolAfterDrawing": false,
             "AnnotationOptions": {
@@ -1586,13 +1713,14 @@
               "RegionCornerRadius": 0,
               "BorderColor": "242, 60, 60",
               "BorderSize": 4,
+              "BorderStyle": "Solid",
               "FillColor": "0, 0, 0, 0",
               "DrawingCornerRadius": 3,
               "Shadow": true,
               "ShadowColor": "125, 0, 0, 0",
               "ShadowOffset": "0, 1",
               "LineCenterPointCount": 1,
-              "ArrowHeadsBothSide": false,
+              "ArrowHeadDirection": "End",
               "TextOutlineOptions": {
                 "Font": "Arial",
                 "Size": 25,
@@ -1604,7 +1732,8 @@
                 "AlignmentVertical": "Center",
                 "Gradient": false,
                 "Color2": "240, 240, 240",
-                "GradientMode": "Vertical"
+                "GradientMode": "Vertical",
+                "EnterKeyNewLine": false
               },
               "TextOutlineBorderColor": "242, 60, 60",
               "TextOutlineBorderSize": 5,
@@ -1619,7 +1748,8 @@
                 "AlignmentVertical": "Center",
                 "Gradient": false,
                 "Color2": "240, 240, 240",
-                "GradientMode": "Vertical"
+                "GradientMode": "Vertical",
+                "EnterKeyNewLine": false
               },
               "TextBorderColor": "White",
               "TextBorderSize": 0,
@@ -1629,7 +1759,7 @@
               "StepBorderSize": 0,
               "StepFillColor": "242, 60, 60",
               "StepFontSize": 18,
-              "StepUseLetters": false,
+              "StepType": "Numbers",
               "MagnifyStrength": 200,
               "StickerSize": 64,
               "LastStickerPath": null,
@@ -1641,7 +1771,12 @@
             "LastAnnotationTool": "DrawingRectangle",
             "LastEditorTool": "DrawingRectangle",
             "ImageEditorStartMode": "AutoSize",
-            "ImageEditorWindowState": {},
+            "ImageEditorWindowState": {
+              "Location": "0, 0",
+              "Size": "0, 0",
+              "IsMaximized": false
+            },
+            "EditorAutoCopyImage": false,
             "AutoCloseEditorOnTask": false,
             "ShowEditorPanTip": true,
             "ImageEditorResizeInterpolationMode": "Bicubic",
@@ -1650,11 +1785,15 @@
             "EditorNewImageBackgroundColor": "White",
             "EditorCanvasColor": "Transparent",
             "ImageEffectPresets": [],
-            "SelectedImageEffectPreset": 0
+            "SelectedImageEffectPreset": 0,
+            "ColorPickerOptions": {
+              "RecentColorsSelected": true
+            },
+            "ScreenColorPickerInfoText": ""
           },
           "FFmpegOptions": {
             "OverrideCLIPath": false,
-            "CLIPath": "%MyDocuments%\\ShareX\\Tools\\ffmpeg.exe",
+            "CLIPath": "%ApplicationData%\\ShareX\\Tools\\ffmpeg.exe",
             "VideoSource": "GDI grab",
             "AudioSource": "None",
             "VideoCodec": "libx264",
@@ -1662,7 +1801,6 @@
             "UserArgs": "",
             "UseCustomCommands": false,
             "CustomCommands": "",
-            "ShowError": true,
             "x264_Preset": "ultrafast",
             "x264_CRF": 28,
             "VPx_bitrate": 3000,
@@ -1671,11 +1809,13 @@
             "NVENC_bitrate": 3000,
             "GIFStatsMode": "full",
             "GIFDither": "sierra2_4a",
+            "GIFBayerScale": 2,
             "AMF_usage": "transcoding",
             "AMF_quality": "speed",
             "QSV_preset": "fast",
             "QSV_bitrate": 3000,
             "AAC_bitrate": 128,
+            "Opus_bitrate": 128,
             "Vorbis_qscale": 3,
             "MP3_qscale": 4
           },
@@ -1688,6 +1828,7 @@
           "ScreenRecordDuration": 3.0,
           "ScreenRecordTwoPassEncoding": false,
           "ScreenRecordAskConfirmationOnAbort": false,
+          "ScreenRecordTransparentRegion": false,
           "ScrollingCaptureOptions": {
             "TrimLeftEdge": 0,
             "TrimTopEdge": 0,
@@ -1711,6 +1852,7 @@
           "OCROptions": {
             "Permission": false,
             "DefaultLanguage": "eng",
+            "DefaultSite": "GoogleTranslate",
             "Silent": false,
             "ProcessOnLoad": true,
             "AutoCopy": false
@@ -1730,9 +1872,11 @@
           },
           "NameFormatPattern": "%ra{10}",
           "NameFormatPatternActiveWindow": "%pn_%ra{10}",
-          "RegionCaptureUseWindowPattern": true,
           "FileUploadUseNamePattern": false,
           "FileUploadReplaceProblematicCharacters": false,
+          "URLRegexReplace": false,
+          "URLRegexReplacePattern": "^https?://(.+)$",
+          "URLRegexReplaceReplacement": "https://$1",
           "ClipboardUploadURLContents": false,
           "ClipboardUploadShortenURL": false,
           "ClipboardUploadShareURL": false,
@@ -1744,6 +1888,8 @@
         "UseDefaultToolsSettings": true,
         "ToolsSettings": {
           "ScreenColorPickerFormat": "$hex",
+          "ScreenColorPickerFormatCtrl": "$r255, $g255, $b255",
+          "ScreenColorPickerInfoText": "RGB: $r255, $g255, $b255$nHex: $hex$nX: $x Y: $y",
           "IndexerSettings": {
             "Output": "Html",
             "SkipHiddenFolders": true,
@@ -1754,13 +1900,27 @@
             "IndentationText": "|___",
             "AddEmptyLineAfterFolders": false,
             "UseCustomCSSFile": false,
+            "DisplayPath": false,
+            "DisplayPathLimited": false,
             "CustomCSSFilePath": "",
             "UseAttribute": true,
             "CreateParseableJson": true
           },
           "ImageCombinerOptions": {
             "Orientation": "Vertical",
-            "Space": 0
+            "Alignment": "LeftOrTop",
+            "Space": 0,
+            "AutoFillBackground": false
+          },
+          "VideoConverterOptions": {
+            "InputFilePath": null,
+            "OutputFolderPath": null,
+            "OutputFileName": null,
+            "VideoCodec": "x264",
+            "VideoQuality": 23,
+            "UseCustomArguments": false,
+            "CustomArguments": "",
+            "AutoOpenFolder": true
           },
           "VideoThumbnailOptions": {
             "DefaultOutputDirectory": null,
@@ -1783,24 +1943,22 @@
             "AddTimestamp": true,
             "DrawShadow": true,
             "DrawBorder": true
+          },
+          "BorderlessWindowSettings": {
+            "RememberWindowTitle": true,
+            "WindowTitle": null,
+            "AutoCloseWindow": false,
+            "ExcludeTaskbarArea": false
           }
         },
         "UseDefaultAdvancedSettings": true,
         "AdvancedSettings": {
+          "CapturePath": null,
           "ProcessImagesDuringFileUpload": false,
           "ProcessImagesDuringClipboardUpload": false,
           "UseAfterCaptureTasksDuringFileUpload": true,
           "TextTaskSaveAsFile": true,
           "AutoClearClipboard": false,
-          "UseCustomCaptureSound": false,
-          "CustomCaptureSoundPath": "",
-          "SpeechCapture": "",
-          "UseCustomTaskCompletedSound": false,
-          "CustomTaskCompletedSoundPath": "",
-          "SpeechTaskCompleted": "",
-          "UseCustomErrorSound": false,
-          "CustomErrorSoundPath": "",
-          "CapturePath": null,
           "RegionCaptureDisableAnnotation": false,
           "ImageExtensions": [
             "jpg",
@@ -1812,7 +1970,6 @@
             "tif",
             "tiff"
           ],
-          "EarlyCopyURL": false,
           "TextExtensions": [
             "txt",
             "log",
@@ -1845,25 +2002,17 @@
             "go",
             "gohtml"
           ],
+          "EarlyCopyURL": false,
+          "TextFileExtension": "txt",
+          "TextFormat": "text",
+          "TextCustom": "",
+          "TextCustomEncodeInput": true,
           "ResultForceHTTPS": false,
           "ClipboardContentFormat": "$result",
           "BalloonTipContentFormat": "$result",
           "OpenURLFormat": "$result",
           "AutoShortenURLLength": 0,
-          "DisableNotifications": false,
-          "DisableNotificationsOnFullscreen": false,
-          "ToastWindowDuration": 3.0,
-          "ToastWindowFadeDuration": 1.0,
-          "ToastWindowPlacement": "BottomRight",
-          "ToastWindowClickAction": "OpenUrl",
-          "ToastWindowRightClickAction": "CloseNotification",
-          "ToastWindowMiddleClickAction": "AnnotateImage",
-          "ToastWindowSize": "400, 300",
           "AutoCloseAfterUploadForm": false,
-          "TextFileExtension": "txt",
-          "TextFormat": "text",
-          "TextCustom": "",
-          "TextCustomEncodeInput": true,
           "NamePatternMaxLength": 100,
           "NamePatternMaxTitleLength": 50
         },
@@ -1895,14 +2044,29 @@
         "FTPIndex": 0,
         "OverrideCustomUploader": false,
         "CustomUploaderIndex": 0,
+        "OverrideScreenshotsFolder": false,
+        "ScreenshotsFolder": "",
         "UseDefaultGeneralSettings": true,
         "GeneralSettings": {
           "PlaySoundAfterCapture": true,
-          "ShowAfterCaptureTasksForm": false,
-          "ShowBeforeUploadForm": false,
           "PlaySoundAfterUpload": true,
-          "PopUpNotification": "ToastNotification",
-          "ShowAfterUploadForm": false
+          "ShowToastNotificationAfterTaskCompleted": true,
+          "ToastWindowDuration": 3.0,
+          "ToastWindowFadeDuration": 1.0,
+          "ToastWindowPlacement": "BottomRight",
+          "ToastWindowSize": "400, 300",
+          "ToastWindowLeftClickAction": "OpenUrl",
+          "ToastWindowRightClickAction": "CloseNotification",
+          "ToastWindowMiddleClickAction": "AnnotateImage",
+          "UseCustomCaptureSound": false,
+          "CustomCaptureSoundPath": "",
+          "UseCustomTaskCompletedSound": false,
+          "CustomTaskCompletedSoundPath": "",
+          "UseCustomErrorSound": false,
+          "CustomErrorSoundPath": "",
+          "DisableNotifications": false,
+          "DisableNotificationsOnFullscreen": false,
+          "PopUpNotification": "ToastNotification"
         },
         "UseDefaultImageSettings": true,
         "ImageSettings": {
@@ -1912,6 +2076,7 @@
           "ImageGIFQuality": "Default",
           "ImageAutoUseJPEG": true,
           "ImageAutoUseJPEGSize": 2048,
+          "ImageAutoJPEGQuality": false,
           "FileExistAction": "Ask",
           "ImageEffectPresets": [
             {
@@ -1920,17 +2085,19 @@
                 {
                   "$type": "ShareX.ImageEffectsLib.Canvas, ShareX.ImageEffectsLib",
                   "Margin": "0, 0, 0, 30",
+                  "MarginMode": "AbsoluteSize",
                   "Color": "Transparent",
                   "Enabled": true
                 },
                 {
                   "$type": "ShareX.ImageEffectsLib.DrawText, ShareX.ImageEffectsLib",
+                  "Text": "Text watermark",
                   "Placement": "BottomRight",
                   "Offset": "0, 0",
-                  "AutoHide": true,
-                  "Text": "Text watermark",
+                  "AutoHide": false,
                   "TextFont": "Arial, 11.25pt",
-                  "TextColor": "White",
+                  "TextRenderingMode": "SystemDefault",
+                  "TextColor": "235, 235, 235",
                   "DrawTextShadow": true,
                   "TextShadowColor": "Black",
                   "TextShadowOffset": "-1, -1",
@@ -1940,11 +2107,8 @@
                   "BorderColor": "Black",
                   "BorderSize": 1,
                   "DrawBackground": true,
-                  "BackgroundColor": "10, 110, 230",
+                  "BackgroundColor": "42, 47, 56",
                   "UseGradient": true,
-                  "GradientType": "Vertical",
-                  "BackgroundColor2": "0, 30, 80",
-                  "UseCustomGradient": true,
                   "Gradient": {
                     "Type": "Vertical",
                     "Colors": [
@@ -1985,7 +2149,7 @@
           "ScreenshotDelay": 0.0,
           "CaptureTransparent": false,
           "CaptureShadow": true,
-          "CaptureShadowOffset": 20,
+          "CaptureShadowOffset": 100,
           "CaptureClientArea": false,
           "CaptureAutoHideTaskbar": false,
           "CaptureCustomRegion": "0, 0, 0, 0",
@@ -2034,9 +2198,12 @@
             "IsFixedSize": false,
             "FixedSize": "250, 250",
             "ShowFPS": false,
+            "MenuIconSize": 0,
+            "MenuLocked": false,
             "RememberMenuState": false,
             "MenuCollapsed": false,
             "MenuPosition": "0, 0",
+            "InputDelay": 500,
             "SwitchToDrawingToolAfterSelection": false,
             "SwitchToSelectionToolAfterDrawing": false,
             "AnnotationOptions": {
@@ -2051,13 +2218,14 @@
               "RegionCornerRadius": 0,
               "BorderColor": "242, 60, 60",
               "BorderSize": 4,
+              "BorderStyle": "Solid",
               "FillColor": "0, 0, 0, 0",
               "DrawingCornerRadius": 3,
               "Shadow": true,
               "ShadowColor": "125, 0, 0, 0",
               "ShadowOffset": "0, 1",
               "LineCenterPointCount": 1,
-              "ArrowHeadsBothSide": false,
+              "ArrowHeadDirection": "End",
               "TextOutlineOptions": {
                 "Font": "Arial",
                 "Size": 25,
@@ -2069,7 +2237,8 @@
                 "AlignmentVertical": "Center",
                 "Gradient": false,
                 "Color2": "240, 240, 240",
-                "GradientMode": "Vertical"
+                "GradientMode": "Vertical",
+                "EnterKeyNewLine": false
               },
               "TextOutlineBorderColor": "242, 60, 60",
               "TextOutlineBorderSize": 5,
@@ -2084,7 +2253,8 @@
                 "AlignmentVertical": "Center",
                 "Gradient": false,
                 "Color2": "240, 240, 240",
-                "GradientMode": "Vertical"
+                "GradientMode": "Vertical",
+                "EnterKeyNewLine": false
               },
               "TextBorderColor": "White",
               "TextBorderSize": 0,
@@ -2094,7 +2264,7 @@
               "StepBorderSize": 0,
               "StepFillColor": "242, 60, 60",
               "StepFontSize": 18,
-              "StepUseLetters": false,
+              "StepType": "Numbers",
               "MagnifyStrength": 200,
               "StickerSize": 64,
               "LastStickerPath": null,
@@ -2106,7 +2276,12 @@
             "LastAnnotationTool": "DrawingRectangle",
             "LastEditorTool": "DrawingRectangle",
             "ImageEditorStartMode": "AutoSize",
-            "ImageEditorWindowState": {},
+            "ImageEditorWindowState": {
+              "Location": "0, 0",
+              "Size": "0, 0",
+              "IsMaximized": false
+            },
+            "EditorAutoCopyImage": false,
             "AutoCloseEditorOnTask": false,
             "ShowEditorPanTip": true,
             "ImageEditorResizeInterpolationMode": "Bicubic",
@@ -2115,11 +2290,15 @@
             "EditorNewImageBackgroundColor": "White",
             "EditorCanvasColor": "Transparent",
             "ImageEffectPresets": [],
-            "SelectedImageEffectPreset": 0
+            "SelectedImageEffectPreset": 0,
+            "ColorPickerOptions": {
+              "RecentColorsSelected": true
+            },
+            "ScreenColorPickerInfoText": ""
           },
           "FFmpegOptions": {
             "OverrideCLIPath": false,
-            "CLIPath": "%MyDocuments%\\ShareX\\Tools\\ffmpeg.exe",
+            "CLIPath": "%ApplicationData%\\ShareX\\Tools\\ffmpeg.exe",
             "VideoSource": "GDI grab",
             "AudioSource": "None",
             "VideoCodec": "libx264",
@@ -2127,7 +2306,6 @@
             "UserArgs": "",
             "UseCustomCommands": false,
             "CustomCommands": "",
-            "ShowError": true,
             "x264_Preset": "ultrafast",
             "x264_CRF": 28,
             "VPx_bitrate": 3000,
@@ -2136,11 +2314,13 @@
             "NVENC_bitrate": 3000,
             "GIFStatsMode": "full",
             "GIFDither": "sierra2_4a",
+            "GIFBayerScale": 2,
             "AMF_usage": "transcoding",
             "AMF_quality": "speed",
             "QSV_preset": "fast",
             "QSV_bitrate": 3000,
             "AAC_bitrate": 128,
+            "Opus_bitrate": 128,
             "Vorbis_qscale": 3,
             "MP3_qscale": 4
           },
@@ -2153,6 +2333,7 @@
           "ScreenRecordDuration": 3.0,
           "ScreenRecordTwoPassEncoding": false,
           "ScreenRecordAskConfirmationOnAbort": false,
+          "ScreenRecordTransparentRegion": false,
           "ScrollingCaptureOptions": {
             "TrimLeftEdge": 0,
             "TrimTopEdge": 0,
@@ -2176,6 +2357,7 @@
           "OCROptions": {
             "Permission": false,
             "DefaultLanguage": "eng",
+            "DefaultSite": "GoogleTranslate",
             "Silent": false,
             "ProcessOnLoad": true,
             "AutoCopy": false
@@ -2195,9 +2377,11 @@
           },
           "NameFormatPattern": "%ra{10}",
           "NameFormatPatternActiveWindow": "%pn_%ra{10}",
-          "RegionCaptureUseWindowPattern": true,
           "FileUploadUseNamePattern": false,
           "FileUploadReplaceProblematicCharacters": false,
+          "URLRegexReplace": false,
+          "URLRegexReplacePattern": "^https?://(.+)$",
+          "URLRegexReplaceReplacement": "https://$1",
           "ClipboardUploadURLContents": false,
           "ClipboardUploadShortenURL": false,
           "ClipboardUploadShareURL": false,
@@ -2209,6 +2393,8 @@
         "UseDefaultToolsSettings": true,
         "ToolsSettings": {
           "ScreenColorPickerFormat": "$hex",
+          "ScreenColorPickerFormatCtrl": "$r255, $g255, $b255",
+          "ScreenColorPickerInfoText": "RGB: $r255, $g255, $b255$nHex: $hex$nX: $x Y: $y",
           "IndexerSettings": {
             "Output": "Html",
             "SkipHiddenFolders": true,
@@ -2219,13 +2405,27 @@
             "IndentationText": "|___",
             "AddEmptyLineAfterFolders": false,
             "UseCustomCSSFile": false,
+            "DisplayPath": false,
+            "DisplayPathLimited": false,
             "CustomCSSFilePath": "",
             "UseAttribute": true,
             "CreateParseableJson": true
           },
           "ImageCombinerOptions": {
             "Orientation": "Vertical",
-            "Space": 0
+            "Alignment": "LeftOrTop",
+            "Space": 0,
+            "AutoFillBackground": false
+          },
+          "VideoConverterOptions": {
+            "InputFilePath": null,
+            "OutputFolderPath": null,
+            "OutputFileName": null,
+            "VideoCodec": "x264",
+            "VideoQuality": 23,
+            "UseCustomArguments": false,
+            "CustomArguments": "",
+            "AutoOpenFolder": true
           },
           "VideoThumbnailOptions": {
             "DefaultOutputDirectory": null,
@@ -2248,24 +2448,22 @@
             "AddTimestamp": true,
             "DrawShadow": true,
             "DrawBorder": true
+          },
+          "BorderlessWindowSettings": {
+            "RememberWindowTitle": true,
+            "WindowTitle": null,
+            "AutoCloseWindow": false,
+            "ExcludeTaskbarArea": false
           }
         },
         "UseDefaultAdvancedSettings": true,
         "AdvancedSettings": {
+          "CapturePath": null,
           "ProcessImagesDuringFileUpload": false,
           "ProcessImagesDuringClipboardUpload": false,
           "UseAfterCaptureTasksDuringFileUpload": true,
           "TextTaskSaveAsFile": true,
           "AutoClearClipboard": false,
-          "UseCustomCaptureSound": false,
-          "CustomCaptureSoundPath": "",
-          "SpeechCapture": "",
-          "UseCustomTaskCompletedSound": false,
-          "CustomTaskCompletedSoundPath": "",
-          "SpeechTaskCompleted": "",
-          "UseCustomErrorSound": false,
-          "CustomErrorSoundPath": "",
-          "CapturePath": null,
           "RegionCaptureDisableAnnotation": false,
           "ImageExtensions": [
             "jpg",
@@ -2277,7 +2475,6 @@
             "tif",
             "tiff"
           ],
-          "EarlyCopyURL": false,
           "TextExtensions": [
             "txt",
             "log",
@@ -2310,25 +2507,17 @@
             "go",
             "gohtml"
           ],
+          "EarlyCopyURL": false,
+          "TextFileExtension": "txt",
+          "TextFormat": "text",
+          "TextCustom": "",
+          "TextCustomEncodeInput": true,
           "ResultForceHTTPS": false,
           "ClipboardContentFormat": "$result",
           "BalloonTipContentFormat": "$result",
           "OpenURLFormat": "$result",
           "AutoShortenURLLength": 0,
-          "DisableNotifications": false,
-          "DisableNotificationsOnFullscreen": false,
-          "ToastWindowDuration": 3.0,
-          "ToastWindowFadeDuration": 1.0,
-          "ToastWindowPlacement": "BottomRight",
-          "ToastWindowClickAction": "OpenUrl",
-          "ToastWindowRightClickAction": "CloseNotification",
-          "ToastWindowMiddleClickAction": "AnnotateImage",
-          "ToastWindowSize": "400, 300",
           "AutoCloseAfterUploadForm": false,
-          "TextFileExtension": "txt",
-          "TextFormat": "text",
-          "TextCustom": "",
-          "TextCustomEncodeInput": true,
           "NamePatternMaxLength": 100,
           "NamePatternMaxTitleLength": 50
         },
@@ -2337,4 +2526,5 @@
       }
     }
   ],
+  "ApplicationVersion": "13.7.0"
 }
