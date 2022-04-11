@@ -176,17 +176,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Write-Log -Message "Applying $appName settings to the Default User profile." -Severity 1 -LogType CMTrace -WriteHost $True
-
-    # Copy config file to the default profile
-    New-Folder -Path "$envSystemDrive\Users\Default\AppData\Roaming\vlc"
-    Copy-File -Path "$appScriptDirectory\$appConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\vlc\vlcrc"
-
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+
+    Write-Log -Message "Applying $appName settings to the Default User profile." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Copy config file to the default profile
+    New-Folder -Path "$envSystemDrive\Users\Default\AppData\Roaming\vlc"
+    Copy-File -Path "$appScriptDirectory\$appConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\vlc\vlcrc"
 
     # Configure application shortcut
     Remove-File -Path $envCommonDesktop\$appName.lnk -ContinueOnError $True
