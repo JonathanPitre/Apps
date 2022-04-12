@@ -202,8 +202,8 @@ $appProcesses = @("BrokerAgent", "picaSessionAgent")
 $appServices = @("CitrixTelemetryService")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /includeadditional "Citrix Profile Management","Citrix Profile Management WMI Plugin" /exclude "Citrix WEM Agent","User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Personalization for App-V - VDA","Machine Identity Service","Citrix Universal Print Client" /enablerestore'
-$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 21*, All Editions"} | Sort-Object Version -Descending | Select-Object -First 1
+$appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enablerestore /enable_ss_ports /exclude "Machine Identity Service","Citrix Universal Print Client","Citrix Personalization for App-V - VDA","Citrix Supportability Tools","Citrix Files for Windows","Citrix Files for Outlook","User Personalization layer","Citrix WEM Agent","Citrix MCS IODriver" /includeadditional "Citrix Profile Management","Citrix Profile Management WMI Plugin","Citrix Telemetry Service","Citrix VDA Upgrade Agent","Citrix Rendezvous V2" /noreboot /noresume /quiet /remotepc /remove_appdisk_ack /remove_pvd_ack'
+$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 22*, All Editions"} | Sort-Object Version -Descending | Select-Object -First 1
 $appVersion = $Evergreen.Version
 $appSetup = "VDAWorkstationSetup_$appVersion.exe"
 $appDlNumber = "20117"
@@ -311,7 +311,8 @@ If ($appVersion -gt $appInstalledVersion)
 
     # Registry optimizations
     # Enable EDT MTU Discovery on the VDA - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/technical-overview/hdx/adaptive-transport.html
-    Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "MtuDiscovery" -Type "DWord" -Value "1"
+    # Now enabled by default
+    #Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "MtuDiscovery" -Type "DWord" -Value "1"
 
     # Disable Citrix Profile Management if detected
     If ((Test-Path -Path "HKLM:\SYSTEM\CurrentControlSet\Services\ctxProfile") -and (Get-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Value "PSEnabled") -ne "0")
@@ -355,9 +356,15 @@ If ($appVersion -gt $appInstalledVersion)
     # Enable WOL
     # https://www.cyberdrain.com/monitoring-with-powershell-monitor-and-enabling-wol-for-hp-lenovo-dell
 
+    # Enable Rendezvous - https://docs.citrix.com/en-us/citrix-daas/hdx/rendezvous-protocol/rendezvous-v2.html
+    If ((Get-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\XenDesktopSetup" -Value "Rendezvous V2 Component") -eq "1")
+    {
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\VirtualDesktopAgent" -Name "GctRegistration" -Type "DWord" -Value "1"
+    }
+
     # Go back to the parent folder
     Set-Location ..
-    Remove-Folder -Path "$envTemp\Install\"
+    Remove-Folder -Path "$envTemp\Install"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 

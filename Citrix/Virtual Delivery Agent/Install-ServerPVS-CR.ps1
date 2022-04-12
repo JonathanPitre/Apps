@@ -69,22 +69,33 @@ Function Initialize-Module
         }
         Else
         {
+            # Install Nuget
+            If (-not(Get-PackageProvider -ListAvailable -Name NuGet))
+            {
+                Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+                Write-Host -Object "Package provider NuGet was installed." -ForegroundColor Green
+            }
+
+            # Add the Powershell Gallery as trusted repository
+            If ((Get-PSRepository -Name "PSGallery").InstallationPolicy -eq "Untrusted")
+            {
+                Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+                Write-Host -Object "PowerShell Gallery is now a trusted repository." -ForegroundColor Green
+            }
+
+                # Install Nuget
+            # Update PowerShellGet
+            $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
+            $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
+            If ($PSGetVersion -gt $InstalledPSGetVersion)
+            {
+                Install-PackageProvider -Name PowerShellGet -Force
+                Write-Host -Object "PowerShellGet Gallery was updated." -ForegroundColor Green
+            }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
             If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
             {
-
-                # Add the Powershell Gallery as trusted repository
-                Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-
-                # Install Nuget
-                If (-not(Get-PackageProvider -ListAvailable -Name Nuget -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name Nuget -Force }
-                # Update PowerShellGet
-                $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
-                $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
-                If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
-
-
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
                 Import-Module -Name $Module -Force -Global -DisableNameChecking
@@ -194,11 +205,11 @@ $appProcesses = @("BrokerAgent", "picaSessionAgent")
 $appServices = @("CitrixTelemetryService")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /virtualmachine /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /masterpvsimage /includeadditional "Citrix Profile Management","Citrix Profile Management WMI Plugin","Citrix Universal Print Client","Citrix MCS IODriver","Citrix VDA Upgrade Agent","Citrix Rendezvous V2" /exclude "Machine Identity Service","Citrix WEM Agent","User personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Personalization for App-V - VDA"'
-$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 21*, All Editions"} | Sort-Object Version -Descending | Select-Object -First 1
+$appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enable_ss_ports /exclude "Machine Identity Service","Citrix Personalization for App-V - VDA","Citrix Supportability Tools","Citrix Files for Windows","Citrix Files for Outlook","User personalization layer","Citrix MCS IODriver","Citrix VDA Upgrade Agent","Citrix WEM Agent" /includeadditional "Citrix Profile Management","Citrix Profile Management WMI Plugin","Citrix Universal Print Client","Citrix Rendezvous V2"  /masterpvsimage /noreboot /noresume /quiet /remove_appdisk_ack /remove_pvd_ack'
+$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 22*, All Editions"} | Sort-Object Version -Descending | Select-Object -First 1
 $appVersion = $Evergreen.Version
 $appSetup = "VDAServerSetup_$appVersion.exe"
-$appDlNumber = "20116"
+$appDlNumber = "20429"
 $appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
 $appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
@@ -342,11 +353,18 @@ If ($appVersion -gt $appInstalledVersion)
 
     # Registry optimizations
     # Enable EDT MTU Discovery on the VDA - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/technical-overview/hdx/adaptive-transport.html
-    Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "MtuDiscovery" -Type "DWord" -Value "1"
+    # Now enabled by default
+    #Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "MtuDiscovery" -Type "DWord" -Value "1"
+
+    # Enable Rendezvous - https://docs.citrix.com/en-us/citrix-daas/hdx/rendezvous-protocol/rendezvous-v2.html
+    If ((Get-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\XenDesktopSetup" -Value "Rendezvous V2 Component") -eq "1")
+    {
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\VirtualDesktopAgent" -Name "GctRegistration" -Type "DWord" -Value "1"
+    }
 
     # Go back to the parent folder
     Set-Location ..
-    Remove-Folder -Path "$envTemp\Install\"
+    Remove-Folder -Path "$envTemp\Install"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
