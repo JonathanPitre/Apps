@@ -1,4 +1,4 @@
-$a# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
@@ -170,10 +170,11 @@ Function Get-AMDAzureNVv4Driver
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+
 $appVendor = "AMD"
 $appVendor2 = "Microsoft"
-$appName = "Software"
 $appName = "Azure AMD NVv4 GPU Driver"
+$appName2 = "Software"
 $appProcesses = @("InstallManagerApp.exe")
 $appServices = @("AMD Crash Defender Service", "AMD External Events Utility")
 $appInstallParameters = "-install"
@@ -186,8 +187,8 @@ $EvergreenUninstaller = Get-AMDAzureNVv4Driver | Where-Object { $_.Name -eq "AMD
 $appUninstallerURL = $EvergreenUninstaller.URI
 $appUninstaller = Split-Path -Path $appUninstallerURL -Leaf
 $appUninstallParameters = "-silent"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName2" -Exact)
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName2" -Exact).DisplayVersion | Select-Object -First 1
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
@@ -250,8 +251,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appVendor2 $appName2 $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor2 $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else {
-    Write-Log -Message "$appVendor2 $appName2 $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor2 $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
