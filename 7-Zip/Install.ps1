@@ -188,6 +188,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Copy-File -Path "$envCommonStartMenuPrograms\$appName\$appName File Manager.lnk" -Destination "$envCommonStartMenuPrograms" -ContinueFileCopyOnError $True
     Remove-Folder -Path "$envCommonStartMenuPrograms\$appName" -ContinueOnError $True
 
+    # Fix 7-Zip security issue  - https://www.ghacks.net/2022/04/18/workaround-for-security-issue-in-7-zip-until-it-is-fixed
+    Remove-File -Path "$appDestination\$appName.chm"
+
     # Go back to the parent folder
     Set-Location ..
 
