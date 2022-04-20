@@ -528,9 +528,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Value "0" -Type DWord
         Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Value "0" -Type DWord
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Value "0" -Type DWord
-    }
-    If ($envOSName -like "*Windows Server 2019*" -or $envOSName -like "*Windows Server 2022*")
-    {
+
         # Define CIM object variables - https://virtualwarlock.net/how-to-install-the-fslogix-apps-agent
         # This is needed for accessing the non-default trigger settings when creating a schedule task using Powershell
         $Class = cimclass MSFT_TaskEventTrigger root/Microsoft/Windows/TaskScheduler
