@@ -196,7 +196,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 	# Copy config file to the default profile
 	New-Item -Path "$appDestination" -Name "PersonalPath.cfg" -ItemType File -Value "%ApplicationData%\$appName" -Force
 	New-Folder -Path "$envSystemDrive\Users\Default\AppData\Roaming\$appName"
-	New-Folder -Path  "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
+	New-Folder -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
 	New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\$appName.lnk" -TargetPath "$appDestination\$appName.exe" -Arguments "-silent" -WorkingDirectory "$appDestination"
 	Copy-File -Path "$appScriptDirectory\$appConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\$appName" -ContinueOnError $True
 	Copy-File -Path "$appScriptDirectory\$appConfigHotkeys" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\$appName" -ContinueOnError $True

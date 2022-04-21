@@ -248,7 +248,7 @@ $appLanguage = "fr-CA"
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/Teams.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Teams/desktop-config.json"
-$appConfig= Split-Path -Path $appConfigURL -Leaf
+$appConfig = Split-Path -Path $appConfigURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
 $Evergreen = Get-EvergreenApp $appVendor$appName | Where-Object {$_.Ring -eq $appRing -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi"}
