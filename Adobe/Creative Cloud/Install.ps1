@@ -213,6 +213,10 @@ $appURL = $Nevergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf
 $appSetup = "Set-up.exe"
 $appDestination = "${env:ProgramFiles(x86)}\Adobe\Adobe Creative Cloud\Utils"
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Adobe/Creative%20Cloud/com.adobe.acc.container.default.prefs"
+$appConfigURL2 = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Adobe/Creative%20Cloud/com.adobe.acc.default.prefs"
+$appConfig = Split-Path -Path $appConfigURL -Leaf
+$appConfig2 = Split-Path -Path $appConfigURL2 -Leaf
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion).Substring(0, 9)
 
@@ -293,8 +297,25 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeGCInvoker-1.0" -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeAAMUpdater-1.0" -ContinueOnError $True
 
-    # Configure application shortcut
+    # Fix application Start Menu shorcut
     Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
+
+    # Configure application settings - https://techlabs.blog/categories/how-to-guides/install-adobe-creative-cloud-on-citrix-virtual-desktop
+    # Download required config file
+    If (-Not(Test-Path -Path $appScriptDirectory\$appConfig) -or (-Not(Test-Path -Path $appScriptDirectory\$appConfig)))
+    {
+        Write-Log -Message "Downloading $appVendor $appName config file..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
+        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL2 -OutFile $appScriptDirectory\$appConfig2
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    New-Folder -Path "$envSystemDrive\Users\Default\AppData\Local\Adobe\OOBE"
+    Copy-File -Path "$appScriptDirectory\com.adobe.acc.container.default.prefs" -Destination "$envSystemDrive\Users\Default\AppData\Local\Adobe\OOBE\com.adobe.acc.container.default.prefs"
+    Copy-File -Path "$appScriptDirectory\com.adobe.acc.default.prefs" -Destination "$envSystemDrive\Users\Default\AppData\Local\Adobe\OOBE\com.adobe.acc.default.prefs"
 
     # Go back to the parent folder
     Set-Location ..
