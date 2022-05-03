@@ -1,4 +1,4 @@
-# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
+ # Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
@@ -254,7 +254,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup) -or (Get-ChildItem).Length -lt 1024kb)
     {
-        Write-Log -Message "Citrix credentials for downloading the $appVendor $appName2" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Citrix credentials for downloading the $appVendor $appName" -Severity 1 -LogType CMTrace -WriteHost $True
         $CitrixUserName = Read-Host -Prompt "Please supply your Citrix.com username"
         $CitrixPassword1 = Read-Host -Prompt "Please supply your Citrix.com password" -AsSecureString
         $CitrixPassword2 = Read-Host -Prompt "Please supply your Citrix.com password once more" -AsSecureString
@@ -275,7 +275,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         $CitrixPassword = $CitrixCredentials.GetNetworkCredential().Password
 
         # Download latest version
-        Write-Log -Message "Downloading $appVendor $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
         Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appVersion
         # Move the policy definitions files
