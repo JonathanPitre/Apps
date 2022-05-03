@@ -124,7 +124,7 @@ Foreach ($Module in $Modules)
 
 $appVendor = "Microsoft"
 $appName = "Edge WebView2 Runtime"
-$appProcesses = @("msedgewebview2", "msedge", "concentr")
+$appProcesses = @("msedgewebview2", "msedge", "SelfService", "concentr")
 $appInstallParameters = "/silent /install"
 $appArchitecture = "x64"
 $Evergreen = Get-EvergreenApp -Name MicrosoftEdgeWebView2Runtime | Where-Object { $_.Architecture -eq $appArchitecture }
