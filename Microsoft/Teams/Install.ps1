@@ -397,7 +397,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Change language into desktop-config.json
     If (Test-Path -Path $appScriptDirectory\$appTeamsConfig)
     {
-        $json = Get-Content -Path $appScriptDirectory\$appConfig-Raw | ConvertFrom-Json
+        $json = Get-Content -Path $appScriptDirectory\$appConfig -Raw | ConvertFrom-Json
         If ($json.currentWebLanguage -ne $appLanguage)
         {
             $json.currentWebLanguage = $appLanguage
@@ -407,8 +407,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Copy Microsoft Teams config file to the default profile
-    Copy-File -Path "$appScriptDirectory\$appTeamsConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Teams"
-    Write-Log -Message "$appVendor $appName settings were configured for the Default User profile." -Severity 1 -LogType CMTrace -WriteHost $True
+    If (-Not(Test-Path -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Teams\$appTeamsConfig"))
+    {
+        Copy-File -Path "$appScriptDirectory\$appTeamsConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Teams"
+        Write-Log -Message "$appVendor $appName settings were configured for the Default User profile." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+    Else
+    {
+        Write-Log -Message "Default profile is already configured." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
 
     # Register Teams as the chat app for Office
     Set-RegistryKey -Key "HKLM:\SOFTWARE\IM Providers\Teams" -Name "FriendlyName" -Value "Microsoft Teams" -Type String
