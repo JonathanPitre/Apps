@@ -186,7 +186,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Applying $appName settings to the Default User profile." -Severity 1 -LogType CMTrace -WriteHost $True
     # Copy config file to the default profile
     New-Folder -Path "$envSystemDrive\Users\Default\AppData\Roaming\vlc"
-    Copy-File -Path "$appScriptDirectory\$appConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\vlc\vlcrc"
+    Copy-File -Path "$appScriptDirectory\$appConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\vlc"
 
     # Configure application shortcut
     Remove-File -Path $envCommonDesktop\$appName.lnk -ContinueOnError $True
