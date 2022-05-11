@@ -188,6 +188,16 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Get-ScheduledTask -TaskName "$appVendor $appName Update Task" | Stop-ScheduledTask
     Get-ScheduledTask -TaskName "$appVendor $appName Update Task" | Disable-ScheduledTask
 
+    # Remove Active Setup
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Active Setup\Installed Components\{AC76BA86-0000-0000-7760-7E8A45000000}" -Name "StubPath"
+    
+    # Fix for Z@xxx.tmp files left behind in Temp folder after printing
+    # https://pathandy.com/adobe-temp-files/
+    # https://community.adobe.com/t5/acrobat-discussions/what-is-meaning-of-the-setting-tttosysprintdisabled-1-amp-t1tottdisabled-1-when-printing-from/m-p/11670068
+    New-Item -Path "$envWinDir" -Name "acroct.ini" -Force
+    Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "TTToSysPrintDisabled" -Value "1"
+    Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "T1ToTTDisabled" -Value "1"
+
     # Go back to the parent folder
     Set-Location ..
 

@@ -268,6 +268,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "Adobe Creative Cloud must be installed in order for $appVendor $appName $appShortVersion licensing to work!" -Severity 2 -LogType CMTrace -WriteHost $True
     }
 
+    # Fix for Z@xxx.tmp files left behind in Temp folder after printing
+    # https://pathandy.com/adobe-temp-files/
+    # https://community.adobe.com/t5/acrobat-discussions/what-is-meaning-of-the-setting-tttosysprintdisabled-1-amp-t1tottdisabled-1-when-printing-from/m-p/11670068
+    New-Item -Path "$envWinDir" -Name "acroct.ini" -Force
+    Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "TTToSysPrintDisabled" -Value "1"
+    Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "T1ToTTDisabled" -Value "1"
+
     # Go back to the parent folder
     Set-Location ..
 

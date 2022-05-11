@@ -41,17 +41,17 @@ Function Initialize-Module
 		[Parameter(Mandatory = $true)]
 		[string]$Module
 	)
-	Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+	Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
 	# If module is imported say that and do nothing
-	If (Get-Module | Where-Object {$_.Name -eq $Module})
+	If (Get-Module | Where-Object { $_.Name -eq $Module })
  {
-		Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+		Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
 	}
 	Else
  {
 		# If module is not imported, but available on disk then import
-		If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+		If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
 		{
 			$InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
 			$ModuleVersion = (Find-Module -Name $Module).Version
@@ -92,7 +92,7 @@ Function Initialize-Module
 			}
 
 			# If module is not imported, not available on disk, but is in online gallery then install and import
-			If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+			If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
 			{
 				# Install and import module
 				Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -132,7 +132,7 @@ $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrob
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "IGNOREVCRT64=1 EULA_ACCEPT=YES UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1 ROAMIDENTITY=1 ROAMLICENSING=1"
-$Nevergreen = Get-NevergreenApp -Name AdobeAcrobat | Where-Object {$_.Architecture -eq $appArchitecture}
+$Nevergreen = Get-NevergreenApp -Name AdobeAcrobat | Where-Object { $_.Architecture -eq $appArchitecture }
 $appVersion = $Nevergreen.Version
 $appSetupURL = "https://trials.adobe.com/AdobeProducts/APRO/Acrobat_HelpX/win32/Acrobat_DC_Web_x64_WWMUI.zip"
 $appSetup = Split-Path -Path $appSetupURL -Leaf
@@ -258,12 +258,19 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 	Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
 
 	# Remove unneeded applications from running at start-up
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "Acrobat Assistant 8.0" -ContinueOnError $True
+	Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "Acrobat Assistant 8.0" -ContinueOnError $True
 	Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeAAMUpdater-1.0" -ContinueOnError $True
 	#Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeGCInvoker-1.0" -ContinueOnError $True
 
 	# Remove Active Setup
 	Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Active Setup\Installed Components\{AC76BA86-0000-0000-7760-7E8A45000000}" -Name "StubPath"
+
+	# Fix for Z@xxx.tmp files left behind in Temp folder after printing
+	# https://pathandy.com/adobe-temp-files/
+	# https://community.adobe.com/t5/acrobat-discussions/what-is-meaning-of-the-setting-tttosysprintdisabled-1-amp-t1tottdisabled-1-when-printing-from/m-p/11670068
+	New-Item -Path "$envWinDir" -Name "acroct.ini" -Force
+	Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "TTToSysPrintDisabled" -Value "1"
+	Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "T1ToTTDisabled" -Value "1"
 
 	If (-Not(Get-InstalledApplication -Name "Adobe Creative Cloud"))
  {
