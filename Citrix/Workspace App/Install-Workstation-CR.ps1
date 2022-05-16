@@ -1,4 +1,4 @@
-# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
@@ -120,44 +120,6 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
-Function Get-CitrixWorkspaceApp
-{
-    [OutputType([System.Management.Automation.PSObject])]
-    [CmdletBinding()]
-    Param ()
-    $DownloadURL = "https://www.citrix.com/downloads/workspace-app/windows/workspace-app-for-windows-latest.html"
-
-    Try
-    {
-        $DownloadText = (Invoke-WebRequest -Uri $DownloadURL -DisableKeepAlive -UseBasicParsing).RawContent
-    }
-    Catch
-    {
-        Throw "Failed to connect to URL: $DownloadURL with error $_."
-        Break
-    }
-    Finally
-    {
-        $VersionRegEx = "Version\:\&nbsp\;((?:\d+\.)+(?:\d+)) \((.+)\)"
-        $LongVersion = ($DownloadText | Select-String -Pattern $VersionRegEx).Matches.Groups[1].Value
-        $ShortVersion = ($DownloadText | Select-String -Pattern $VersionRegEx).Matches.Groups[2].Value
-        $URLRegEx = '\/\/downloads\.citrix\.com.+CitrixWorkspaceApp\.exe.+\=\w+'
-        $URL = "https:" + ($DownloadText | Select-String -Pattern $URLRegEx).Matches.Value
-
-        if ($LongVersion -and $ShortVersion -and $URL)
-        {
-            [PSCustomObject]@{
-                Name         = 'Citrix Workspace App'
-                Architecture = 'x86'
-                Type         = 'Exe'
-                ShortVersion = $ShortVersion
-                LongVersion  = $LongVersion
-                Uri          = $URL
-            }
-        }
-    }
-}
-
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Citrix"
@@ -166,16 +128,14 @@ $appName2 = "app"
 $appProcesses = @("wfica32", "wfcrun32", "redirector", "CDViewer", "HdxBrowser", "HdxTeams", "HdxBrowserCef", "concentr", "cpviewer", "PseudoContainer2", "PseudoContainer", "CtxCFRUI", "ssonsvr", "WebHelper", "SelfServicePlugin", "SelfService", "Receiver", "Ceip", "AuthManSvr", "CWAUpdaterService")
 # https://docs.citrix.com/en-us/citrix-workspace-app-for-windows/install.html
 $appInstallParameters = "EnableCEIP=false EnableTracing=false /forceinstall /noreboot /silent /includeSSON"
-$Evergreen = Get-CitrixWorkspaceApp
-$appVersion = $Evergreen.ShortVersion
-$appURL = $Evergreen.Uri
-$appSetup = "CitrixWorkspaceApp.exe"
+$Evergreen = Get-EvergreenApp -Name CitrixWorkspaceApp | Where-Object { $_.Title -like "Citrix Workspace - Current Release" }
+$appVersion = $Evergreen.Version
+$appURL = $Evergreen.URI
+$appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\ICA Client"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx)
 $appInstalled = Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx
 $appInstalledVersion = ($appInstalled).DisplayVersion
-$appInstalleSubVersion = $appInstalledVersion.Split(".")[2]
-$appInstalledVersion = ($appInstalled).DisplayName.Trim("Citrix Workspace ") + "." + $appInstalleSubVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
