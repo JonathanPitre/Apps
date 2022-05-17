@@ -41,17 +41,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -92,7 +92,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -144,9 +144,9 @@ Function Get-OldClassicCalculator
         if ($URL)
         {
             [PSCustomObject]@{
-                Name         = 'Old Classic Calculator'
-                Type         = 'Zip'
-                Uri          = $URL
+                Name = 'Old Classic Calculator'
+                Type = 'Zip'
+                Uri  = $URL
             }
         }
     }
@@ -157,11 +157,13 @@ Function Get-OldClassicCalculator
 $appVendor = "Microsoft"
 $appName = "Old Classic Calculator"
 $appName2 = "for Windows 11 and Windows 10"
-$appProcesses = @("calc","calc1")
+$appProcesses = @("calc", "calc1")
 $appInstallParameters = "/SILENT /NORESTART"
 $Evergreen = Get-OldClassicCalculator
-$appURL = $Evergreen.URI
-$appZip = Split-Path -Path $appURL -Leaf
+#$appURL = $Evergreen.URI
+$appURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Old%20Classic%20Calculator/2.0/OldClassicCalc-2.0-setup.exe"
+#$appZip = Split-Path -Path $appURL -Leaf
+$appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles}\OldClassicCalc"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName $appName2")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName $appName2").DisplayVersion
@@ -171,20 +173,26 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName $appName2").Dis
 Set-Location -Path $appScriptDirectory
 
 # Download latest setup file(s)
-If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup)) {
+If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
+{
     Write-Log -Message "Downloading $appVendor $appName $appName2..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appScriptDirectory\$appZip
-    Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory -Force
-    Remove-File -Path $appZip
-    $appSetup = Get-ChildItem -Filter *.exe | Select-Object -ExpandProperty Name
-    $appVersion = Get-FileVersion -File .\$appSetup
+    #Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appScriptDirectory\$appZip
+    #Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory -Force
+    #Remove-File -Path $appZip
+    #$appSetup = Get-ChildItem -Filter *.exe | Select-Object -ExpandProperty Name
+    Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appScriptDirectory\$appSetup
+    $appSetup -match '((?:\d+\.)+\d+(?:-\d+)?)'
+    $appVersion = $Matches[0]
     New-Folder -Path $appScriptDirectory\$appVersion
-    Move-Item -Path .\$appSetup -Destination .\$appVersion -Force
+    Copy-File -Path $appScriptDirectory\$appSetup -Destination $appScriptDirectory\$appVersion\$appSetup
+    Remove-File -Path $appScriptDirectory\$appSetup
 }
-Else {
+Else
+{
     Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    $appSetup = Get-ChildItem -Filter  *.exe | Select-Object -ExpandProperty Name
-    $appVersion = Get-FileVersion -File .\$appSetup
+    $appSetup = Get-ChildItem -Filter *.exe -Recurse | Select-Object -ExpandProperty Name
+    $appSetup -match '((?:\d+\.)+\d+(?:-\d+)?)'
+    $appVersion = $Matches[0]
 }
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
@@ -193,7 +201,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
 
-    Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters
+    # Install latest version
+    Execute-Process -Path ".\$appVersion\$appSetup" -Parameters $appInstallParameters
+
+    # Configure application shortcut
+    Rename-Item -Path "$envCommonStartMenuPrograms\Calculator (Classic).lnk" -NewName "$envCommonStartMenuPrograms\Calculator.lnk" -Force
+
+    # Replace calc.exe by calc1.exe
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\calc.exe" -Name "Debugger" -Value "`"$appDestination\calc1.exe`"" -Type "String"
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\calc.exe" -Name "UseFilter" -Value "0" -Type "Dword"
 
     # Go back to the parent folder
     Set-Location ..
