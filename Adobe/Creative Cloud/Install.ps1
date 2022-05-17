@@ -41,17 +41,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -92,7 +92,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -207,7 +207,7 @@ $appInstallParameters = "--silent" #--INSTALLLANGUAGE=<ProductInstallLanguage>
 $appURLCleanerTool = "https://swupmf.adobe.com/webfeed/CleanerTool/win/AdobeCreativeCloudCleanerTool.exe"
 $appCleanerTool = Split-Path -Path $appURLCleanerTool -Leaf
 $appCleanerToolParameters = "--cleanupXML=$appScriptDirectory\cleanup.xml"
-$Nevergreen = Get-AdobeCreativeCloud | Where-Object {$_.Architecture -eq "x64" -and $_.Edition -eq 'Enterprise' -and $_.Type -eq 'Zip'}
+$Nevergreen = Get-AdobeCreativeCloud | Where-Object { $_.Architecture -eq "x64" -and $_.Edition -eq 'Enterprise' -and $_.Type -eq 'Zip' }
 $appVersion = $Nevergreen.Version
 $appURL = $Nevergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf
@@ -218,7 +218,7 @@ $appConfigURL2 = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Ad
 $appConfig = Split-Path -Path $appConfigURL -Leaf
 $appConfig2 = Split-Path -Path $appConfigURL2 -Leaf
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion).Substring(0, 9)
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
@@ -226,7 +226,7 @@ $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").D
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
     # Download latest cleaner tool
@@ -284,9 +284,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Get-ScheduledTask -TaskName "$($appVendor)GCInvoker-1.0" | Disable-ScheduledTask
 
     # Stop and disable unneeded services
-    Stop-ServiceAndDependencies -Name $appServices[0] -ContinueOnError $True
-    Stop-ServiceAndDependencies -Name $appServices[1] -ContinueOnError $True
-    Stop-ServiceAndDependencies -Name $appServices[2] -ContinueOnError $True
+    Get-Service -Name $appServices[0] | Stop-Service -Force
+    Get-Service -Name $appServices[1] | Stop-Service -Force
+    Get-Service -Name $appServices[2] | Stop-Service -Force
     Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
     Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled" -ContinueOnError $True
     Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled" -ContinueOnError $True
