@@ -1,4 +1,4 @@
- # Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
@@ -41,17 +41,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -92,7 +92,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -119,41 +119,6 @@ Foreach ($Module in $Modules)
 }
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
-
-Function Get-CitrixWEMAgent
-{
-    [OutputType([System.Management.Automation.PSObject])]
-    [CmdletBinding()]
-    Param ()
-    $DownloadURL = "https://docs.citrix.com/en-us/workspace-environment-management/service/whats-new.html"
-
-    Try
-    {
-        $DownloadText = (Invoke-WebRequest -Uri $DownloadURL -DisableKeepAlive -UseBasicParsing).RawContent
-    }
-    Catch
-    {
-        Throw "Failed to connect to URL: $DownloadURL with error $_."
-        Break
-    }
-    Finally
-    {
-        $RegEx = "Minimum agent version required: ((?:\d+\.)+(?:\d+))"
-        $Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[1].Value
-        $ZipVersion = $Version.Substring(0, $Version.Length - 4)
-        $URL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=$($appDlNumber)&URL=https://downloads.citrix.com/$($appDlNumber)/Workspace-Environment-Management-Agent-$($ZipVersion).zip"
-
-        if ($Version -and $URL)
-        {
-            [PSCustomObject]@{
-                Name    = 'Citrix Workspace Environment Agent'
-                Version = $Version
-                Uri     = $URL
-            }
-        }
-    }
-
-}
 
 Function Get-CitrixDownload
 {
@@ -233,12 +198,13 @@ Function Get-CitrixDownload
 $appVendor = "Citrix"
 $appName = "Workspace Environment Management Agent"
 $appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
-$appInstallParameters = "/quiet Cloud=1" # OnPrem 0 Cloud 1
-$appDlNumber = "16122"
-$Evergreen = Get-CitrixWEMAgent
-$appVersion = $Evergreen.Version
+$appInstallParameters = "/quiet Cloud=0" # OnPrem 0 Cloud 1
+$appDlNumber = "20579"
+$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object { $_.Title -like "Workspace Environment Management*" } | Sort-Object Version -Descending | Select-Object -First 1
+$appVersion = (Get-ChildItem $appScriptDirectory | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
+$appShortVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appZip = Split-Path -Path $appURL -Leaf
+$appZip = "Workspace-Environment-Management-v-$appShortVersion-01-00-01.zip"
 $appSetup = "Citrix Workspace Environment Management Agent.exe"
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
@@ -249,10 +215,10 @@ $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").D
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
-    Set-Location -Path $appVersion
+    If (-Not(Test-Path -Path $appShortVersion)) { New-Folder -Path $appShortVersion }
+    Set-Location -Path $appShortVersion
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup) -or (Get-ChildItem).Length -lt 1024kb)
+    If (-Not(Test-Path -Path "$appScriptDirectory\$appShortVersion\$appSetup"))
     {
         Write-Log -Message "Citrix credentials for downloading the $appVendor $appName" -Severity 1 -LogType CMTrace -WriteHost $True
         $CitrixUserName = Read-Host -Prompt "Please supply your Citrix.com username"
@@ -275,16 +241,31 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         $CitrixPassword = $CitrixCredentials.GetNetworkCredential().Password
 
         # Download latest version
-        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appShortVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
-        Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appVersion
+        Expand-Archive -Path $appZip -DestinationPath "$appScriptDirectory\$appShortVersion"
+        $appSetupDirectory = Get-ChildItem -Path "$appScriptDirectory\$appShortVersion" -Filter $appSetup -Recurse | Select-Object -ExpandProperty Directory | Select-Object -ExpandProperty Name
+        Move-Item -Path "$appScriptDirectory\$appShortVersion\$appSetupDirectory\*" -Destination "$appScriptDirectory\$appShortVersion" -Force
+
         # Move the policy definitions files
-        Copy-File -Path "$appScriptDirectory\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptDirectory\PolicyDefinitions" -Recurse
-        Copy-File -Path "$appScriptDirectory\$appVersion\Configuration Templates" -Destination "$appScriptDirectory" -Recurse
+        Get-ChildItem -Path "$appScriptDirectory\$appShortVersion" -Filter *.exe -Recurse
+        Copy-File -Path "$appScriptDirectory\$appShortVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptDirectory\PolicyDefinitions" -Recurse
+        Copy-File -Path "$appScriptDirectory\$appShortVersion\Configuration Templates" -Destination "$appScriptDirectory" -Recurse
+        
         # Cleanup
-        Remove-Folder -Path "$appScriptDirectory\$appVersion\Agent Group Policies"
-        Remove-Folder -Path "$appScriptDirectory\$appVersion\Configuration Templates"
+        Remove-Folder -Path "$appScriptDirectory\$appShortVersion\$appSetupDirectory"
+        Remove-Folder -Path "$appScriptDirectory\$appShortVersion\Agent Group Policies"
+        Remove-Folder -Path "$appScriptDirectory\$appShortVersion\Configuration Templates"
         Remove-File -Path $appZip
+
+        # Get real file version
+        $appVersion = Get-FileVersion -File "$appScriptDirectory\$appShortVersion\$appSetup"
+
+        # Go back to the parent folder
+        Set-Location ..
+        Rename-Item -Path "$appScriptDirectory\$appShortVersion" -NewName "$appScriptDirectory\$appVersion"
+        Set-Location -Path $appVersion
+       
     }
     Else
     {
