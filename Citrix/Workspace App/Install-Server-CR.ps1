@@ -10,7 +10,7 @@
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 $env:SEE_MASK_NOZONECHECKS = 1
-$Modules = @("PSADT") # Modules list
+$Modules = @("PSADT","Evergreen") # Modules list
 
 Function Get-ScriptDirectory
 {
