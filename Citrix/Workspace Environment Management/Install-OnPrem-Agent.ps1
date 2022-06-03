@@ -1,15 +1,17 @@
-# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
+# Set the script execution policy for this process
+Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
 $env:SEE_MASK_NOZONECHECKS = 1
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT") # Modules list
 
 Function Get-ScriptDirectory
@@ -120,6 +122,40 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
+Function Get-CitrixWEMAgent
+{
+    [OutputType([System.Management.Automation.PSObject])]
+    [CmdletBinding()]
+    Param ()
+    $DownloadURL = "https://docs.citrix.com/en-us/workspace-environment-management/current-release/whats-new.html"
+
+    Try
+    {
+        $DownloadText = (Invoke-WebRequest -Uri $DownloadURL -DisableKeepAlive -UseBasicParsing).RawContent
+    }
+    Catch
+    {
+        Throw "Failed to connect to URL: $DownloadURL with error $_."
+        Break
+    }
+    Finally
+    {
+        $RegEx = "(What’s new in )(\d{4})"
+        $Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[2].Value
+        $WEMURL = "https://www.citrix.com/downloads/citrix-virtual-apps-and-desktops/edition-software/advanced-$($Version).html"
+        $URL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=$($appDlNumber)&URL=https://downloads.citrix.com/$($appDlNumber)/Workspace-Environment-Management-Agent-$($ZipVersion).zip"
+
+        if ($Version -and $URL)
+        {
+            [PSCustomObject]@{
+                Name    = 'Citrix Workspace Environment Agent'
+                Version = $Version
+                Uri     = $URL
+            }
+        }
+    }
+
+}
 Function Get-CitrixDownload
 {
     <#
@@ -251,7 +287,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Get-ChildItem -Path "$appScriptDirectory\$appShortVersion" -Filter *.exe -Recurse
         Copy-File -Path "$appScriptDirectory\$appShortVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptDirectory\PolicyDefinitions" -Recurse
         Copy-File -Path "$appScriptDirectory\$appShortVersion\Configuration Templates" -Destination "$appScriptDirectory" -Recurse
-        
+
         # Cleanup
         Remove-Folder -Path "$appScriptDirectory\$appShortVersion\$appSetupDirectory"
         Remove-Folder -Path "$appScriptDirectory\$appShortVersion\Agent Group Policies"
@@ -265,7 +301,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Set-Location ..
         Rename-Item -Path "$appScriptDirectory\$appShortVersion" -NewName "$appScriptDirectory\$appVersion"
         Set-Location -Path $appVersion
-       
+
     }
     Else
     {

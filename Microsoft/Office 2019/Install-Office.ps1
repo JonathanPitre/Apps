@@ -1,15 +1,17 @@
-﻿# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
+﻿# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
+# Set the script execution policy for this process
+Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
 $env:SEE_MASK_NOZONECHECKS = 1
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT", "Evergreen") # Modules list
 
 Function Get-ScriptDirectory
@@ -41,17 +43,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -92,7 +94,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -127,11 +129,11 @@ $appName = "Office"
 $appMajorVersion = "2019"
 $appSetup = "setup.exe"
 $appProcesses = @("OUTOOK", "EXCEL", "MSACCESS", "WINPROJ", "LYNC", "VISIO", "ONENOTE", "POWERPNT", "MSPUB")
-$appConfig = "$appScriptDirectory\Office2019-x64-VDI.xml"
-$appBitness = ([xml](Get-Content -Path $appConfig)).SelectNodes("//Add/@OfficeClientEdition").Value
+$appConfig = "Office2019-x64-VDI.xml"
+$appBitness = ([xml](Get-Content $appConfig)).SelectNodes("//Add/@OfficeClientEdition").Value
 $appDownloadParameters = "/download .\$appConfig"
 $appInstallParameters = "/configure .\$appConfig"
-$Evergreen = Get-EvergreenApp -Name Microsoft365Apps | Where-Object {$_.Channel -eq "PerpetualVL2019"}
+$Evergreen = Get-EvergreenApp -Name Microsoft365Apps | Where-Object { $_.Channel -eq "$appName $appMajorVersion Enterprise" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appDestination = "$env:ProgramFiles\Microsoft Office\root\Office16"
@@ -140,14 +142,17 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName .* $
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion)
+{
     Set-Location -Path $appScriptDirectory
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSetup)) {
-        Write-Log -Message "Downloading the latest version of  $appVendor $appName Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
+    If (-Not(Test-Path -Path $appScriptDirectory\$appSetup))
+    {
+        Write-Log -Message "Downloading the latest version of $appVendor $appName 365 Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
@@ -158,20 +163,22 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # https://github.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/blob/master/Office-ProPlus-Deployment/Remove-PreviousOfficeInstalls/Remove-PreviousOfficeInstalls.ps1
     .\Remove-PreviousOfficeInstalls\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true
 
-    If (-Not(Test-Path -Path .\$appSetupVersion)) {New-Folder -Path $appSetupVersion}
+    If (-Not(Test-Path -Path .\$appSetupVersion)) { New-Folder -Path $appSetupVersion }
     Copy-File .\$appConfig, $appSetup -Destination $appSetupVersion -ContinueFileCopyOnError $True
     Set-Location -Path .\$appSetupVersion
 
-    If (-Not(Test-Path -Path .\Office\Data\v$appBitness.cab)) {
+    If (-Not(Test-Path -Path .\Office\Data\v$appBitness.cab))
+    {
         Write-Log -Message "Downloading $appVendor $appName $appMajorVersion $appBitness via ODT $appSetupVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-Process -Path .\$appSetup -Parameters $appDownloadParameters -PassThru
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Installing $appVendor $appName $appMajorVersion $appBitness..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -Passthru
+    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -PassThru
     Get-Process -Name OfficeC2RClient | Stop-Process -Force
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -184,6 +191,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "$appVendor $appName $appMajorVersion $appBitness was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
-Else {
+Else
+{
     Write-Log -Message "$appVendor $appName $appMajorVersion $appBitness is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }

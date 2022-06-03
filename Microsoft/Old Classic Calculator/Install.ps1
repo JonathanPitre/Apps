@@ -1,15 +1,17 @@
-﻿# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
+﻿# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
+# Set the script execution policy for this process
+Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
 $env:SEE_MASK_NOZONECHECKS = 1
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT", "Evergreen") # Modules list
 
 Function Get-ScriptDirectory
@@ -207,7 +209,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Configure application shortcut
     Rename-Item -Path "$envCommonStartMenuPrograms\Calculator (Classic).lnk" -NewName "$envCommonStartMenuPrograms\Calculator.lnk" -Force
     Remove-File -Path "$envCommonDesktop\Calculator (Classic).lnk"
-    
+
     # Replace calc.exe by calc1.exe
     Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\calc.exe" -Name "Debugger" -Value "`"$appDestination\calc1.exe`"" -Type "String"
     Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\calc.exe" -Name "UseFilter" -Value "0" -Type "Dword"

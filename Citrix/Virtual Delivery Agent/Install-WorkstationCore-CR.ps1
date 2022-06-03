@@ -1,15 +1,17 @@
-# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
+# Set the script execution policy for this process
+Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
 $env:SEE_MASK_NOZONECHECKS = 1
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT", "Evergreen") # Modules list
 
 Function Get-ScriptDirectory
@@ -206,7 +208,7 @@ $appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexpe
 $Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 21*, All Editions"} | Sort-Object Version -Descending | Select-Object -First 1
 $appVersion = $Evergreen.Version
 $appSetup = "VDAWorkstationCoreSetup_$appVersion.exe"
-$appDlNumber = "20118"
+$appDlNumber = "20431"
 $appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
 $appHardwarePlatform = Get-HardwarePlatform
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
@@ -229,9 +231,9 @@ If ($appVersion -gt $appInstalledVersion)
     # Install Windows Media Player feature if missing
     If ($envOSName -Like "*Windows 10*")
     {
-        If ((Get-WindowsOptionalFeature –FeatureName "WindowsMediaPlayer" -Online).State -ne "Enabled")
+        If ((Get-WindowsOptionalFeature -FeatureName "WindowsMediaPlayer" -Online).State -ne "Enabled")
         {
-            Enable-WindowsOptionalFeature –FeatureName "WindowsMediaPlayer" -All -Online
+            Enable-WindowsOptionalFeature -FeatureName "WindowsMediaPlayer" -All -Online
         }
     }
 

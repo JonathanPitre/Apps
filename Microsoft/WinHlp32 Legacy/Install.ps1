@@ -1,15 +1,17 @@
-# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
+# Set the script execution policy for this process
+Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
 $env:SEE_MASK_NOZONECHECKS = 1
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+[System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT") # Modules list
 
 Function Get-ScriptDirectory
@@ -137,7 +139,6 @@ $TempMain = "$TempInstall\x86_microsoft-windows-winhstb_31bf3856ad364e35_6.3.960
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-
 If ($IsAppInstalled -eq $false)
 {
     Set-Location -Path $appScriptDirectory
@@ -148,7 +149,7 @@ If ($IsAppInstalled -eq $false)
     {
         Write-Log -Message "Downloading $appVendor $appName..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appScriptDirectory\$appSetup
-        
+
         Write-Log -Message "Installing $appVendor $appName..." -Severity 1 -LogType CMTrace -WriteHost $True
         New-Folder -Path $TempInstall
         Expand "$appScriptDirectory\$appSetup" -F:* "$TempInstall"
@@ -206,7 +207,7 @@ If ($IsAppInstalled -eq $false)
         Copy-File -Path "$($TempLang)_zh-tw_*\winhlp32.exe.mui" -Destination "$appDestination\zh-TW"
         Copy-File -Path "$($TempLang)_zh-tw_*\ftsrch.dll.mui" -Destination "$appDestination\zh-TW"
         Get-ChildItem -Path $appDestination -File -Recurse -Include *.exe.mui | Rename-Item -NewName { $_.Name.replace(".exe.mui","_legacy.exe.mui") }
-   
+
         Copy-File -Path "$TempMain\winhlp32.exe" -Destination "$appDestination\winhlp32_legacy.exe"
         Copy-File -Path "$TempMain\ftsrch.dll" -Destination "$appDestination"
 

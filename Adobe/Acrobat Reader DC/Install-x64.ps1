@@ -1,54 +1,19 @@
-# Standalone application install script for VDI environment - (C)2021 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
-# Custom package providers list
-$PackageProviders = @("Nuget")
+#---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
-# Custom modules list
-$Modules = @("PSADT", "Evergreen", "Nevergreen")
-
-Write-Verbose -Message "Importing custom modules..." -Verbose
-
+$ProgressPreference = "SilentlyContinue"
+$ErrorActionPreference = "SilentlyContinue"
+# Set the script execution policy for this process
+Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
+$env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
+$Modules = @("PSADT", "Evergreen", "Nevergreen") # Modules list
 
-# Install custom package providers list
-Foreach ($PackageProvider in $PackageProviders)
-{
-    If (-not(Get-PackageProvider -ListAvailable -Name $PackageProvider -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name $PackageProvider -Force }
-}
-
-# Add the Powershell Gallery as trusted repository
-Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-
-# Update PowerShellGet
-$InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
-$PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
-If ($PSGetVersion -gt $InstalledPSGetVersion) { Install-PackageProvider -Name PowerShellGet -Force }
-
-# Install and import custom modules list
-Foreach ($Module in $Modules)
-{
-    If (-not(Get-Module -ListAvailable -Name $Module)) { Install-Module -Name $Module -AllowClobber -Force | Import-Module -Name $Module -Force }
-    Else
-    {
-        $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
-        $ModuleVersion = (Find-Module -Name $Module).Version
-        $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
-        $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-        If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
-        {
-            Update-Module -Name $Module -Force
-            Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
-        }
-    }
-}
-
-Write-Verbose -Message "Custom modules were successfully imported!" -Verbose
-
-# Get the current script directory
 Function Get-ScriptDirectory
 {
     Remove-Variable appScriptDirectory
@@ -59,32 +24,112 @@ Function Get-ScriptDirectory
         ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
         Else
         {
-            Write-Host -ForegroundColor Red "Cannot resolve script file's path"
+            Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
             Exit 1
         }
     }
     Catch
     {
-        Write-Host -ForegroundColor Red "Caught Exception: $($Error[0].Exception.Message)"
+        Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
         Exit 2
     }
 }
 
-# Variables Declaration
-# Generic
-$ProgressPreference = "SilentlyContinue"
-$ErrorActionPreference = "SilentlyContinue"
-$env:SEE_MASK_NOZONECHECKS = 1
+Function Initialize-Module
+{
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory = $true)]
+        [string]$Module
+    )
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
+
+    # If module is imported say that and do nothing
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
+    {
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
+    }
+    Else
+    {
+        # If module is not imported, but available on disk then import
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
+        {
+            $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
+            $ModuleVersion = (Find-Module -Name $Module).Version
+            $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
+            $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
+            If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
+            {
+                Update-Module -Name $Module -Force
+                Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
+                Write-Host -Object "Module $Module was updated." -ForegroundColor Green
+            }
+            Import-Module -Name $Module -Force -Global -DisableNameChecking
+            Write-Host -Object "Module $Module was imported." -ForegroundColor Green
+        }
+        Else
+        {
+            # Install Nuget
+            If (-not(Get-PackageProvider -ListAvailable -Name NuGet))
+            {
+                Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+                Write-Host -Object "Package provider NuGet was installed." -ForegroundColor Green
+            }
+
+            # Add the Powershell Gallery as trusted repository
+            If ((Get-PSRepository -Name "PSGallery").InstallationPolicy -eq "Untrusted")
+            {
+                Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+                Write-Host -Object "PowerShell Gallery is now a trusted repository." -ForegroundColor Green
+            }
+
+            # Update PowerShellGet
+            $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
+            $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
+            If ($PSGetVersion -gt $InstalledPSGetVersion)
+            {
+                Install-PackageProvider -Name PowerShellGet -Force
+                Write-Host -Object "PowerShellGet Gallery was updated." -ForegroundColor Green
+            }
+
+            # If module is not imported, not available on disk, but is in online gallery then install and import
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
+            {
+                # Install and import module
+                Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
+                Import-Module -Name $Module -Force -Global -DisableNameChecking
+                Write-Host -Object "Module $Module was installed and imported." -ForegroundColor Green
+            }
+            Else
+            {
+                # If the module is not imported, not available and not in the online gallery then abort
+                Write-Host -Object "Module $Module was not imported, not available and not in an online gallery, exiting." -ForegroundColor Red
+                EXIT 1
+            }
+        }
+    }
+}
+
+# Get the current script directory
 $appScriptDirectory = Get-ScriptDirectory
 
-# Application related
-##*===============================================
+# Install and import modules list
+Foreach ($Module in $Modules)
+{
+    Initialize-Module -Module $Module
+}
+
+#-----------------------------------------------------------[Functions]------------------------------------------------------------
+
+#----------------------------------------------------------[Declarations]----------------------------------------------------------
+
 $appVendor = "Adobe"
 $appName = "Acrobat"
 $appName2 = "Reader"
 $appShortVersion = "DC"
 $appLanguage = "French"
-$appArchitecture ="x64"
+$appArchitecture = "x64"
 $appProcesses = @("Acrobat", "AdobeCollabSync", "AcroCEF", "acrobat_sl")
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat%20Reader%20DC/AcroProx64.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
@@ -95,14 +140,15 @@ $appVersion = $Evergreen.Version
 $appSetupURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appSetupURL -Leaf
 $appMsiSetup = "AcroPro.msi"
-$Nevergreen = Get-NevergreenApp -Name AdobeAcrobatReader| Where-Object { $_.Architecture -eq $appArchitecture }
+$Nevergreen = Get-NevergreenApp -Name AdobeAcrobatReader | Where-Object { $_.Architecture -eq $appArchitecture }
 $appPatchVersion = $Nevergreen.Version
 $appPatchURL = $Nevergreen.Uri
 $appPatch = Split-Path -Path $appPatchURL -Leaf
 $appDestination = "$env:ProgramFiles\$appVendor\$appName $appShortVersion\$appName"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.* $appShortVersion .*" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion (64-bit)" -Exact).DisplayVersion
-##*===============================================
+
+#-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -132,7 +178,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture $appPatchVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appPatchURL -OutFile $appPatch
         # Modify setup.ini according to latest patch
-	If ((Test-Path -Path $appScriptDirectory\$appPatch) -and (Test-Path -Path $appScriptDirectory\$appPatch\setup.ini))
+        If ((Test-Path -Path $appScriptDirectory\$appPatch) -and (Test-Path -Path $appScriptDirectory\$appPatch\setup.ini))
         {
             Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Startup" -Key "CmdLine" -Value "/sPB /rs /msi $appAddParameters"
             Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Product" -Key "CmdLine" -Value "TRANSFORMS=`"$appTransform`""
@@ -190,7 +236,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Remove Active Setup
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Active Setup\Installed Components\{AC76BA86-0000-0000-7760-7E8A45000000}" -Name "StubPath"
-    
+
     # Fix for Z@xxx.tmp files left behind in Temp folder after printing
     # https://pathandy.com/adobe-temp-files/
     # https://community.adobe.com/t5/acrobat-discussions/what-is-meaning-of-the-setting-tttosysprintdisabled-1-amp-t1tottdisabled-1-when-printing-from/m-p/11670068
