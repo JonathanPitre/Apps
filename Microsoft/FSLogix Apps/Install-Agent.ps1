@@ -460,7 +460,7 @@ $appURLScript = "https://raw.githubusercontent.com/FSLogix/Invoke-FslShrinkDisk/
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact) | Select-Object -Last 1
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -Last 1
 
-#----------------------------------------------------------[Execution]----------------------------------------------------------
+#-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
