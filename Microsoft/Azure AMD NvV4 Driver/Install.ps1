@@ -43,17 +43,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -94,7 +94,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -141,11 +141,11 @@ Function Get-AMDAzureNVv4Driver
     Finally
     {
         $RegExDriver = "https:\/\/.+AMD-Azure-NVv4-Driver-(.+)\.exe"
-        $DriverURL = ($DownloadText | Where-Object href -match $RegExDriver | Select-Object -ExpandProperty href -First 1)
+        $DriverURL = ($DownloadText | Where-Object href -Match $RegExDriver | Select-Object -ExpandProperty href -First 1)
         $DriverVersion = ($DownloadText | Select-String -Pattern $RegExDriver).Matches.Groups[1].Value
 
         $RegExUninstaller = "https:\/\/.+AMDCleanupUtility.+\.exe"
-        $UninstallerURL = ($DownloadText | Where-Object href -match $RegExUninstaller | Select-Object -ExpandProperty href -First 1)
+        $UninstallerURL = ($DownloadText | Where-Object href -Match $RegExUninstaller | Select-Object -ExpandProperty href -First 1)
 
         if ($DriverVersion -and $DriverURL)
         {
@@ -161,9 +161,9 @@ Function Get-AMDAzureNVv4Driver
         if ($UninstallerURL)
         {
             [PSCustomObject]@{
-                Name         = 'AMD Cleanup Utility'
-                Type         = 'Exe'
-                Uri          = $UninstallerURL
+                Name = 'AMD Cleanup Utility'
+                Type = 'Exe'
+                Uri  = $UninstallerURL
             }
         }
 
@@ -194,28 +194,33 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName2" -E
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-    Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appWebVersion)) { New-Folder -Path $appWebVersion }
+Set-Location -Path $appScriptDirectory
+If (-Not(Test-Path -Path $appWebVersion)) { New-Folder -Path $appWebVersion }
+
+# Download latest setup file(s)
+If (-Not(Test-Path -Path $appScriptDirectory\$appWebVersion\$appSetup))
+{
+    Write-Log -Message "Downloading $appVendor2 $appName $appWebVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appWebVersion\$appSetup
+    $appVersion = (Get-FileVersion -File $appWebVersion\$appSetup -ProductVersion).Trim("Attested ")
+}
+Else
+{
+    Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    $appVersion = (Get-FileVersion -File $appWebVersion\$appSetup -ProductVersion).Trim("Attested ")
+}
+
+If ([version]$appVersion -gt [version]$appInstalledVersion)
+{
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appWebVersion\$appSetup)) {
-        Write-Log -Message "Downloading $appVendor2 $appName2 $appWebVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appWebVersion\$appSetup
-        $appVersion = (Get-FileVersion -File $appWebVersion\$appSetup -ProductVersion).Trim("Attested ")
-    }
-    Else {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-        $appVersion = (Get-FileVersion -File $appWebVersion\$appSetup -ProductVersion).Trim("Attested ")
-    }
-
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
-
-    # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appUninstaller)) {
+    If (-Not(Test-Path -Path $appScriptDirectory\$appUninstaller))
+    {
         Write-Log -Message "Downloading $appVendor Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appUninstallerURL -OutFile $appScriptDirectory\$appUninstaller
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
@@ -225,11 +230,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     #Execute-Process -Path $appUninstaller -Parameters $appUninstallParameters
 
     # Extracting
-    If ((Test-Path -Path "$envProgramFiles\7-Zip\7z.exe")) {
+    If ((Test-Path -Path "$envProgramFiles\7-Zip\7z.exe"))
+    {
         Write-Log -Message "Downloading $appVendor Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-Process -Path "$envProgramFiles\7-Zip\7z.exe" -Parameters "x `"$appScriptDirectory\$appWebVersion\$appSetup`" -aoa -o`"$appScriptDirectory\$appWebVersion`""
     }
-    Else {
+    Else
+    {
         Write-Log -Message "7-Zip must be installed to continue the installation!" -Severity 3 -LogType CMTrace -WriteHost $True
         Exit
     }
@@ -255,6 +262,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "$appVendor2 $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
-Else {
+Else
+{
     Write-Log -Message "$appVendor2 $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
