@@ -486,7 +486,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Configure application shortcut
-    Copy-File -Path "$envCommonStartMenu\$appShortName\*" -Destination "$envCommonStartMenuPrograms\$appShortName" -ContinueFileCopyOnError $True
+    Copy-File -Path "$envCommonStartMenu\$appShortName\FSLogix Apps RuleEditor.lnk" -Destination "$envCommonStartMenuPrograms\Administrative Tools" -ContinueFileCopyOnError $True
     Remove-Folder -Path "$envCommonStartMenu\$appShortName" -ContinueOnError $True
 
     # Go back to the parent folder

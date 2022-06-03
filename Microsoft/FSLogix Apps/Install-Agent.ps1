@@ -501,8 +501,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Execute-Process -Path $appDestination\frxcontext.exe -Parameters "--install"
 
     # Configure application shortcut
-    New-Folder -Path "$envCommonStartMenuPrograms\Troubleshooting Tools" -ContinueOnError $True
-    New-Shortcut -Path "$envCommonStartMenuPrograms\Troubleshooting Tools\FSLogix Tray Icon.lnk" -TargetPath "$appDestination\frxtray.exe" -IconLocation "$appDestination\frxtray.exe" -Description "FSLogix Tray Icon" -WorkingDirectory "$appDestination"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\FSLogix Tray Icon.lnk" -TargetPath "$appDestination\frxtray.exe" -IconLocation "$appDestination\frxtray.exe" -Description "FSLogix Tray Icon" -WorkingDirectory "$appDestination"
 
     # Enable FSLogix Apps agent search roaming - Apply different configurations based on operating system
     If ($envOSName -like "*Windows Server 2012*" -or $envOSName -like "*Windows Server 2016")
