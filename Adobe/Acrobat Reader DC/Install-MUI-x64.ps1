@@ -12,7 +12,7 @@ Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Ca
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Evergreen", "Nevergreen") # Modules list
+$Modules = @("PSADT", "Evergreen") # Modules list
 
 Function Get-ScriptDirectory
 {
@@ -125,10 +125,10 @@ Foreach ($Module in $Modules)
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Adobe"
-$appName = "Acrobat"
+$appName = "Acrobat Reader"
 $appName2 = "Reader"
 $appShortVersion = "DC"
-$appLanguage = "French"
+$appLanguage = "MUI"
 $appArchitecture = "x64"
 $appProcesses = @("Acrobat", "AdobeCollabSync", "AcroCEF", "acrobat_sl")
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat%20Reader%20DC/AcroProx64.mst"
@@ -140,13 +140,13 @@ $appVersion = $Evergreen.Version
 $appSetupURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appSetupURL -Leaf
 $appMsiSetup = "AcroPro.msi"
-$Nevergreen = Get-NevergreenApp -Name AdobeAcrobatReader | Where-Object { $_.Architecture -eq $appArchitecture }
-$appPatchVersion = $Nevergreen.Version
-$appPatchURL = $Nevergreen.Uri
+$EvergreenPatch = Get-EvergreenApp -Name AdobeAcrobatDC | Where-Object { $_.Type -eq $appName2 -and $_.Architecture -eq $appArchitecture }
+$appPatchVersion = $EvergreenPatch.Version
+$appPatchURL = $EvergreenPatch.URI
 $appPatch = Split-Path -Path $appPatchURL -Leaf
-$appDestination = "$env:ProgramFiles\$appVendor\$appName $appShortVersion\$appName"
+$appDestination = "$env:ProgramFiles\$appVendor\$appName $appShortVersion\$appName2"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.* $appShortVersion .*" -RegEx)
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion (64-bit)" -Exact).DisplayVersion
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion MUI (64-bit)" -Exact).DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 

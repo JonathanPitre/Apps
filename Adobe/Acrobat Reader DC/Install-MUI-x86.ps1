@@ -12,7 +12,7 @@ Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Ca
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Nevergreen") # Modules list
+$Modules = @("PSADT", "Evergreen") # Modules list
 
 Function Get-ScriptDirectory
 {
@@ -128,7 +128,7 @@ $appVendor = "Adobe"
 $appName = "Acrobat Reader"
 $appName2 = "Reader"
 $appShortVersion = "DC"
-$appLanguage = "Multi"
+$appLanguage = "MUI"
 $appArchitecture = "x86"
 $appProcesses = @("AcroRd32", "AdobeCollabSync", "ReaderCEF", "reader_sl")
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat%20Reader%20DC/AcroRead.mst"
@@ -136,12 +136,14 @@ $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "EULA_ACCEPT=YES DISABLE_CACHE=1 DISABLE_PDFMAKER=YES DISABLEDESKTOPSHORTCUT=0 UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1"
 $appAddParameters2 = "ALLUSERS=1"
-$Nevergreen = Get-NevergreenApp -Name AdobeAcrobatReader | Where-Object { $_.Language -eq $appLanguage -and $_.Architecture -eq $appArchitecture }
-$appVersion = $Nevergreen.Version
-$appSetupURL = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/1500720033/AcroRdrDC1500720033_MUI.exe"
+$Evergreen = Get-EvergreenApp -Name AdobeAcrobatReaderDC | Where-Object { $_.Language -eq $appLanguage -and $_.Architecture -eq $appArchitecture }
+$appVersion = $Evergreen.Version
+$appSetupURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appSetupURL -Leaf
 $appMsiSetup = "AcroRead.msi"
-$appPatchURL = $Nevergreen.URI
+$EvergreenPatch = Get-EvergreenApp -Name AdobeAcrobatDC | Where-Object { $_.Type -eq $appName2 -and $_.Architecture -eq $appArchitecture }
+$appPatchVersion = $EvergreenPatch.Version
+$appPatchURL = $EvergreenPatch.URI
 $appPatch = Split-Path -Path $appPatchURL -Leaf
 $appFontURL = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/FontPack2100120135_XtdAlf_Lang_DC.msi"
 $appFont = Split-Path -Path $appFontURL -Leaf
@@ -180,7 +182,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Download latest patch
     If (-Not(Test-Path -Path $appScriptDirectory\$appPatch))
     {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture $appPatchVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appPatchURL -OutFile $appPatch
         # Modify setup.ini according to latest patch
         If ((Test-Path -Path $appScriptDirectory\$appPatch) -and (Test-Path -Path $appScriptDirectory\$appPatch\setup.ini))
@@ -227,7 +229,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "Installing $appVendor $appName $appShortVersion $appLanguage $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-MSI -Action Install -Path $appMsiSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -Patch $appPatch -SkipMSIAlreadyInstalledCheck
     }
-    ElseIf (($IsAppInstalled) -and (Test-Path -Path $appScriptDirectory\$appPatch))
+    ElseIf (($appInstalledVersion) -and (Test-Path -Path $appScriptDirectory\$appPatch))
     {
         # Install latest patch
         Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
