@@ -3,8 +3,7 @@
   <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
     <Product ID="O365ProPlusRetail">
       <Language ID="en-us" />
-      <Language ID="MatchOS" />
-      <Language ID="fr-ca" />
+      <Language ID="fr-fr" />
       <ExcludeApp ID="Groove" />
       <ExcludeApp ID="Lync" />
       <ExcludeApp ID="OneDrive" />
@@ -13,8 +12,7 @@
     </Product>
     <Product ID="LanguagePack">
       <Language ID="en-us" />
-      <Language ID="MatchOS" />
-      <Language ID="fr-ca" />
+      <Language ID="fr-fr" />
       <ExcludeApp ID="Bing" />
     </Product>
   </Add>

@@ -2,7 +2,6 @@
   <Info Description="Visio 365 Optimized for VDI" />
   <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
     <Product ID="VisioProRetail">
-      <Language ID="MatchOS" />
       <Language ID="en-us" />
       <Language ID="fr-fr" />
       <ExcludeApp ID="Groove" />
