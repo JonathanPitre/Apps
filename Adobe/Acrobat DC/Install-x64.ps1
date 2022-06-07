@@ -12,7 +12,7 @@ Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Ca
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Nevergreen") # Modules list
+$Modules = @("PSADT", "Evergreen") # Modules list
 
 Function Get-ScriptDirectory
 {
@@ -134,12 +134,12 @@ $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrob
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "IGNOREVCRT64=1 EULA_ACCEPT=YES UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1 ROAMIDENTITY=1 ROAMLICENSING=1"
-$Nevergreen = Get-NevergreenApp -Name AdobeAcrobat | Where-Object { $_.Architecture -eq $appArchitecture }
-$appVersion = $Nevergreen.Version
+$Evergreen = Get-EvergreenApp -Name AdobeAcrobatDC | Where-Object { $_.Type -eq $appName -and $_.Architecture -eq $appArchitecture }
+$appVersion = $Evergreen.Version
 $appSetupURL = "https://trials.adobe.com/AdobeProducts/APRO/Acrobat_HelpX/win32/Acrobat_DC_Web_x64_WWMUI.zip"
 $appSetup = Split-Path -Path $appSetupURL -Leaf
 $appMsiSetup = "AcroPro.msi"
-$appPatchURL = $Nevergreen.URI
+$appPatchURL = $Evergreen.URI
 $appPatch = Split-Path -Path $appPatchURL -Leaf
 $appADMXurl = "https://ardownload2.adobe.com/pub/adobe/acrobat/win/AcrobatDC/misc/AcrobatADMTemplate.zip"
 $appADMX = Split-Path -Path $appADMXurl -Leaf
