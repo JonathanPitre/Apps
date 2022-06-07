@@ -264,7 +264,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
 
     # Configure application shortcut
-    #Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
+    Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
     # Go back to the parent folder
     Set-Location ..
