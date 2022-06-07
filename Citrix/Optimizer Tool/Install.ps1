@@ -43,18 +43,18 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
 
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -73,7 +73,7 @@ Function Initialize-Module
         {
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
 
                 # Add the Powershell Gallery as trusted repository
@@ -239,7 +239,7 @@ $appInstallParameters = "-Source `"$appDestination\Templates\$appTemplate`" -Mod
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
@@ -291,14 +291,16 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Remove-Folder -Path "$env:ProgramFiles\Citrix\Optimizer" -ContinueOnError $True
+    If (-Not(Test-Path -Path $appDestination)) { New-Folder -Path $appDestination }
     Copy-File -Path "$appScriptDirectory\$appVersion\*" -Destination $appDestination -Recurse
     Copy-File -Path "$appScriptDirectory\$appTemplate" -Destination "$appDestination\Templates"
     New-Folder -Path "$appDestination\Logs"
     New-Folder -Path "$appDestination\Rollback"
     New-Folder -Path "$appDestination\Reports"
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
-    Write-Log -Message "Executing $appVendor $appName $appVersion optimizations from $appTemplate..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-Process -Path powershell.exe -Parameters "-file `"$appDestination\CtxOptimizerEngine.ps1`" $appInstallParameters" -WindowStyle Hidden -CreateNoWindow
+    Write-Log -Message "$appVendor $appName $appVersion must be run manually to optimize the system." -Severity 1 -LogType CMTrace -WriteHost $True
+    #Write-Log -Message "Executing $appVendor $appName $appVersion optimizations from $appTemplate..." -Severity 1 -LogType CMTrace -WriteHost $True
+    #Execute-Process -Path powershell.exe -Parameters "-file `"$appDestination\CtxOptimizerEngine.ps1`" $appInstallParameters" -WindowStyle Hidden -CreateNoWindow
 
     # Configure application shortcut
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor $appName.lnk" -TargetPath "$appDestination\$appSetup"
@@ -308,7 +310,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 Else
 {
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
-    Write-Log -Message "$appVendor $appName $appVersion will now run to optimize the system..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-Process -Path powershell.exe -Parameters "-file `"$appDestination\CtxOptimizerEngine.ps1`" $appInstallParameters" -WindowStyle Hidden -CreateNoWindow
-    Write-Log -Message "$appVendor $appName $appVersion applied the optimizations successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appVersion must be run manually to optimize the system." -Severity 1 -LogType CMTrace -WriteHost $True
+    #Write-Log -Message "$appVendor $appName $appVersion will now run to optimize the system..." -Severity 1 -LogType CMTrace -WriteHost $True
+    #Execute-Process -Path powershell.exe -Parameters "-file `"$appDestination\CtxOptimizerEngine.ps1`" $appInstallParameters" -WindowStyle Hidden -CreateNoWindow
+    #Write-Log -Message "$appVendor $appName $appVersion applied the optimizations successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
