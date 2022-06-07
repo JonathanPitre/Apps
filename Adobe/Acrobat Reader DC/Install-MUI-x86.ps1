@@ -227,7 +227,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
         # Install latest version
         Write-Log -Message "Installing $appVendor $appName $appShortVersion $appLanguage $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSI -Action Install -Path $appMsiSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -Patch $appPatch -SkipMSIAlreadyInstalledCheck
+        Execute-MSI -Action Install -Path $appMsiSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -SkipMSIAlreadyInstalledCheck
     }
     ElseIf (($appInstalledVersion) -and (Test-Path -Path $appScriptDirectory\$appPatch))
     {
