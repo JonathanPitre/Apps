@@ -1,4 +1,4 @@
-# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre & Owen Reynolds, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
