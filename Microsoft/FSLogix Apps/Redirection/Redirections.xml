@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<FrxProfileFolderRedirection ExcludeCommonFolders="0">
+<FrxProfileFolderRedirection>
   <Excludes>
     <Exclude Copy="0">$Recycle.Bin</Exclude>
     <Exclude Copy="0">AppData\LocalLow</Exclude>
@@ -193,6 +193,7 @@
     <Exclude Copy="0">AppData\Roaming\Zoom\ZoomDownload</Exclude>
     <Exclude Copy="0">AppData\Roaming\Zoom\logs</Exclude>
     <Exclude Copy="0">AppData\Roaming\com.adobe.formscentral.FormsCentralForAcrobat</Exclude>
+    <Exclude Copy="0">3D Objects</Exclude>
     <Exclude Copy="0">Contacts</Exclude>
     <Exclude Copy="0">Desktop</Exclude>
     <Exclude Copy="0">Documents</Exclude>
