@@ -282,14 +282,19 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "LOAD HKLM\DefaultUser $envSystemDrive\Users\Default\NTUSER.DAT" -WindowStyle Hidden
 
     # Set OneDriveSetup variable
-    $OneDriveSetup = Get-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Run" -Value "OneDriveSetup"
+    $regOneDriveSetup = Get-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Run" -Value "OneDriveSetup"
 
     # Remove the built-in OneDrive setup from running on new user profile
     # https://byteben.com/bb/installing-the-onedrive-sync-client-in-per-machine-mode-during-your-task-sequence-for-a-lightening-fast-first-logon-experience
-    If ($OneDriveSetup)
+    If ($regOneDriveSetup)
     {
         Remove-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDriveSetup"
     }
+
+    # Cleanup (to prevent access denied issue unloading the registry hive)
+    Get-Variable reg* | Remove-Variable
+    [GC]::Collect()
+    Start-Sleep -Seconds 5
 
     # Unload the Default User registry hive
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "UNLOAD HKLM\DefaultUser" -WindowStyle Hidden

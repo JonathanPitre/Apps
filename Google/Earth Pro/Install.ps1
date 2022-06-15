@@ -222,15 +222,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 	Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Load the Default User registry hive
+	Start-Sleep -Seconds 5
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "LOAD HKLM\DefaultUser $envSystemDrive\Users\Default\NTUSER.DAT" -WindowStyle Hidden
 
     # Removes software notificationg
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\$appVendor\$appVendor $appName" -Name "enableTips" -Value "false" -Type String
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\$appVendor\$appVendor $appName" -Name "tooltips" -Value "false" -Type String
 
+    # Cleanup (to prevent access denied issue unloading the registry hive)
+    [GC]::Collect()
+    Start-Sleep -Seconds 5
 
     # Unload the Default User registry hive
-    Start-Sleep -Seconds 3
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "UNLOAD HKLM\DefaultUser" -WindowStyle Hidden
 
     # Cleanup temp files

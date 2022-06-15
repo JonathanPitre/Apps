@@ -173,13 +173,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Load the Default User registry hive
+    Start-Sleep -Seconds 5
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "LOAD HKLM\DefaultUser $envSystemDrive\Users\Default\NTUSER.DAT" -WindowStyle Hidden
 
     # Configure UI Language
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\paint.net" -Name "UI/Language" -Value $appLanguage -Type String
 
+    # Cleanup (to prevent access denied issue unloading the registry hive)
+    [GC]::Collect()
+    Start-Sleep -Seconds 5
+
     # Unload the Default User registry hive
-    Start-Sleep -Seconds 3
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "UNLOAD HKLM\DefaultUser" -WindowStyle Hidden
 
     # Cleanup temp files

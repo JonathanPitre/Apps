@@ -193,6 +193,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Load the Default User registry hive
+    Start-Sleep -Seconds 5
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "LOAD HKLM\DefaultUser $envSystemDrive\Users\Default\NTUSER.DAT" -WindowStyle Hidden
 
     # Removes software notification
@@ -200,8 +201,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\JavaSoft\Prefs\com\projectlibre1\dialog" -Name "user/Email" -Value "true" -Type String
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\JavaSoft\Prefs\com\projectlibre1\dialog" -Name "/Show/Tip/On/Startup" -Value "false" -Type String
 
+    # Cleanup (to prevent access denied issue unloading the registry hive)
+    [GC]::Collect()
+    Start-Sleep -Seconds 5
+
     # Unload the Default User registry hive
-    Start-Sleep -Seconds 3
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "UNLOAD HKLM\DefaultUser" -WindowStyle Hidden
 
     # Cleanup temp files
