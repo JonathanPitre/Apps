@@ -244,7 +244,7 @@ https://github.com/asheroto/Search-Registry
 $appVendor = "Microsoft"
 $appName = "Teams"
 $appProcesses = @("Teams", "Update", "Squirrel", "Outlook")
-$appRing = "Preview"
+$appRing = "General"
 $appArchitecture = "x64"
 $appLanguage = "fr-CA"
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/Teams.mst"
@@ -282,8 +282,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Delete left over folders and reg keys
     Remove-Folder -Path "$envProgramFilesX86\Teams Installer" -ContinueOnError $True
-    Remove-RegistryKey -Key "HKCR:\CLSID\{00425F68-FFC1-445F-8EDF-EF78B84BA1C7}" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKCR:\WOW6432Node\CLSID\{00425F68-FFC1-445F-8EDF-EF78B84BA1C7}" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Classes\CLSID\{00425F68-FFC1-445F-8EDF-EF78B84BA1C7}" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Classes\CLSID\{00425F68-FFC1-445F-8EDF-EF78B84BA1C7}" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Classes\Installer\Products\AAB6F137689A4A549863C7A3AAAA67B0" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders" -Name "C:\Program Files (x86)\Teams Installer\"
     $RegKey = Search-Registry -Path "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall" -Recurse -ValueDataRegex ".*Teams.*Installer.*"  | Select-Object -ExpandProperty Key
     Remove-RegistryKey -Key $RegKey
@@ -298,7 +299,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         {
         }
     }
-
 
     # Remove user install
     $TeamsUsers = Get-ChildItem -Path "$($env:SystemDrive)\Users"
@@ -357,12 +357,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     # Required if not using the custom MST
     #New-Item -Path "HKLM:\SOFTWARE\Citrix" -Name "PortICA" -Force
-
-    # Copy setup files to $envTemp\Install to avoid install issue
-    Copy-File -Path ".\$appSetup" -Destination "$envTemp\Install" -Recurse
-    Copy-File -Path "$appScriptDirectory\$appTransform" -Destination "$envTemp\Install" -Recurse
-
-    Execute-MSI -Action Install -Path $envTemp\Install\$appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters -Transform $envTemp\Install\$appTransform
+    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters -Transform "$appScriptDirectory\$appTransform"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
@@ -428,6 +423,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\IM Providers\Teams" -Name "ProcessName" -Value "Teams.exe" -Type String
 
     # Load the Default User registry hive
+    Start-Sleep -Seconds 5
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "LOAD HKLM\DefaultUser $envSystemDrive\Users\Default\NTUSER.DAT" -WindowStyle Hidden
 
     # Set Microsoft Teams as the default chat app for Office - https://www.msoutlook.info/question/setting-skype-or-other-im-client-to-integrate-with-outlook
@@ -443,12 +439,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Classes\TeamsURL\shell\open\command" -Name "(Default)" -Value "`"C:\Program Files (x86)\Microsoft\Teams\current\Teams.exe`" `"%1`"" -Type String
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\ApplicationAssociationToasts" -Name "msteams_msteams" -Value "0" -Type DWord
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Internet Explorer\ProtocolExecute\msteams" -Name "WarnOnOpen" -Value "0" -Type DWord
+
+    # Cleanup (to prevent access denied issue unloading the registry hive)
+    [GC]::Collect()
+    Start-Sleep -Seconds 5
+
     # Unload the Default User registry hive
-    Start-Sleep -Seconds 3
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "UNLOAD HKLM\DefaultUser" -WindowStyle Hidden
 
     # Cleanup temp files
-    Remove-Folder -Path "$envTemp\Install"
     Remove-Item -Path "$envSystemDrive\Users\Default\*.LOG1" -Force
     Remove-Item -Path "$envSystemDrive\Users\Default\*.LOG2" -Force
     Remove-Item -Path "$envSystemDrive\Users\Default\*.blf" -Force
