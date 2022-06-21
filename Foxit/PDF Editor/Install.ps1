@@ -127,15 +127,18 @@ Foreach ($Module in $Modules)
 $appVendor = "Foxit"
 $appName = "PDF Editor"
 $appProcesses = @("FoxitPDFEditor", "FoxitPDFEditorUpdateService", "FoxitPDFCEF64")
+$appServices = @("FoxitPhantomPDFUpdateService")
 $appInstallParameters = "/QB"
 # https://kb.foxitsoftware.com/hc/en-us/articles/360040660271--Command-line-Deployments-of-Foxit-PDF-Editor
-$appAddParameters = "DESKTOP_SHORTCUT=0 LAUNCHCHECKDEFAULT=0 AUTO_UPDATE=0 LAUNCHCHECKDEFAULT=0 NOTINSTALLUPDATE=1"
+$appAddParameters = "DESKTOP_SHORTCUT=0 LAUNCHCHECKDEFAULT=0 AUTO_UPDATE=0 LAUNCHCHECKDEFAULT=0 NOTINSTALLUPDATE=1 KEYPATH=`"$appScriptDirectory\fpmkey.txt`""
 $appUninstallParameters = "/QB CLEAN=1"
 $appLanguage = "Multi-Language"
 $Evergreen = Get-EvergreenApp -Name FoxitPDFEditor | Where-Object { $_.Language -eq $appLanguage }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
+$appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Apps/Foxit/PDF%20Editor/FoxitPDFEditor.mst"
+$appTransform = Split-Path -Path $appTransformURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\Foxit Software\Foxit PDF Editor"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion)
@@ -159,6 +162,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Download required transform file
+    If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
+    {
+        Write-Log -Message "Downloading $appVendor $appName Transform.." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptDirectory\$appTransform
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled)
@@ -170,9 +184,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
+    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters -Transform "$appScriptDirectory\$appTransform"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Stop and disable unneeded services
+    Stop-ServiceAndDependencies -Name $appServices[0]
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
 
     # Configure application shortcut
     Copy-File -Path "$envCommonStartMenuPrograms\$appVendor $appName\$appVendor $appName.lnk" -Destination "$envCommonStartMenuPrograms" -ContinueFileCopyOnError $True
