@@ -165,10 +165,30 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
+    # Load the Default User registry hive
+    Start-Sleep -Seconds 5
+    Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "LOAD HKLM\DefaultUser $envSystemDrive\Users\Default\NTUSER.DAT" -WindowStyle Hidden
+
     # Enable hardware encoding feature for Teams - https://docs.microsoft.com/en-us/windows-server/remote/remote-desktop-services/clients/windowsdesktop-whatsnew
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Terminal Server Client\Default\AddIns\WebRTC Redirector" -Name "UseHardwareEncoding" -Value "1" -Type DWord
     Set-RegistryKey -Key "HKCU:\Software\Microsoft\Terminal Server Client\Default\AddIns\WebRTC Redirector" -Name "UseHardwareEncoding" -Value "1" -Type DWord
+
     # Reduced E2E latency and some performance issues by optimizing the GPU render path - https://docs.microsoft.com/en-us/windows-server/remote/remote-desktop-services/clients/windowsdesktop-whatsnew
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Terminal Server Client" -Name "IsSwapChainRenderingEnabled" -Value "1" -Type DWord
     Set-RegistryKey -Key "HKCU:\Software\Microsoft\Terminal Server Client" -Name "IsSwapChainRenderingEnabled" -Value "1" -Type DWord
+
+    # Cleanup (to prevent access denied issue unloading the registry hive)
+    [GC]::Collect()
+    Start-Sleep -Seconds 5
+
+    # Unload the Default User registry hive
+    Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "UNLOAD HKLM\DefaultUser" -WindowStyle Hidden
+
+    # Cleanup temp files
+    Remove-Item -Path "$envSystemDrive\Users\Default\*.LOG1" -Force
+    Remove-Item -Path "$envSystemDrive\Users\Default\*.LOG2" -Force
+    Remove-Item -Path "$envSystemDrive\Users\Default\*.blf" -Force
+    Remove-Item -Path "$envSystemDrive\Users\Default\*.regtrans-ms" -Force
 
     # Go back to the parent folder
     Set-Location ..
