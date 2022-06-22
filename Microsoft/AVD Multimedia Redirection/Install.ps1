@@ -147,7 +147,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
     {
-        Write-Log -Message "Downloading $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else
