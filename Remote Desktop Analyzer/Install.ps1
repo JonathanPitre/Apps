@@ -133,7 +133,7 @@ $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\$appName"
 [boolean]$IsAppInstalled = [boolean](Test-Path -Path "$appDestination\$appSetup")
-$appInstalledVersion = Get-FileVersion -File "$appDestination\$appSetup"
+$appInstalledVersion = If ($IsAppInstalled) { Get-FileVersion -File "$appDestination\$appSetup" }
 $appInstalledVersion = $appInstalledVersion.Substring(0, $appInstalledVersion.Length - 2)
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
