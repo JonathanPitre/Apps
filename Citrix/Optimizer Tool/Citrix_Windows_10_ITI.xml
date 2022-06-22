@@ -8,7 +8,7 @@
     <description>Windows 10 versions 20H2, 21H2, 21H2 (2009) from ITI</description>
     <category>OS Optimizations</category>
     <author>Jonathan Pitre</author>
-    <lastupdatedate>2/25/2022</lastupdatedate>
+    <lastupdatedate>6/10/2022</lastupdatedate>
   </metadata>
   <group>
     <id>DisableServices</id>
@@ -548,7 +548,7 @@ DOES NOT SUPPORT ROLLBACK!</description>
     <entry>
       <name>Microsoft.HEIFImageExtension</name>
       <description>Adds support for High Efficiency Image File (HEIF) format, usually with .heif extension.</description>
-      <execute>1</execute>
+      <execute>0</execute>
       <action>
         <plugin>UWP</plugin>
         <params>
@@ -614,7 +614,7 @@ DOES NOT SUPPORT ROLLBACK!</description>
     <entry>
       <name>Microsoft.MSPaint</name>
       <description>Microsoft.MSPaint</description>
-      <execute>1</execute>
+      <execute>0</execute>
       <action>
         <plugin>UWP</plugin>
         <params>
@@ -680,7 +680,7 @@ DOES NOT SUPPORT ROLLBACK!</description>
     <entry>
       <name>Microsoft.WebpImageExtension</name>
       <description>Adds support for image format WebP.</description>
-      <execute>1</execute>
+      <execute>0</execute>
       <action>
         <plugin>UWP</plugin>
         <params>
@@ -691,7 +691,7 @@ DOES NOT SUPPORT ROLLBACK!</description>
     <entry>
       <name>Microsoft.Windows.Photos</name>
       <description>Microsoft.Windows.Photos</description>
-      <execute>1</execute>
+      <execute>0</execute>
       <action>
         <plugin>UWP</plugin>
         <params>
@@ -1983,7 +1983,7 @@ For more information, please refer to official Microsoft documentation: https://
     <entry>
       <name>Microsoft.ScreenSketch</name>
       <description>Removes "Snip and Sketch" application. Provides functionality of Snipping Tool with additional improvements.</description>
-      <execute>1</execute>
+      <execute>0</execute>
       <action>
         <plugin>UWP</plugin>
         <params>
