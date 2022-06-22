@@ -309,6 +309,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMCmdAgent.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMUIAgent.exe" -Force
 
+    # Configure application shortcut
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Agent Log Parser.lnk" -TargetPath "$appDestination\Agent Log Parser.exe"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Resultant Actions Viewer.lnk" -TargetPath "$appDestination\VUEMRSAV.exe"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Application Info Viewer.lnk" -TargetPath "$appDestination\AppInfoViewer.exe"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Manage Applications.lnk" -TargetPath "$appDestination\AppsMgmtUtil.exe"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Manage Printers.lnk" -TargetPath "$appDestination\PrnsMgmtUtil.exe"
+
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }
