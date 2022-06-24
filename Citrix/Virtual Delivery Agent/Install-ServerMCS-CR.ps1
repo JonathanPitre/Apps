@@ -122,78 +122,186 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
-Function Get-CitrixDownload
+function Get-CitrixDownload
 {
     <#
 .SYNOPSIS
-  Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
+  Downloads a Citrix binary or ISO from Citrix.com utilizing authentication
 .DESCRIPTION
-  Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
-  Ryan Butler 2/6/2020 https://github.com/ryancbutler/Citrix/tree/master/XenDesktop/AutoDownload
-.PARAMETER dlNumber
-  Number assigned to binary download
-.PARAMETER dlEXE
-  File to be downloaded
-.PARAMETER dlPath
-  Path to store downloaded file. Must contain following slash (C:\Temp\)
+  Downloads a Citrix binary or ISO from Citrix.com utilizing authentication
+  Ryan Butler & Jonathan Pitre 6/10/2022
+.PARAMETER CitrixProductName
+  Get Citrix Product Name from https://raw.githubusercontent.com/ryancbutler/Citrix_DL_Scrapper/main/ctx_dls.json. Default to "Multi-session OS Virtual Delivery Agent"
 .PARAMETER CitrixUserName
   Citrix.com username
 .PARAMETER CitrixPassword
   Citrix.com password
+.PARAMETER EvergreenMode
+  Get latest version and download url of given Citrix Product Name. When set to $False, the download will be initiated. Default value is set to $True.
+.PARAMETER DownloadPath
+  Path to store downloaded file. Default path is "$env:Temp\Citrix"
+.PARAMETER VerboseMode
+  Enable verbose logging
 .EXAMPLE
-  Get-CitrixDownload -dlNumber "16834" -dlEXE "Citrix_Virtual_Apps_and_Desktops_7_1912.iso" -CitrixUserName "MyCitrixUsername" -CitrixPassword "MyCitrixPassword" -dlPath "C:\Temp\"
+  Get-CitrixDownload -CitrixDownload $CitrixDownload -CitrixUserName "MyCitrixUsername" -CitrixPassword "MyCitrixPassword" -DownloadPath "C:\Temp\"
 #>
-    Param(
-        [Parameter(Mandatory = $true)]$dlNumber,
-        [Parameter(Mandatory = $true)]$dlEXE,
-        [Parameter(Mandatory = $true)]$dlPath,
-        [Parameter(Mandatory = $true)]$CitrixUserName,
-        [Parameter(Mandatory = $true)]$CitrixPassword
+
+    [cmdletbinding()]
+    Param (
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [ValidateSet('Citrix Virtual Apps and Desktops', 'Multi-session OS Virtual Delivery Agent', 'Single-session OS Virtual Delivery Agent', 'Single-session OS Core Services Virtual Delivery Agent', 'License Server', 'Profile Management', 'StoreFront', 'Session Recording', 'Citrix Provisioning', 'Citrix ADC Upgrade Package')]
+        [ValidateNotNullOrEmpty()]
+        $CitrixProductName = "Multi-session OS Virtual Delivery Agent",
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [string]$CitrixUsername,
+        [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [string]$CitrixPassword,
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()]
+        [boolean]$EvergreenMode = $True,
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()]
+        [string]$DownloadPath = "$env:Temp\Citrix",
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName)]
+        [ValidateNotNullOrEmpty()]
+        [boolean]$VerboseMode = $False
     )
-    #Initialize Session
-    Invoke-WebRequest "https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response" -SessionVariable websession -UseBasicParsing | Out-Null
 
-    #Set Form
-    $Form = @{
-        "persistent" = "on"
-        "userName"   = $CitrixUserName
-        "password"   = $CitrixPassword
-    }
-
-    #Authenticate
-    Try
+    Process
     {
-        Invoke-WebRequest -Uri ("https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response") -WebSession $websession -Method POST -Body $form -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -ErrorAction Stop | Out-Null
-    }
-    Catch
-    {
-        If ($_.Exception.Response.StatusCode.Value__ -eq 500)
-        {
-            Write-Verbose "500 returned on auth. Ignoring"
-            Write-Verbose $_.Exception.Response
-            Write-Verbose $_.Exception.Message
-        }
-        Else
-        {
-            Throw $_
-        }
-    }
 
-    $dlURL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=${dlNumber}&URL=https://downloads.citrix.com/${dlNumber}/${dlEXE}"
-    $Download = Invoke-WebRequest -Uri $dlURL -WebSession $WebSession -UseBasicParsing -Method GET
-    $Webform = @{
-        "chkAccept"            = "on"
-        "clbAccept"            = "Accept"
-        "__VIEWSTATEGENERATOR" = ($Download.InputFields | Where-Object { $_.id -eq "__VIEWSTATEGENERATOR" }).value
-        "__VIEWSTATE"          = ($Download.InputFields | Where-Object { $_.id -eq "__VIEWSTATE" }).value
-        "__EVENTVALIDATION"    = ($Download.InputFields | Where-Object { $_.id -eq "__EVENTVALIDATION" }).value
-    }
+        # Speed up downloads
+        $ProgressPreference = 'SilentlyContinue'
 
-    $OutFile = ($dlPath + $dlEXE)
-    #Download
-    Invoke-WebRequest -Uri $dlURL -WebSession $WebSession -Method POST -Body $Webform -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -OutFile $OutFile
-    return $OutFile
-}
+        # Convert password to SecureString
+        [securestring]$SecurePassword = ConvertTo-SecureString $CitrixPassword -AsPlainText -Force
+
+        # Initialize Session
+        Invoke-WebRequest -Uri "https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response" -SessionVariable websession -UseBasicParsing | Out-Null
+
+        # Set Form
+        $Form = @{
+            "persistent" = "on"
+            "userName"   = $CitrixUsername
+            "password"   = $CitrixPassword
+        }
+
+        # Authenticate
+        Try
+        {
+            Invoke-WebRequest -Uri ("https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response") -WebSession $WebSession -Method POST -Body $Form -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -ErrorAction Stop | Out-Null
+        }
+        Catch
+        {
+            If ($_.Exception.Response.StatusCode.Value__ -eq 500)
+            {
+                Write-Verbose -Message "500 returned on auth. Ignoring"
+                Write-Verbose -Message $_.Exception.Response
+                Write-Verbose -Message $_.Exception.Message
+            }
+            Else
+            {
+                Throw $_
+            }
+
+        }
+
+        if ($VerboseMode) { Write-Verbose -Message "Product Name: $CitrixProductName" -Verbose }
+
+        # Get Citrix Product Family from Citrix Product Name
+        switch ( $CitrixProductName )
+        {
+            { ($_ -eq "Citrix Virtual Apps and Desktops") -or ($_ -eq "Multi-session OS Virtual Delivery Agent") } { [string]$CitrixProductFamily = "cvad" }
+            'Citrix Virtual Apps and Desktops' { [string]$CitrixProductFamily = "cvad" }
+            'Multi-session OS Virtual Delivery Agent' { [string]$CitrixProductFamily = "cvad" }
+            'Single-session OS Virtual Delivery Agent' { [string]$CitrixProductFamily = "cvad" }
+            'Single-session OS Core Services Virtual Delivery Agent*' { [string]$CitrixProductFamily = "cvad" }
+            'License Server' { [string]$CitrixProductFamily = "cvad" }
+            'Profile Management' { [string]$CitrixProductFamily = "cvad" }
+            'StoreFront' { [string]$CitrixProductFamily = "cvad" }
+            'Session Recording' { [string]$CitrixProductFamily = "cvad" }
+            'Citrix WEM' { [string]$CitrixProductFamily = "wem" }
+            'Citrix Provisioning' { [string]$CitrixProductFamily = "pvs" }
+            'Citrix ADC Upgrade Package' { [string]$CitrixProductFamily = "adc" }
+            default { Throw "No such Citrix Product Family was found for $CitrixProductName" }
+        }
+
+        if ($VerboseMode) { Write-Verbose -Message "Product Family: $CitrixProductFamily" -Verbose }
+
+        # Get Citrix downloads list
+        $CitrixDownloadsList = Invoke-RestMethod -Uri "https://raw.githubusercontent.com/ryancbutler/Citrix_DL_Scrapper/main/ctx_dls.json"
+
+        # Get latest Citrix Product Name
+        [pscustomobject]$CitrixDownload = $CitrixDownloadsList | Where-Object { $_.product -like "*$CitrixProductName*" -and $_.version -notlike "7*" -and $_.family -eq $CitrixProductFamily } | `
+            Sort-Object -Property @{ Expression = { $_.version }; Descending = $true } | Select-Object -First 1
+
+        # Get Citrix Product Download Number
+        [string]$CitrixDownloadNumber = $CitrixDownload.dlnumber
+        if ($VerboseMode) { Write-Verbose -Message "Download number: $CitrixDownloadNumber" -Verbose }
+
+        # Get Citrix Product Filename
+        [string]$CitrixFilename = $CitrixDownload.filename
+        if ($VerboseMode) { Write-Verbose -Message "Filename: $CitrixFilename" -Verbose }
+
+        # Get Citrix Product Version
+        [string]$CitrixVersion = $CitrixDownload.version
+        if ($VerboseMode) { Write-Verbose -Message "Version: $CitrixVersion" -Verbose }
+
+        # Get Citrix Download URL
+        $CitrixDownloadURL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=${CitrixDownloadNumber}&URL=https://downloads.citrix.com/${CitrixDownloadNumber}/${CitrixFilename}"
+        if ($VerboseMode) { Write-Verbose -Message "Download URL: $CitrixDownloadURL" -Verbose }
+
+        # Get Download web form
+        $Download = Invoke-WebRequest -Uri $CitrixDownloadURL -WebSession $WebSession -UseBasicParsing -Method GET
+        $WebForm = @{
+            "chkAccept"            = "on"
+            "clbAccept"            = "Accept"
+            "__VIEWSTATEGENERATOR" = ($Download.InputFields | Where-Object { $_.id -eq "__VIEWSTATEGENERATOR" }).value
+            "__VIEWSTATE"          = ($Download.InputFields | Where-Object { $_.id -eq "__VIEWSTATE" }).value
+            "__EVENTVALIDATION"    = ($Download.InputFields | Where-Object { $_.id -eq "__EVENTVALIDATION" }).value
+        }
+
+        # Check if EvergreenMode is enabled
+        if ($EvergreenMode)
+        {
+            # Return Citrixproduct Version and Download URL
+            if ($CitrixVersion -and $CitrixDownloadURL)
+            {
+                [PSCustomObject]@{
+                    Version = $CitrixVersion
+                    URI     = $CitrixDownloadURL
+                }
+            }
+        }
+        else
+        {
+            # Create download path
+            If (-Not(Test-Path $DownloadPath)) { New-Item -ItemType Directory -Path $DownloadPath }
+            $CitrixFile = ($DownloadPath + "\" + $CitrixFilename)
+            if ($VerboseMode) { Write-Verbose -Message "Download path: $CitrixFile" -Verbose }
+
+            # Download Citrix Product
+            if ($VerboseMode) { Write-Verbose -Message "Downloading Citrix $CitrixProductName $CitrixVersion..." -Verbose }
+            Invoke-WebRequest -Uri $CitrixDownloadURL -WebSession $WebSession -Method POST -Body $WebForm -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -OutFile $CitrixFile
+
+            # Get Citrix File hash
+            $FileHash = (Get-FileHash -Path $CitrixFile -Algorithm SHA256).Hash
+
+            # Checksum check
+            $Hash = $CitrixDownload.checksum.Split(" ")[-1].ToUpper()
+            If ($FileHash -ne $Hash)
+            {
+                Throw "Checksum failed! for $CitrixFile. Got $FileHash, expected $Hash)"
+            }
+            Else
+            {
+                if ($VerboseMode) { Write-Verbose -Message "Checksum passed!" -Verbose }
+            }
+
+            return $CitrixFile
+        }
+    } # End process
+} # End of function
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -205,10 +313,34 @@ $appServices = @("CitrixTelemetryService")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
 $appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enable_ss_ports /exclude "Citrix Personalization for App-V - VDA","Citrix Supportability Tools","Citrix Files for Windows","Citrix Files for Outlook","User Personalization layer","Citrix WEM Agent","Citrix VDA Upgrade Agent" /includeadditional "Machine Identity Service","Citrix Profile Management","Citrix Profile Management WMI Plugin","Citrix Universal Print Client","Citrix Telemetry Service","Citrix MCS IODriver","Citrix Rendezvous V2" /mastermcsimage /noreboot /noresume /quiet /remove_appdisk_ack /remove_pvd_ack /virtualmachine'
-$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 22*, All Editions"} | Sort-Object Version -Descending | Select-Object -First 1
+
+#
+$CitrixProductName = "Multi-session OS Virtual Delivery Agent"
+Write-Log -Message "Citrix credentials for downloading the $appVendor $appName2" -Severity 1 -LogType CMTrace -WriteHost $True
+$CitrixUserName = Read-Host -Prompt "Please supply your Citrix.com username"
+$CitrixPassword1 = Read-Host -Prompt "Please supply your Citrix.com password" -AsSecureString
+$CitrixPassword2 = Read-Host -Prompt "Please supply your Citrix.com password once more" -AsSecureString
+$CitrixPassword1Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword1))
+$CitrixPassword2Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword2))
+     
+If ($CitrixPassword1Temp -ne $CitrixPassword2Temp)
+{
+    Write-Log -Message "The supplied Citrix passwords missmatch!" -Severity 3 -LogType CMTrace -WriteHost $True
+    Exit-Script -ExitCode 1
+}
+
+Remove-Variable -Name CitrixPassword1Temp, CitrixPassword2Temp
+$CitrixCredentials = New-Object System.Management.Automation.PSCredential ($CitrixUserName, $CitrixPassword1)
+
+# Verify Citrix credentials
+$CitrixUserName = $CitrixCredentials.UserName
+$CitrixPassword = $CitrixCredentials.GetNetworkCredential().Password
+#
+
+$Evergreen = Get-CitrixDownload -CitrixProductName $CitrixProductName -CitrixUsername $CitrixUsername -CitrixPassword $CitrixPassword -VerboseMode $True
 $appVersion = $Evergreen.Version
-$appSetup = "VDAServerSetup_$appVersion.exe"
-$appDlNumber = "20429"
+$appURL = $Evergreen.URI
+$appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
 $appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
@@ -293,31 +425,11 @@ If ($appVersion -gt $appInstalledVersion)
         }
     }
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup) -or (Get-ChildItem).Length -lt 1024kb)
+    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
     {
-        Write-Log -Message "Citrix credentials for downloading the $appVendor $appName2" -Severity 1 -LogType CMTrace -WriteHost $True
-        $CitrixUserName = Read-Host -Prompt "Please supply your Citrix.com username"
-        $CitrixPassword1 = Read-Host -Prompt "Please supply your Citrix.com password" -AsSecureString
-        $CitrixPassword2 = Read-Host -Prompt "Please supply your Citrix.com password once more" -AsSecureString
-        $CitrixPassword1Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword1))
-        $CitrixPassword2Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword2))
-
-        If ($CitrixPassword1Temp -ne $CitrixPassword2Temp)
-        {
-            Write-Log -Message "The supplied Citrix passwords missmatch!" -Severity 3 -LogType CMTrace -WriteHost $True
-            Exit-Script -ExitCode 1
-        }
-
-        Remove-Variable -Name CitrixPassword1Temp, CitrixPassword2Temp
-        $CitrixCredentials = New-Object System.Management.Automation.PSCredential ($CitrixUserName, $CitrixPassword1)
-
-        # Verify Citrix credentials
-        $CitrixUserName = $CitrixCredentials.UserName
-        $CitrixPassword = $CitrixCredentials.GetNetworkCredential().Password
-
         # Download latest version
         Write-Log -Message "Downloading $appVendor $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appSetup -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
+        Get-CitrixDownload -CitrixProductName $CitrixProductName -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -EvergreenMode $False -DownloadPath "$appScriptDirectory\$appVersion" -VerboseMode $False
     }
     Else
     {
