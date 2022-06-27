@@ -125,7 +125,7 @@ Foreach ($Module in $Modules)
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Adobe"
-$appName = "Acrobat Reader"
+$appName = "Acrobat"
 $appName2 = "Reader"
 $appShortVersion = "DC"
 $appLanguage = "MUI"
@@ -140,13 +140,13 @@ $appVersion = $Evergreen.Version
 $appSetupURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appSetupURL -Leaf
 $appMsiSetup = "AcroPro.msi"
-$EvergreenPatch = Get-EvergreenApp -Name AdobeAcrobatDC | Where-Object { $_.Type -eq $appName2 -and $_.Architecture -eq $appArchitecture }
+$EvergreenPatch = Get-EvergreenApp -Name AdobeAcrobatDC | Where-Object { $_.Type -eq $appName2 + $appLanguage -and $_.Architecture -eq $appArchitecture }
 $appPatchVersion = $EvergreenPatch.Version
 $appPatchURL = $EvergreenPatch.URI
 $appPatch = Split-Path -Path $appPatchURL -Leaf
-$appDestination = "$env:ProgramFiles\$appVendor\$appName $appShortVersion\$appName2"
+$appDestination = "$env:ProgramFiles\$appVendor\$appName $appShortVersion\$appName"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.* $appShortVersion .*" -RegEx)
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion MUI (64-bit)" -Exact).DisplayVersion
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion (64-bit)" -Exact).DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
