@@ -323,7 +323,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     #Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
     # Disable Citrix API hook - https://discussions.citrix.com/topic/406494-microsoft-new-edge-ready-for-citrix-terminal-serves
-    # https://blog.vermeerschconsulting.be/index.php/2020/04/23/edge-chromium-in-citrix-virtual-apps-server-2016-or-2019-with-a-working-smart-card-reader
+    # https://blog.vermeerschconsulting.be/index.php/2020/04/23edge-chromium-in-citrix-virtual-apps-server-2016-or-2019-with-a-working-smart-card-reader
     $regKey = "HKLM:\SOFTWARE\Citrix\CtxHook\AppInit_Dlls\SfrHook"
     $regKeyProcess = "$($appProcesses[0]).exe"
     If ((Test-Path -Path $regKey) -and (-Not(Test-Path -Path $regKey\$regKeyProcess)))
