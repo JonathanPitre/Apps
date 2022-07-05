@@ -135,8 +135,8 @@ $appVersion = $Evergreen.Version
 $appURL = $Evergreen.Uri
 $appSetup = $Evergreen.Filename
 $appDestination = "$env:ProgramFiles\Remote Desktop"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
-$appInstalledVersion = ((Get-InstalledApplication -Name "$appName").DisplayVersion) | Select-Object -First 1
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName" -Exact)
+$appInstalledVersion = ((Get-InstalledApplication -Name "$appName" -Exact).DisplayVersion) | Select-Object -First 1
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
