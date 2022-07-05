@@ -43,17 +43,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -94,7 +94,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -136,13 +136,14 @@ $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\VMware\VMware Tools"
 [boolean]$IsAppInstalled = (Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion).Substring(0, 6)
+$HardwarePlatForm = Get-HardwarePlatform
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ([version]$appVersion -gt [version]$appInstalledVersion)
+If (([version]$appVersion -gt [version]$appInstalledVersion) -and ($HardwarePlatForm -eq "Virtual:$appVendor"))
 {
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
     Get-Process -Name $appProcesses | Stop-Process -Force
@@ -177,6 +178,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-Location ..
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+}
+ElseIf ($HardwarePlatForm -ne "Virtual:VMWare")
+{
+    Write-Log -Message "$appVendor $appName can't be installed on hardware platform $HardwarePlatForm." -Severity 3 -LogType CMTrace -WriteHost $True
 }
 Else
 {
