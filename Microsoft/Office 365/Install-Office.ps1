@@ -262,6 +262,18 @@ Function Get-MicrosoftOfficeUninstaller
     }
 }
 
+# Download required config file
+Set-Location -Path $appScriptDirectory
+If (-Not(Test-Path -Path $appScriptDirectory\$appConfig))
+{
+    Write-Log -Message "Downloading $appVendor $appName Config.." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
+}
+Else
+{
+    Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+}
+
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Microsoft"
@@ -296,17 +308,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Downloading the latest version of $appVendor Office Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
     Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     $appSetupVersion = (Get-Command .\$appSetup).FileVersionInfo.FileVersion
-
-    # Download required config file
-    If (-Not(Test-Path -Path $appScriptDirectory\$appConfig))
-    {
-        Write-Log -Message "Downloading $appVendor $appName Config.." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
-    }
-    Else
-    {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
 
     # Download latest policy definitions
     Get-MicrosoftOfficeAdmx
