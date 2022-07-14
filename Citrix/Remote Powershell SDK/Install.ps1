@@ -125,7 +125,7 @@ Foreach ($Module in $Modules)
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Citrix"
-$appName2 = "XenApp and XenDesktop"
+$appName2 = "DaaS"
 $appName = "Remote PowerShell SDK"
 $appInstallParameters = "/q"
 $appURL = "https://download.apps.cloud.com/CitrixPoshSdk.exe"
