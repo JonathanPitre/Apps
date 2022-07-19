@@ -43,17 +43,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -94,7 +94,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -162,20 +162,23 @@ $appName = "Analyze Logon Duration"
 $Evergreen = Get-AnalyzeLogonDuration
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appSetup = (Split-Path -Path $appURL -Leaf).Replace("%20"," ")
+$appSetup = (Split-Path -Path $appURL -Leaf).Replace("%20", " ")
 $appDestination = "$env:ProgramFiles\WindowsPowerShell\Scripts"
-$appIconURL = "https://cdn-eaddb.nitrocdn.com/fTaYEsQIhvKCfobqpKOsSITDpcosteLK/assets/static/optimized/rev-63cf90a/wp-content/themes/controlup-bootstrap/favicon.ico"
+$appIconURL = "https://github.com/JonathanPitre/Apps/raw/master/Analyze%20Logon%20Duration/ControlUp.ico"
 $appIcon = "ControlUp.ico"
 [boolean]$IsAppInstalled = [boolean](Test-Path -Path "$appDestination\$appSetup")
-$appInstalledFile = If ($IsAppInstalled) { (Get-Content -Path "$appDestination\$appSetup" -Raw) -match "(Version\: )((?:\d+\.)+(?:\d+))" }
-$appInstalledVersion = $Matches[2]
+If ($IsAppInstalled)
+{
+    (Get-Content -Path "$appDestination\$appSetup" -Raw) -match "(Version\: )((?:\d+\.)+(?:\d+))"
+    $appInstalledVersion = $Matches[2]
+}
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
     # Download latest setup file(s)
@@ -222,7 +225,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Configure application shortcut
-    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appName.lnk" -TargetPath "$appDestination\$appSetup" -IconLocation "$appScriptDirectory\$appIcon" -Description "$appName" -WorkingDirectory "$appDestination"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administr ative Tools\$appName.lnk" -TargetPath "$appDestination\$appSetup" -IconLocation "$appScriptDirectory\$appIcon" -Description "$appName" -WorkingDirectory "$appDestination"
 
     # Go back to the parent folder
     Set-Location ..
