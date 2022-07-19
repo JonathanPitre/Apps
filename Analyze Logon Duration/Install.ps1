@@ -225,7 +225,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Configure application shortcut
-    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appName.lnk" -TargetPath "$appDestination\$appSetup" -IconLocation "$appScriptDirectory\$appIcon" -Description "$appName" -WorkingDirectory "$appDestination"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appName.lnk" -TargetPath "powershell.exe" -Arguments "-Ex ByPass -NoExit -File `"$appDestination\$appSetup`"" -IconLocation "$appScriptDirectory\$appIcon" -Description "$appName" -WorkingDirectory "$appDestination"
 
     # Go back to the parent folder
     Set-Location ..
