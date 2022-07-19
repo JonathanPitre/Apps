@@ -127,7 +127,7 @@ Foreach ($Module in $Modules)
 $appVendor = "Citrix"
 $appName = "Workspace"
 $appName2 = "app"
-$appProcesses = @("wfica32", "wfcrun32", "redirector", "CDViewer", "HdxBrowser", "HdxTeams", "HdxBrowserCef", "concentr", "cpviewer", "PseudoContainer2", "PseudoContainer", "CtxCFRUI", "ssonsvr", "WebHelper", "SelfServicePlugin", "SelfService", "Receiver", "Ceip", "AuthManSvr", "CWAUpdaterService")
+$appProcesses = @("CDViewer", "concentr", "HdxBrowser", "HdxRtcEngine", "redirector", "ssonsvr", "WebHelper", "wfcrun32", "wfica32", "AuthManSvr", "storebrowse", "HdxBrowserCef", "CitrixWorkspaceBrowser", "AnalyticsSrv", "Ceip", "CitrixReceiverUpdater", "CitrixWorkspaceNotification", "ConfigurationWizard", "PrefPanel", "Receiver", "SRProxy", "UpdaterService", "SelfService", "SelfServicePlugin")
 # https://docs.citrix.com/en-us/citrix-workspace-app-for-windows/install.html
 $appInstallParameters = "EnableCEIP=false EnableTracing=false /forceinstall /noreboot /silent /includeSSON /AutoUpdateCheck=disabled /InstallEmbeddedBrowser=N"
 $Evergreen = Get-EvergreenApp -Name CitrixWorkspaceApp | Where-Object { $_.Title -like "Citrix Workspace - Current Release" }
@@ -191,18 +191,11 @@ If ($appVersion -gt $appInstalledVersion) {
     }
 
     # Registry Optimizations
+    # Remove AnalyticsSrv.exe from startup
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "AnalyticsSrv"
+
     # Fix AutoCAD slow mouse performance - https://support.citrix.com/article/CTX235943
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Mouse" -Name "MouseTimer" -Type "String" -Value "25"
-
-    # Enable UDP Audio - https://www.mycugc.org/blogs/ray-davis1/2020/03/10/how-to-get-udp-audio-in-citrix-vad-working
-    <#
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "AudioBandwidthLimit" -Type "String" -Value "1-"
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "ClientAudio" -Type "String" -Value "true,false"
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "EnableRtpAudio" -Type "String" -Value "true,false"
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "EnableUDPThroughGateway" -Type "String" -Value "true,false"
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "RtpAudioHighestPort" -Type "String" -Value "16509"
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Audio" -Name "RtpAudioLowestPort" -Type "String" -Value "16500"
-    #>
 
     # Copy policy definitions files to lacal computer
     Copy-File -Path $appDestination\Configuration\*.admx, $appDestination\Configuration\en-us -Destination $envWinDir\PolicyDefinitions -Recurse
