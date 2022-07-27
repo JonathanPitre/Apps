@@ -43,17 +43,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -94,7 +94,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -125,40 +125,43 @@ Foreach ($Module in $Modules)
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Microsoft"
-$appName = "Powershell"
-$appName2 = "Core"
+$appName = "PowerShell"
 $appProcesses = @("pwsh")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
-$Evergreen = Get-EvergreenApp -Name MicrosoftPowerShellCore | Where-Object {$_.Architecture -eq $appArchitecture -and $_.URI -match ".msi"}
+$appRelease = "Stable"
+$Evergreen = Get-EvergreenApp -Name MicrosoftPowerShell | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Type -eq "msi" -and $_.Release -eq $appRelease }
 $appVersion = $Evergreen.Version
 $appMajorVersion = $appVersion.Substring(0, 1)
 $appURL = $Evergreen.URI
-$appSetup = $appURL.Split("/")[8]
+$appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\PowerShell\$appMajorVersion"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
-$appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersion
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName $appMajorVersion-.*" -RegEx)
+$appInstalledVersion = (Get-InstalledApplication -Name "$appName $appMajorVersion-.*" -RegEx).DisplayVersion
 $appInstalledVersion = $appInstalledVersion.Substring(0, $appInstalledVersion.Length - 2)
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion)
+{
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup)) {
-        Write-Log -Message "Downloading $appVendor $appName $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
+    {
+        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
 
-    Write-Log -Message "Installing $appVendor $appName $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -166,8 +169,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appVendor $appName $appName2 $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
-Else {
-    Write-Log -Message "$appVendor $appName $appName2 $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+Else
+{
+    Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
