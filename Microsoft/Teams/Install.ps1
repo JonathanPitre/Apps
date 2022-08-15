@@ -381,10 +381,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Execute-Process -Path "$envWinDir\SysWOW64\regsvr32.exe" -Parameters "/s /n /i:user `"$appX86DLL`"" -ContinueOnError $True
 
     # Download required config file
-    If (-Not(Test-Path -Path $appScriptDirectory\$appTeamsConfig))
+    If (-Not(Test-Path -Path $appScriptDirectory\$appConfig))
     {
         Write-Log -Message "Downloading $appVendor $appName config file..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appTeamsConfig
+        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
     }
     Else
     {
@@ -392,7 +392,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Change language into desktop-config.json
-    If (Test-Path -Path $appScriptDirectory\$appTeamsConfig)
+    If (Test-Path -Path $appScriptDirectory\$appConfig)
     {
         $json = Get-Content -Path $appScriptDirectory\$appConfig -Raw | ConvertFrom-Json
         If ($json.currentWebLanguage -ne $appLanguage)
@@ -404,9 +404,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Copy Microsoft Teams config file to the default profile
-    If (-Not(Test-Path -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Teams\$appTeamsConfig"))
+    If (-Not(Test-Path -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Teams\$appConfig"))
     {
-        Copy-File -Path "$appScriptDirectory\$appTeamsConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Teams"
+        Copy-File -Path "$appScriptDirectory\$appConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Teams"
         Write-Log -Message "$appVendor $appName settings were configured for the Default User profile." -Severity 1 -LogType CMTrace -WriteHost $True
     }
     Else
