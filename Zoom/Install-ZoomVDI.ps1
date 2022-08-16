@@ -1,6 +1,6 @@
 # Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
 
-#Requires -Version 5.1
+#Requires -Version 7.0
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
@@ -12,7 +12,7 @@ Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Ca
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Nevergreen") # Modules list
+$Modules = @("Nevergreen") # Modules list
 
 Function Get-ScriptDirectory
 {
@@ -53,8 +53,8 @@ Function Initialize-Module
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
-        {
+        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+        {   
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
             $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
@@ -133,6 +133,7 @@ Filter Get-FileSize
         Else { ($_ / 1pb), 'PB' }
     )
 }
+
 Function Get-Download
 {
     Param (
@@ -185,9 +186,9 @@ $appServices = @("ZoomCptService")
 $appInstallParameters = "/QB"
 # https://support.zoom.us/hc/en-us/articles/201362163-Mass-Installation-and-Configuration-for-Windows
 $appAddParameters = "zNoDesktopShortCut=1"
-$Nevergreen = Get-NevergreenApp Zoom | Where-Object {$_.Name -like "*VDI Client" }
-$appVersion = $Nevergreen.Version
-$appURL = $Nevergreen.URI
+$Evergreen = Get-NevergreenApp Zoom | Where-Object { $_.Name -like "*VDI Client" }
+$appVersion = $Evergreen.Version
+$appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\ZoomVDI\bin"
 $appUninstallerURL = "https://support.zoom.us/hc/en-us/article_attachments/360084068792/CleanZoom.zip"
@@ -196,9 +197,9 @@ $appUninstallerSetup = "CleanZoom.exe"
 $appAdmxVersion = (Get-ZoomAdmx).Version
 $appAdmxUrl = (Get-ZoomAdmx).URI
 $appAdmx = Split-Path -Path $appAdmxUrl -Leaf
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
-$appInstalledVersion = If ($IsAppInstalled) { Get-FileVersion $appDestination\Zoom.exe }
-$appInstalledVersion = $appInstalledVersion.Replace(",", ".").Split(".", 1).Substring(0, $appInstalledVersion.Length - 6)
+[boolean]$IsAppInstalled = [boolean](Get-ItemProperty -Path HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like "*$appName*" })
+$appInstalledVersion = (Get-ItemProperty -Path HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object {$_.DisplayName -like "*$appName*"}).Comments | Sort-Object -Property Version -Descending | Select-Object -First 1
+$appInstalledVersion = $appInstalledVersion.Split("(")[0]
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
@@ -207,28 +208,28 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-Location -Path $appScriptDirectory
     If (-Not(Test-Path -Path $appVersion))
     {
-        New-Folder -Path $appVersion
+        New-Item -Path $appVersion -ItemType Directory -Force | Out-Null
     }
     Set-Location -Path $appVersion
 
     # Download required cleanup tool
     If (-Not(Test-Path -Path $appScriptDirectory\$appUninstallerSetup))
     {
-        Write-Log -Message "Downloading $appShortName Cleanup Tool..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Host -Object "Downloading $appShortName Cleanup Tool..." -ForegroundColor Green -Debug
         Get-Download -Url $appUninstallerURL -Destination $appScriptDirectory -FileName $appUninstallerZip -IncludeStats
         Expand-Archive -Path $appScriptDirectory\$appUninstallerZip -DestinationPath $appScriptDirectory
-        Remove-File -Path $appScriptDirectory\$appUninstallerZip
+        Remove-Item -Path $appScriptDirectory\$appUninstallerZip -Force
     }
     Else
     {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Host -Object "File(s) already exists, download was skipped." -ForegroundColor Yellow -Debug
     }
 
     # Uninstall previous versions
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Host -Object "Uninstalling previous versions..." -ForegroundColor Green -Debug
     Get-Process -Name $appProcesses | Stop-Process -Force
-    Remove-MSIApplications -Name "$appShortName" -Parameters $appInstallParameters -ContinueOnError $True
-    Execute-Process -Path $appScriptDirectory\$appUninstallerSetup -Parameters "/silent"
+    #Start-Process -FilePath msiexec.exe -ArgumentList "/x $appSetup" -PassThru -Wait -ErrorAction Stop | Out-Null
+    Start-Process -FilePath $appScriptDirectory\$appUninstallerSetup -ArgumentList '/silent' -NoNewWindow -Wait
 
     # Remove user install
     $ZoomUsers = Get-ChildItem -Path "$($env:SystemDrive)\Users"
@@ -237,10 +238,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         {
             If (Test-Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\$appShortName\bin\$appShortName.exe")
             {
-                Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\$appShortName" -ContinueOnError $True
-                Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\$($appShortName)VDI" -ContinueOnError $True
-                Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\Windows\Start Menu\Programs\$appShortName" -ContinueOnError $True
-                Remove-Folder -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\Windows\Start Menu\Programs\$appShortName VDI" -ContinueOnError $True
+                Remove-Item -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\$appShortName" -Force -Recurse
+                Remove-Item -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\$($appShortName)VDI" -Force -Recurse
+                Remove-Item -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\Windows\Start Menu\Programs\$appShortName" -Force -Recurse
+                Remove-Item -Path "$($env:SystemDrive)\Users\$($_.Name)\AppData\Roaming\Windows\Start Menu\Programs\$appShortName VDI" -Force -Recurse
             }
         }
         Catch
@@ -250,6 +251,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Remove registry entries from all user profiles - https://www.reddit.com/r/SCCM/comments/fu3q6f/zoom_uninstall_if_anyone_needs_this_information
+    <#
     [scriptblock]$HKCURegistrySettings = {
         Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Zoom" -Recurse -ContinueOnError $True -SID $UserProfile.SID
         Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ZoomUMX" -Recurse -ContinueOnError $True -SID $UserProfile.SID
@@ -258,49 +260,51 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Remove-RegistryKey -Key "HKCU:\Software\Policies\Zoom\Zoom Meetings\VDI" -Recurse -ContinueOnError $True -SID $UserProfile.SID
     }
     Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings
+    #>
 
     # Download latest policy definitions
-    Write-Log -Message "Downloading $appShortName ADMX templates $appAdmxVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Host -Object "Downloading $appShortName ADMX templates $appAdmxVersion..." -ForegroundColor Green -Debug
     Get-Download -Url $appAdmxUrl -Destination $appScriptDirectory $appAdmx -IncludeStats
     Expand-Archive -Path "$appScriptDirectory\$appAdmx" -DestinationPath "$appScriptDirectory\Temp" -Force
-    Remove-File -Path "$appScriptDirectory\$appAdmx"
+    Remove-Item -Path "$appScriptDirectory\$appAdmx" -Force
+
     If (-Not(Test-Path -Path "$appScriptDirectory\PolicyDefinitions")) { New-Folder -Path "$appScriptDirectory\PolicyDefinitions" }
     Move-Item -Path "$appScriptDirectory\Temp\*\*.admx" -Destination "$appScriptDirectory\PolicyDefinitions" -Force
     If (-Not(Test-Path -Path "$appScriptDirectory\PolicyDefinitions\en-US")) { New-Folder -Path "$appScriptDirectory\PolicyDefinitions\en-US" }
     Move-Item -Path "$appScriptDirectory\Temp\*\en-US\*.adml" -Destination "$appScriptDirectory\PolicyDefinitions\en-US" -Force
-    Remove-Folder -Path "$appScriptDirectory\Temp"
-    Write-Log -Message "$appShortName ADMX templates $appAdmxVersion were downloaded successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Remove-Item -Path "$appScriptDirectory\Temp" -Force -Recurse
+    Write-Host -Object "$appShortName ADMX templates $appAdmxVersion were downloaded successfully!" -ForegroundColor Green -Debug
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
     {
-        Write-Log -Message "Downloading $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Host -Object "Downloading $appName $appVersion..." -ForegroundColor Green -Debug
         Get-Download -Url $appUrl -Destination $appScriptDirectory\$appVersion -FileName $appSetup -IncludeStats
     }
     Else
     {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Host -Object "File(s) already exists, download was skipped." -ForegroundColor Yellow -Debug
     }
 
     # Install latest version
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
+    Start-Process -FilePath msiexec.exe -ArgumentList "/i $appSetup $appInstallParameters $appAddParameters" -NoNewWindow -Wait
 
     # Stop and disable unneeded services
-    Stop-ServiceAndDependencies -Name $appServices[0]
-    Set-ServiceStartMode -Name $appServices[0] -StartMode "Manual"
+    Stop-Service -Name $appServices[0] -Force
+    Set-Service -Name $appServices[0] -StartupType Manual
 
     # Configure application shortcut
-    Remove-File -Path "$envCommonDesktop\$appShortName VDI.lnk" -ContinueOnError $True
-    Move-Item -Path "$envCommonStartMenuPrograms\$appShortName VDI\$appShortName VDI.lnk" -Destination "$envCommonStartMenuPrograms\$appShortName VDI.lnk" -Force
-    Remove-Folder -Path "$envCommonStartMenuPrograms\$appShortName VDI" -ContinueOnError $True
+    Remove-Item -Path "$env:PUBLIC\Desktop\$appShortName VDI.lnk" -Force
+    Move-Item -Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\$appShortName VDI\$appShortName VDI.lnk" -Destination "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\$appShortName VDI.lnk" -Force
+    Remove-Item -Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\$appShortName VDI\$appShortName VDI" -Force
 
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Host -Object "$appName $appVersion was installed successfully!" -ForegroundColor Green -Debug
 }
 Else
 {
-    Write-Log -Message "$appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Host -Object "$appName $appInstalledVersion is already installed." -ForegroundColor Yellow -Debug
 }
