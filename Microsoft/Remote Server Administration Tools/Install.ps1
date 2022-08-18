@@ -165,20 +165,32 @@ If ($envOSName -like "*Windows 10*")
 
 If ($envOSName -like "*Windows Server*")
 {
-    If (Get-WindowsFeature -Name GPMC | Where-Object -Property { $_.InstallState -eq "Available" })
+    # Group Policy Management
+    If ((Get-WindowsFeature -Name GPMC | Select-Object -ExpandProperty "InstallState") -ne "Installed")
     {
-        # Group Policy Management
-        Install-WindowsFeature -Name GPMC
+        Install-WindowsFeature -Name GPMC | Out-Null
     }
-    If (Get-WindowsFeature -Name RSAT-AD-Tools | Where-Object -Property { $_.InstallState -eq "Available" })
+    Else
     {
-        # Active Directory Tools
-        Install-WindowsFeature -Name RSAT-AD-Tools
+        Write-Log -Message "Group Policy Management is already installed!" -Severity 2 -LogType CMTrace -WriteHost $True
     }
-    If (Get-WindowsFeature -Name RSAT-DNS-Server | Where-Object -Property { $_.InstallState -eq "Available" })
+    # Active Directory Tools
+    If ((Get-WindowsFeature -Name RSAT-AD-Tools | Select-Object -ExpandProperty "InstallState") -ne "Installed")
     {
-        # DNS tools
-        Install-WindowsFeature -Name RSAT-DNS-Server
+        Install-WindowsFeature -Name RSAT-AD-Tools | Out-Null
+    }
+    Else
+    {
+        Write-Log -Message "Active Directory Tools are already installed!" -Severity 2 -LogType CMTrace -WriteHost $True
+    }
+    # DNS Tools
+    If ((Get-WindowsFeature -Name RSAT-DNS-Server | Select-Object -ExpandProperty "InstallState") -ne "Installed")
+    {
+        Install-WindowsFeature -Name RSAT-DNS-Server | Out-Null
+    }
+    Else
+    {
+        Write-Log -Message "DNS Tools are already installed!" -Severity 2 -LogType CMTrace -WriteHost $True
     }
     # Install-WindowsFeature -Name RSAT-DHCP
 }
