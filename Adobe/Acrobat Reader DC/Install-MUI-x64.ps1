@@ -214,8 +214,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         # Install latest version
         Write-Log -Message "Installing $appVendor $appName $appShortVersion $appLanguage $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-MSI -Action Install -Path $appMsiSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -SkipMSIAlreadyInstalledCheck
+        $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion (64-bit)" -Exact).DisplayVersion
     }
-    ElseIf (($appInstalledVersion) -and (Test-Path -Path $appScriptDirectory\$appPatch))
+
+    If (([version]$appPatchVersion -gt [version]$appInstalledVersion) -and (Test-Path -Path $appScriptDirectory\$appPatch))
     {
         # Install latest patch
         Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
