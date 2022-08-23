@@ -165,8 +165,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Get-Process explorer | Stop-Process -Force
+        If (Test-Path -Path "$appDestination\Uninstall.exe")
+        {
+            Execute-Process -Path "$appDestination\Uninstall.exe" -Parameters "/S" -PassThru
+        }
         Remove-MSIApplications -Name $appName -Parameters $appInstallParameters
-        Execute-Process -Path "$appDestination\Uninstall.exe" -Parameters "/S" -PassThru
     }
 
     # Download required transform file
