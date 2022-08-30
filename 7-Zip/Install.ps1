@@ -43,17 +43,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -94,7 +94,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -132,7 +132,7 @@ $Evergreen = Get-EvergreenApp -Name 7zip | Where-Object { $_.Architecture -eq $a
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
-$appLanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2)
+$appLanguage = "fr"
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/7-Zip/7-Zip-$appLanguage.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appDestination = "$env:ProgramFiles\7-Zip"
@@ -144,7 +144,7 @@ $appInstalledVersion = ((Get-InstalledApplication -Name "$appName").DisplayVersi
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
     # Download latest setup file(s)
@@ -152,7 +152,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "Downloading $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
-        #$Evergreen | Save-EvergreenApp -CustomPath .\
     }
     Else
     {
@@ -165,11 +164,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Get-Process explorer | Stop-Process -Force
-        If (Test-Path -Path "$appDestination\Uninstall.exe")
-        {
-            Execute-Process -Path "$appDestination\Uninstall.exe" -Parameters "/S" -PassThru
-        }
         Remove-MSIApplications -Name $appName -Parameters $appInstallParameters
+        Execute-Process -Path "$appDestination\Uninstall.exe" -Parameters "/S" -PassThru
     }
 
     # Download required transform file
@@ -193,14 +189,33 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Copy-File -Path "$envCommonStartMenuPrograms\$appName\$appName File Manager.lnk" -Destination "$envCommonStartMenuPrograms" -ContinueFileCopyOnError $True
     Remove-Folder -Path "$envCommonStartMenuPrograms\$appName" -ContinueOnError $True
 
-    # Fix 7-Zip security issue - https://www.ghacks.net/2022/04/18/workaround-for-security-issue-in-7-zip-until-it-is-fixed
-    # CVE is now disputed - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-29072
-    #Remove-File -Path "$appDestination\$appName.chm"
+    # Load the Default User registry hive
+    Write-Log -Message "Loading the Default User registry hive..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Start-Sleep -Seconds 5
+    Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "LOAD HKLM\DefaultUser $envSystemDrive\Users\Default\NTUSER.DAT" -WindowStyle Hidden
+
+    # Configure application display language
+    If ($appLanguage -ne "en")
+    {
+        Set-RegistryKey -Key "HKLM:\DefaultUser\Software\7-Zip" -Name "Lang" -Type String -Value $appLanguage
+    }
+    Else
+    {
+        Set-RegistryKey -Key "HKLM:\DefaultUser\Software\7-Zip" -Name "Lang" -Type String -Value "-"
+    }
+
+    # Cleanup (to prevent access denied issue unloading the registry hive)
+    [GC]::Collect()
+    Start-Sleep -Seconds 5
+
+    # Unload the Default User registry hive
+    Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "UNLOAD HKLM\DefaultUser" -WindowStyle Hidden
 
     # Go back to the parent folder
     Set-Location ..
 
     Write-Log -Message "$appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+
 }
 Else
 {
