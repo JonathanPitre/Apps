@@ -192,6 +192,10 @@ If ($appVersion -gt $appInstalledVersion) {
     # Fix AutoCAD slow mouse performance - https://support.citrix.com/article/CTX235943
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Mouse" -Name "MouseTimer" -Type "String" -Value "25"
 
+    # Don't sync keyboard layout
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Keyboard" -Name "LocalIME" -Type "String" -Value "0"
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Keyboard" -Name "KeyboardSyncMode" -Type "String" -Value "(Server Default)"
+
     # Copy policy definitions files to lacal computer
     Copy-File -Path $appDestination\Configuration\*.admx, $appDestination\Configuration\en-us -Destination $envWinDir\PolicyDefinitions -Recurse
 
