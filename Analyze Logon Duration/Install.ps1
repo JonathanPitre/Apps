@@ -164,8 +164,8 @@ $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = (Split-Path -Path $appURL -Leaf).Replace("%20", " ")
 $appDestination = "$env:ProgramFiles\WindowsPowerShell\Scripts"
-$appIconURL = "https://github.com/JonathanPitre/Apps/raw/master/Analyze%20Logon%20Duration/ControlUp.ico"
-$appIcon = "ControlUp.ico"
+$appIconURL = "https://github.com/JonathanPitre/Apps/raw/master/Analyze%20Logon%20Duration/Analyze%20Logon%20Duration.ico"
+$appIcon = (Split-Path -Path $appIconURL -Leaf).Replace("%20", " ")
 [boolean]$IsAppInstalled = [boolean](Test-Path -Path "$appDestination\$appSetup")
 If ($IsAppInstalled)
 {
@@ -206,6 +206,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Install latest version
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Copy-File -Path .\$appSetup -Destination $appDestination
+    Copy-File -Path .\$appIcon -Destination $appDestination
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
@@ -225,7 +226,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Configure application shortcut
-    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appName.lnk" -TargetPath "powershell.exe" -Arguments "-Ex ByPass -NoExit -File `"$appDestination\$appSetup`"" -IconLocation "$appScriptDirectory\$appIcon" -Description "$appName" -WorkingDirectory "$appDestination"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appName.lnk" -TargetPath "powershell.exe" -Arguments "-Ex ByPass -NoExit -File `"$appDestination\$appSetup`"" -IconLocation "$appDestination\$appIcon" -Description "$appName" -WorkingDirectory "$appDestination"
 
     # Go back to the parent folder
     Set-Location ..
