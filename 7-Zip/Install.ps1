@@ -136,8 +136,8 @@ $appLanguage = "fr"
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/7-Zip/7-Zip-$appLanguage.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appDestination = "$env:ProgramFiles\7-Zip"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
-$appInstalledVersion = ((Get-InstalledApplication -Name "$appName").DisplayVersion).Substring(0, 5)
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName.*" -RegEx)
+$appInstalledVersion = ((Get-InstalledApplication -Name "$appName.*" -RegEx).DisplayVersion).Substring(0, 5)
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
