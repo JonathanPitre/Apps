@@ -133,7 +133,7 @@ $appServices = @("AdobeUpdateService")
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat DC/AcroProx64.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
-$appAddParameters = "IGNOREVCRT64=1 EULA_ACCEPT=YES UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1 ROAMIDENTITY=1 ROAMLICENSING=1"
+$appAddParameters = "IGNOREVCRT64=1 EULA_ACCEPT=YES UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1 ROAMIDENTITY=1 ROAMLICENSING=1 DISABLE_FIU_CHECK=1 TRANSITION_INSTALL_MODE=3"
 $Evergreen = Get-EvergreenApp -Name AdobeAcrobatDC | Where-Object { $_.Type -eq $appName -and $_.Architecture -eq $appArchitecture }
 $appVersion = $Evergreen.Version
 $appSetupURL = "https://trials.adobe.com/AdobeProducts/APRO/Acrobat_HelpX/win32/Acrobat_DC_Web_x64_WWMUI.zip"
