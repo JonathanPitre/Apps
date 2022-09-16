@@ -126,40 +126,40 @@ Foreach ($Module in $Modules)
 
 $appVendor = "Adobe"
 $appName = "Acrobat"
-$appName2 = "Reader"
-$appShortVersion = "DC"
+$appProduct = "Reader"
+$appTrack = "DC"
 $appLanguage = "MUI"
 $appArchitecture = "x64"
 $appProcesses = @("Acrobat", "AdobeCollabSync", "AcroCEF", "acrobat_sl")
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat%20Reader%20DC/AcroProx64.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
-$appAddParameters = "EULA_ACCEPT=YES DISABLE_CACHE=1 DISABLE_PDFMAKER=YES DISABLEDESKTOPSHORTCUT=0 UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1"
+$appAddParameters = "EULA_ACCEPT=YES DISABLE_CACHE=1 DISABLE_PDFMAKER=YES DISABLEDESKTOPSHORTCUT=0 UPDATE_MODE=0 DISABLE_ARM_SERVICE_INSTALL=1 LANG_LIST=All"
 $Evergreen = Get-EvergreenApp -Name AdobeAcrobatReaderDC | Where-Object { $_.Language -eq $appLanguage -and $_.Architecture -eq $appArchitecture }
 $appVersion = $Evergreen.Version
 $appSetupURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appSetupURL -Leaf
 $appMsiSetup = "AcroPro.msi"
-$EvergreenPatch = Get-EvergreenApp -Name AdobeAcrobatDC | Where-Object { $_.Type -eq $appName2 + $appLanguage -and $_.Architecture -eq $appArchitecture }
+$EvergreenPatch = Get-EvergreenApp -Name AdobeAcrobat | Where-Object { $_.Product -eq $appProduct -and $_.Track -eq $appTrack -and $_.Language -eq "Multi" -and $_.Architecture -eq $appArchitecture }
 $appPatchVersion = $EvergreenPatch.Version
 $appPatchURL = $EvergreenPatch.URI
 $appPatch = Split-Path -Path $appPatchURL -Leaf
-$appDestination = "$env:ProgramFiles\$appVendor\$appName $appShortVersion\$appName"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.* $appShortVersion .*" -RegEx)
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion (64-bit)" -Exact).DisplayVersion
+$appDestination = "$env:ProgramFiles\$appVendor\$appName $appTrack\$appName"
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.* $appTrack .*" -RegEx)
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appTrack (64-bit)" -Exact).DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ([version]$appVersion -gt [version]$appInstalledVersion)
+If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptDirectory
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appMsiSetup))
     {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appLanguage $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appProduct $appTrack $appLanguage $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appSetupURL -OutFile $appSetup
-        Write-Log -Message "Extracting $appVendor $appName $appShortVersion $appLanguage $appArchitecture $appVersion MSI..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Extracting $appVendor $appName $appProduct $appTrack $appLanguage $appArchitecture $appVersion MSI..." -Severity 1 -LogType CMTrace -WriteHost $True
         New-Folder -Path "$appScriptDirectory\MSI"
         # Extract MSI
         Execute-Process -Path .\$appSetup -Parameters "-sfx_o`"$appScriptDirectory\MSI`" -sfx_ne"
@@ -175,7 +175,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Download latest patch
     If (-Not(Test-Path -Path $appScriptDirectory\$appPatch))
     {
-        Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture $appPatchVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appProduct $appTrack $appArchitecture $appPatchVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appPatchURL -OutFile $appPatch
         # Modify setup.ini according to latest patch
         If ((Test-Path -Path $appScriptDirectory\$appPatch) -and (Test-Path -Path $appScriptDirectory\$appPatch\setup.ini))
@@ -195,7 +195,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If (($IsAppInstalled) -and (Test-Path -Path $appScriptDirectory\$appMsiSetup))
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Remove-MSIApplications -Name "$appVendor $appName* $appShortVersion*" -WildCard -Exact
+        Remove-MSIApplications -Name "$appVendor $appName* $appTrack*" -WildCard -Exact
     }
 
     If ((Test-Path -Path "$appScriptDirectory\$appMsiSetup") -and (Test-Path -Path $appScriptDirectory\$appPatch))
@@ -203,7 +203,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         # Download required transform file
         If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
         {
-            Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture transform..." -Severity 1 -LogType CMTrace -WriteHost $True
+            Write-Log -Message "Downloading $appVendor $appName $appProduct $appTrack $appArchitecture transform..." -Severity 1 -LogType CMTrace -WriteHost $True
             Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptDirectory\$appTransform
         }
         Else
@@ -212,16 +212,16 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         }
 
         # Install latest version
-        Write-Log -Message "Installing $appVendor $appName $appShortVersion $appLanguage $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Installing $appVendor $appName $appProduct $appTrack $appLanguage $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-MSI -Action Install -Path $appMsiSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -SkipMSIAlreadyInstalledCheck
-        $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion (64-bit)" -Exact).DisplayVersion
+        $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appTrack (64-bit)" -Exact).DisplayVersion
     }
 
     If (([version]$appPatchVersion -gt [version]$appInstalledVersion) -and (Test-Path -Path $appScriptDirectory\$appPatch))
     {
         # Install latest patch
         Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
-        Write-Log -Message "Installing $appVendor $appName $appShortVersion $appArchitecture $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Installing $appVendor $appName $appProduct $appTrack $appArchitecture $appPatchVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-MSP -Path $appPatch
     }
     Else
@@ -249,9 +249,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appVendor $appName $appShortVersion $appLanguage $appArchitecture $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appProduct $appTrack $appLanguage $appArchitecture $appPatchVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
 {
-    Write-Log -Message "$appVendor $appName $appShortVersion $appArchitecture $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appProduct $appTrack $appLanguage $appArchitecture $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
