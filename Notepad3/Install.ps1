@@ -12,7 +12,7 @@ Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Ca
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Nevergreen") # Modules list
+$Modules = @("PSADT", "Evergreen") # Modules list
 
 Function Get-ScriptDirectory
 {
@@ -43,17 +43,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -94,7 +94,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -130,9 +130,9 @@ $appProcesses = @("Notepad3", "minipath", "notepad")
 $appInstallParameters = "/ALLUSERS /CLOSEAPPLICATIONS /LOADINF=`"$appScriptDirectory\Notepad3.inf`" /SILENT /LOG=`"$appScriptDirectory\$appName.log`""
 $appArchitecture = "x64"
 $appPreferredLanguage = "fr-FR"
-$Nevergreen = Get-NevergreenApp -Name $appVendor$appName | Where-Object { $_.Architecture -eq $appArchitecture}
-$appVersion = $Nevergreen.Version
-$appURL = $Nevergreen.URI
+$Evergreen = Get-EvergreenApp -Name $appVendor$appName | Where-Object { $_.Architecture -eq $appArchitecture }
+$appVersion = $Evergreen.Version
+$appURL = $Evergreen.URI
 $appZip = "$($appName)_$($appVersion)_Setup.zip"
 $appSetup = "$($appName)_$($appVersion)_Setup.exe"
 $appDestination = "$env:ProgramFiles\Notepad3"
@@ -170,11 +170,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Notepad3" -Key "Notepad3.ini" -Value "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
         Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings" -Key "SettingsVersion" -Value "5"
         Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings" -Key "AutoCompleteWords" -Value "true"
+        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Suppressed Messages" -Key "MsgSaveSettingsInfo" -Value "1"
         Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings2" -Key "PreferredLanguageLocaleName" -Value "$appPreferredLanguage"
         Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings2" -Key "ReuseWindow" -Value "true"
         Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings2" -Key "SingleFileInstance" -Value "1"
     }
-    #Copy-File -Path "$appScriptDirectory\$appname.ini" -Destination "$envProgramFiles\$appName"
+    # Copy settings to Default user profile
+    Copy-File -Path "$appDestination\Notepad3.ini" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\Rizonesoft\Notepad3"
 
     # Go back to the parent folder
     Set-Location ..
