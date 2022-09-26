@@ -122,37 +122,12 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
-Function Get-ConnectionExperienceIndicator
-{
-    <#
-    .SYNOPSIS
-    Returns latest version of Connection Experience Indicator
-    #>
-    try
-    {
-        $GitHubRepo = "rdanalyzer/connection-experience-indicator"
-        $Releases = "https://api.github.com/repos/$GitHubRepo/releases"
-        $Version = (Invoke-WebRequest -Uri $Releases -UseBasicParsing | ConvertFrom-Json)[0].tag_name
-        $URL = (Invoke-WebRequest -Uri $Releases -UseBasicParsing | ConvertFrom-Json)[0].assets.browser_download_url
-        if ($Version -and $URL)
-        {
-            [PSCustomObject]@{
-                Version      = ($Version).Trim("v")
-                URI          = $URL
-            }
-        }
-    }
-    catch
-    {
-        Throw $_
-    }
-}
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appName = "Connection Experience Indicator"
 $appProcesses = @("ExperienceIndicator")
-$Evergreen = Get-ConnectionExperienceIndicator
+$Evergreen = Get-EvergreenApp -Name ConnectionExperienceIndicator
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
