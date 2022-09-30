@@ -206,7 +206,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Install latest version
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Copy-File -Path .\$appSetup -Destination $appDestination
-    Copy-File -Path .\$appIcon -Destination $appDestination
+    Copy-File -Path $appScriptDirectory\$appIcon -Destination $appDestination
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
