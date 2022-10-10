@@ -128,13 +128,11 @@ $appVendor = "Rizonesoft"
 $appName = "Notepad3"
 $appProcesses = @("Notepad3", "minipath", "notepad")
 $appInstallParameters = "/ALLUSERS /CLOSEAPPLICATIONS /LOADINF=`"$appScriptDirectory\Notepad3.inf`" /SILENT /LOG=`"$appScriptDirectory\$appName.log`""
-$appArchitecture = "x64"
 $appPreferredLanguage = "fr-FR"
-$Evergreen = Get-EvergreenApp -Name $appVendor$appName | Where-Object { $_.Architecture -eq $appArchitecture }
+$Evergreen = Get-EvergreenApp -Name $appVendor$appName | Where-Object { $_.Type -eq "exe" -and $_.URI -notlike "*x86*" -and $_.URI -notlike "*paf*" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appZip = Split-Path -Path $appURL -Leaf
-$appSetup = "$($appName)_$($appVersion)_Setup.exe"
+$appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\Notepad3"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersion
@@ -150,9 +148,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
     {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
-        Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appVersion
-        Remove-File -Path $appZip
+        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else
     {
