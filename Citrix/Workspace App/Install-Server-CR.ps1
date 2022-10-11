@@ -141,7 +141,7 @@ $appInstalledVersion = ($appInstalled).DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ($appVersion -gt $appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-Location -Path $appScriptDirectory
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion
