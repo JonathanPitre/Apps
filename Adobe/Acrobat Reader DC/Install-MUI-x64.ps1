@@ -145,8 +145,8 @@ $appPatchVersion = $EvergreenPatch.Version
 $appPatchURL = $EvergreenPatch.URI
 $appPatch = Split-Path -Path $appPatchURL -Leaf
 $appDestination = "$env:ProgramFiles\$appVendor\$appName $appTrack\$appName"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.* $appTrack .*" -RegEx)
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appTrack (64-bit)" -Exact).DisplayVersion
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.*" -RegEx)
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName.* (.*-bit)" -RegEx).DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
