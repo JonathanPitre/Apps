@@ -43,17 +43,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -94,7 +94,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -190,7 +190,7 @@ https://github.com/asheroto/Search-Registry
         foreach ($CurrentPath in $Path)
         {
             Get-ChildItem $CurrentPath -Recurse:$Recurse |
-                ForEach-Object {
+            ForEach-Object {
                 $Key = $_
 
                 if ($KeyNameRegex)
@@ -253,7 +253,7 @@ $appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Mic
 $appConfig = Split-Path -Path $appConfigURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
-$Evergreen = Get-EvergreenApp $appVendor$appName | Where-Object {$_.Ring -eq $appRing -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi"}
+$Evergreen = Get-EvergreenApp $appVendor$appName | Where-Object { $_.Ring -eq $appRing -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
@@ -286,7 +286,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Classes\CLSID\{00425F68-FFC1-445F-8EDF-EF78B84BA1C7}" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Classes\Installer\Products\AAB6F137689A4A549863C7A3AAAA67B0" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\Folders" -Name "C:\Program Files (x86)\Teams Installer\"
-    $RegKey = Search-Registry -Path "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall" -Recurse -ValueDataRegex ".*Teams.*Installer.*"  | Select-Object -ExpandProperty Key
+    $RegKey = Search-Registry -Path "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall" -Recurse -ValueDataRegex ".*Teams.*Installer.*" | Select-Object -ExpandProperty Key
     Remove-RegistryKey -Key $RegKey
     $RegKeys = Search-Registry -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Installer\UserData\S-1-5-18\Components" -Recurse -ValueDataRegex ".*Teams.*Installer.*" | Select-Object -ExpandProperty Key
     foreach ($RegKey in $RegKeys)
@@ -360,6 +360,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters -Transform "$appScriptDirectory\$appTransform"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Kill autolauch after install
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     # Remove unneeded applications from running at start-up
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "TeamsMachineUninstallerLocalAppData" -ContinueOnError $True
@@ -461,7 +464,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Add Windows Firewall rule(s) - https://docs.microsoft.com/en-us/microsoftteams/get-clients#windows
     If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName"))
     {
-        New-NetFirewallRule -Displayname "$appVendor $appName" -Direction Inbound -Program "$appDestination\$($appProcesses[0]).exe" -Profile 'Domain, Private, Public'
+        New-NetFirewallRule -DisplayName "$appVendor $appName" -Direction Inbound -Program "$appDestination\$($appProcesses[0]).exe" -Profile 'Domain, Private, Public'
     }
 
     # Go back to the parent folder
