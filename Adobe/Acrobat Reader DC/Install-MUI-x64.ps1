@@ -246,6 +246,9 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
     Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "TTToSysPrintDisabled" -Value "1"
     Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "T1ToTTDisabled" -Value "1"
 
+    # Configure application shortcut
+    Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
+
     # Go back to the parent folder
     Set-Location ..
 
