@@ -200,6 +200,7 @@ If ($appVersion -gt $appInstalledVersion)
     If ($SessionName -like "*ica*")
     {
         Write-Log -Message "$appVendor $appName2 CANNOT BE INSTALLED from a Citrix session, please run install script from CONSOLE SESSION!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Exit-Script
 
     }
 

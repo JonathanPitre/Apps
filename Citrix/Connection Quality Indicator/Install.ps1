@@ -12,7 +12,7 @@ Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Ca
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Evergreen") # Modules list
+$Modules = @("PSADT") # Modules list
 
 Function Get-ScriptDirectory
 {
@@ -150,6 +150,7 @@ Function Get-CitrixCQI
         if ($Version -and $URL)
         {
             [PSCustomObject]@{
+                Name    = 'Citrix Connection Quality Indicator'
                 Version = $Version
                 URI     = $URL
             }
@@ -157,77 +158,21 @@ Function Get-CitrixCQI
     }
 }
 
-Function Get-CitrixDownload
+Function Get-SessionName
 {
-    <#
-.SYNOPSIS
-  Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
-.DESCRIPTION
-  Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
-  Ryan Butler 2/6/2020 https://github.com/ryancbutler/Citrix/tree/master/XenDesktop/AutoDownload
-.PARAMETER dlNumber
-  Number assigned to binary download
-.PARAMETER dlEXE
-  File to be downloaded
-.PARAMETER dlPath
-  Path to store downloaded file. Must contain following slash (C:\Temp\)
-.PARAMETER CitrixUserName
-  Citrix.com username
-.PARAMETER CitrixPassword
-  Citrix.com password
-.EXAMPLE
-  Get-CitrixDownload -dlNumber "16834" -dlEXE "Citrix_Virtual_Apps_and_Desktops_7_1912.iso" -CitrixUserName "MyCitrixUsername" -CitrixPassword "MyCitrixPassword" -dlPath "C:\Temp\"
-#>
-    Param(
-        [Parameter(Mandatory = $true)]$dlNumber,
-        [Parameter(Mandatory = $true)]$dlEXE,
-        [Parameter(Mandatory = $true)]$dlPath,
-        [Parameter(Mandatory = $true)]$CitrixUserName,
-        [Parameter(Mandatory = $true)]$CitrixPassword
-    )
-    #Initialize Session
-    Invoke-WebRequest "https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response" -SessionVariable websession -UseBasicParsing | Out-Null
-
-    #Set Form
-    $Form = @{
-        "persistent" = "on"
-        "userName"   = $CitrixUserName
-        "password"   = $CitrixPassword
-    }
-
-    #Authenticate
-    Try
+    [OutputType([System.Management.Automation.PSObject])]
+    [CmdletBinding()]
+    Param ()
+    $SessionInfo = qwinsta $env:USERNAME
+    If ($SessionInfo)
     {
-        Invoke-WebRequest -Uri ("https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response") -WebSession $websession -Method POST -Body $form -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -ErrorAction Stop | Out-Null
-    }
-    Catch
-    {
-        If ($_.Exception.Response.StatusCode.Value__ -eq 500)
+        ForEach ($line in $SessionInfo[1..$SessionInfo.Count])
         {
-            Write-Verbose "500 returned on auth. Ignoring"
-            Write-Verbose $_.Exception.Response
-            Write-Verbose $_.Exception.Message
-        }
-        Else
-        {
-            Throw $_
+            $tmp = $line.split(" ") | Where-Object { $_.Length -gt 0 }
+            $SessionName = $tmp[0].Trim(">")
+            Return $SessionName
         }
     }
-
-    $dlURL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=${dlNumber}&URL=https://downloads.citrix.com/${dlNumber}/${dlEXE}"
-    $Download = Invoke-WebRequest -Uri $dlURL -WebSession $WebSession -UseBasicParsing -Method GET
-    $Webform = @{
-        "chkAccept"            = "on"
-        "clbAccept"            = "Accept"
-        "__VIEWSTATEGENERATOR" = ($Download.InputFields | Where-Object { $_.id -eq "__VIEWSTATEGENERATOR" }).value
-        "__VIEWSTATE"          = ($Download.InputFields | Where-Object { $_.id -eq "__VIEWSTATE" }).value
-        "__EVENTVALIDATION"    = ($Download.InputFields | Where-Object { $_.id -eq "__EVENTVALIDATION" }).value
-    }
-
-    $OutFile = ($dlPath + $dlEXE)
-    #Download
-    Invoke-WebRequest -Uri $dlURL -WebSession $WebSession -Method POST -Body $Webform -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -OutFile $OutFile
-    return $OutFile
 }
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
@@ -241,8 +186,8 @@ $appVersion = $Evergreen.Version
 $appURL = $Evergreen.Uri
 $appZip = Split-Path -Path $appURL -Leaf
 $appSetup = "CitrixCQI.msi"
-$appCitrixKB = "220774"
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\HDX\bin\Connection Quality Indicator"
+$sessionName = Get-SessionName
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion)
 
@@ -254,54 +199,41 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
+    # Detect if running from a Citrix session
+    If ($SessionName -like "*ica*")
+    {
+        Write-Log -Message "$appVendor $appName2 CANNOT BE INSTALLED from a Citrix session, please run install script from CONSOLE SESSION!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Exit-Script
+
+    }
+
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
     {
-        Write-Log -Message "Signing in with your Citrix account..." -Severity 1 -LogType CMTrace -WriteHost $True
-        $CitrixUserName = Read-Host -Prompt "Please supply your Citrix.com username"
-        $CitrixPassword1 = Read-Host -Prompt "Please supply your Citrix.com password" -AsSecureString
-        $CitrixPassword2 = Read-Host -Prompt "Please supply your Citrix.com password once more" -AsSecureString
-        $CitrixPassword1Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword1))
-        $CitrixPassword2Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword2))
-
-        If ($CitrixPassword1Temp -ne $CitrixPassword2Temp)
-        {
-            Write-Log -Message "The supplied Citrix passwords missmatch!" -Severity 3 -LogType CMTrace -WriteHost $True
-            Exit-Script -ExitCode 1
-        }
-
-        Remove-Variable -Name CitrixPassword1Temp, CitrixPassword2Temp
-        $CitrixCredentials = New-Object System.Management.Automation.PSCredential ($CitrixUserName, $CitrixPassword1)
-
-        # Verify Citrix credentials
-        $CitrixUserName = $CitrixCredentials.UserName
-        $CitrixPassword = $CitrixCredentials.GetNetworkCredential().Password
-
         # Download latest version
-        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-CitrixDownload -CitrixKB $appCitrixKB -CitrixFile $appZip -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -FilePath "$appScriptDirectory\$appVersion"
-        Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appVersion
-        Remove-File -Path $appZip
+        Write-Log -Message "$appVendor $appName $appVersion MUST BE DOWNLOADED MANUALLY FIRST!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Start-Sleep -Seconds 5
+        Exit-Script
     }
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Get-Process -Name $appProcesses | Stop-Process -Force
+
+        Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
+
+        Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+        # Configure application shortcut
+        New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor $appName.lnk" -TargetPath "$appDestination\Citrix.CQI.exe"
+
+        # Go back to the parent folder
+        Set-Location ..
+
+        Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     }
-
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcesses | Stop-Process -Force
-
-    Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
-
-    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
-
-    # Configure application shortcut
-    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor $appName.lnk" -TargetPath "$appDestination\Citrix.CQI.exe"
-
-    # Go back to the parent folder
-    Set-Location ..
-
-    Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 }
 Else
