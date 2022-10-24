@@ -120,6 +120,18 @@ Foreach ($Module in $Modules)
     Initialize-Module -Module $Module
 }
 
+# Download required config file
+Set-Location -Path $appScriptDirectory
+If (-Not(Test-Path -Path $appScriptDirectory\$appConfig))
+{
+    Write-Log -Message "Downloading $appVendor $appName Config.." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
+}
+Else
+{
+    Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+}
+
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 Function Get-MicrosoftOfficeUninstaller
@@ -218,7 +230,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Get-Process -Name $appProcesses | Stop-Process -Force
     # Download cleanup script
     Get-MicrosoftOfficeUninstaller
-    & $appUninstallerDir\-RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true -ProductsToRemove $appName
+    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true -ProductsToRemove $appName
 
     # Download latest version
     If (-Not(Test-Path -Path .\$appVersion)) {New-Folder -Path $appVersion}
