@@ -126,7 +126,7 @@ Foreach ($Module in $Modules)
 
 $appVendor = "Microsoft"
 $appName = "PowerShell"
-$appProcesses = @("pwsh")
+$appProcesses = @("pwsh", "mmc", "netprofm", "NlaSvc")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
 $appRelease = "Stable"
@@ -150,7 +150,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
     {
-        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
     Else
