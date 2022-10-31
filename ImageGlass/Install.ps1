@@ -43,17 +43,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -94,7 +94,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -128,8 +128,9 @@ $appName = "ImageGlass"
 $appProcesses = @("ImageGlass")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
-$Evergreen = Get-EvergreenApp $appName | Where-Object { $_.Architecture -eq $appArchitecture -and $_.URI -notmatch "deleted"}
+$Evergreen = Get-EvergreenApp $appName | Where-Object { $_.Architecture -eq $appArchitecture -and $_.URI -notmatch "deleted" }
 $appVersion = $Evergreen.Version
+$appShortVersion = $appVersion.Substring(0, 3)
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\ImageGlass"
@@ -139,8 +140,6 @@ $appConfigAdminURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/maste
 $appConfigAdmin = Split-Path -Path $appConfigAdminURL -Leaf
 $appConfigDefaultURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/ImageGlass/igconfig.default.xml"
 $appConfigDefault = Split-Path -Path $appConfigDefaultURL -Leaf
-$appThemeURL = "https://github.com/ImageGlass/theme/releases/download/8.2/Colibre-24.Amir-H-Jahangard.igtheme"
-$appTheme = Split-Path -Path $appThemeURL -Leaf
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName" -Exact)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName" -Exact).DisplayVersion
 
@@ -149,7 +148,7 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName" -Exact).Displa
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptDirectory
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -211,10 +210,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "NoNewAppAlert" -Type DWord -Value "1"
 
     # Register file associations for images - https://imageglass.org/docs/command-line-utilities
-    Execute-Process -Path "$appDestination\igtasks.exe" -Parameters "regassociations *.b64;*.bay;*.bmp;*.cap;*.cr2;*.crw;*.cur;*.cut;*.dcr;*.dcs;*.dds;*.dib;*.dng;*.drf;*.eip;*.emf;*.erf;*.exif;*.exr;*.fff;*.gif;*.gpr;*.hdr;*.heic;*.ico;*.iiq;*.jfif;*.jpe;*.jpeg;*.jpg;*.jxr;*.k25;*.kdc;*.mdc;*.mef;*.mos;*.mrw;*.nef;*.nrw;*.orf;*.pbm;*.pcx;*.pef;*.pgm;*.png;*.ppm;*.psb;*.psd;*.ptx;*.pxn;*.r3d;*.raf;*.raw;*.rw2;*.rwl;*.rwz;*.sr2;*.srf;*.srw;*.svg;*.tga;*.tif;*.tiff;*.wdp;*.webp;*.wpg;*.x3f;*.xbm" -IgnoreExitCodes
+    Execute-Process -Path "$appDestination\igtasks.exe" -Parameters "regassociations *.avif;*.b64;*.bmp;*.cur;*.cut;*.dds;*.dib;*.emf;*.exif;*.gif;*.heic;*.heif;*.ico;*.jfif;*.jp2;*.jpe;*.jpeg;*.jpg;*.jxl;*.pbm;*.pcx;*.pgm;*.png;*.ppm;*.psb;*.svg;*.tif;*.tiff;*.webp;*.wmf;*.wpg;*.xbm;*.xpm;*.exr;*.hdr;*.psd;*.tga;*.3fr;*.ari;*.arw;*.bay;*.crw;*.cr2;*.cr3;*.cap;*.dcs;*.dcr;*.dng;*.drf;*.eip;*.erf;*.fff;*.gpr;*.iiq;*.k25;*.kdc;*.mdc;*.mef;*.mos;*.mrw;*.nef;*.nrw;*.obm;*.orf;*.pef;*.ptx;*.pxn;*.qoi;*.r3d;*.raf;*.raw;*.rwl;*.rw2;*.rwz;*.sr2;*.srf;*.srw;*.x3f;*.fits;*.xv;*.mjpeg;*.viff; --no-ui" -IgnoreExitCodes *
 
     # Install language pack - https://imageglass.org/docs/command-line-utilities
-    Copy-File -Path $appScriptDirectory\*8.5.iglang -Destination $appDestination\Languages
+    Copy-File -Path $appScriptDirectory\*$appShortVersion.iglang -Destination $appDestination\Languages
 
     # Copy admin configs - https://imageglass.org/docs/app-configs
     Copy-File -Path $appScriptDirectory\*.xml -Destination $appDestination

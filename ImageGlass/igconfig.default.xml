@@ -25,7 +25,8 @@
       <Item key="IsScrollbarsVisible" value="False" />
       <Item key="IsSaveAfterRotating" value="False" />
       <Item key="IsPreserveModifiedDate" value="True" />
-      <Item key="IsDisplayBasenameOfImage" value="False" />
+      <Item key="IsNewVersionAvailable" value="False" />
+      <Item key="IsDisplayBasenameOfImage" value="True" />
       <Item key="IsCenterToolbar" value="True" />
       <Item key="IsOpenLastSeenImage" value="False" />
       <Item key="IsApplyColorProfileForAll" value="False" />
@@ -37,10 +38,10 @@
       <Item key="IsShowingHiddenImages" value="False" />
       <Item key="IsShowColorPickerOnStartup" value="False" />
       <Item key="IsShowPageNavOnStartup" value="False" />
-      <Item key="IsShowPageNavAuto" value="False" />
+      <Item key="IsShowPageNavAuto" value="True" />
       <Item key="IsWindowFit" value="False" />
       <Item key="IsCenterWindowFit" value="True" />
-      <Item key="IsShowToast" value="True" />
+      <Item key="IsShowToast" value="False" />
       <Item key="IsUseTouchGesture" value="True" />
       <Item key="IsHideTooltips" value="False" />
       <Item key="IsExifToolAlwaysOnTop" value="True" />
@@ -50,6 +51,7 @@
       <Item key="IsHideThumbnailBarInFullscreen" value="False" />
       <Item key="IsContinueRunningBackground" value="False" />
       <Item key="IsStartWithOs" value="False" />
+      <Item key="AutoDisplayNewImageInFolder" value="False" />
       <Item key="FirstLaunchVersion" value="5" />
       <Item key="SlideShowInterval" value="5" />
       <Item key="SlideShowIntervalTo" value="5" />
@@ -60,6 +62,8 @@
       <Item key="ZoomLockValue" value="-1" />
       <Item key="ToolbarIconHeight" value="22" />
       <Item key="ImageEditQuality" value="100" />
+      <Item key="ImageVerticalPanningSpeed" value="40" />
+      <Item key="ImageHorizontalPanningSpeed" value="40" />
       <Item key="FrmMainWindowState" value="Normal" />
       <Item key="FrmSettingsWindowState" value="Normal" />
       <Item key="FrmExifToolWindowState" value="Normal" />
@@ -73,15 +77,15 @@
       <Item key="ZoomOptimizationMethod" value="Auto" />
       <Item key="ToolbarPosition" value="Top" />
       <Item key="AfterEditingAction" value="Nothing" />
-      <Item key="ColorProfile" value="sRGB" />
+      <Item key="ColorProfile" value="CurrentMonitorProfile" />
       <Item key="ToolbarButtons" value="btnBack;btnNext;Separator;btnRotateLeft;btnRotateRight;btnFlipHorz;btnFlipVert;btnCrop;Separator;btnAutoZoom;btnZoomLock;btnScaletoWidth;btnScaletoHeight;btnScaleToFit;btnScaleToFill;Separator;btnOpen;btnRefresh;Separator;btnWindowFit;btnFullScreen;btnSlideShow;Separator;btnThumb;btnCheckedBackground;btnDelete;" />
       <Item key="ExifToolExePath" value="" />
       <Item key="ExifToolCommandArgs" value="" />
       <Item key="ZoomLevels" value="5;10;15;20;30;40;50;60;70;80;90;100;125;150;175;200;250;300;350;400;500;600;700;800;1000;1200;1500;1800;2100;2500;3000;3500" />
       <Item key="SinglePageFormats" value="*.heic;*.heif;*.psd;" />
-      <Item key="KeyComboActions" value="LeftRight:PrevNextImage;PageUpDown:PrevNextImage;SpaceBack:PauseSlideshow;UpDown:PauseSlideshow;" />
+      <Item key="KeyComboActions" value="LeftRight:PrevNextImage;PageUpDown:PrevNextImage;SpaceBack:PauseSlideshow;UpDown:PanUpDown;" />
       <Item key="BackgroundColor" value="#232A30" />
-      <Item key="Language" value="French.v8.5.iglang" />
+      <Item key="Language" value="French.v8.7.iglang" />
       <Item key="Theme" value="Kobe" />
     </Content>
   </Configuration>
