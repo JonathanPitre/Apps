@@ -153,6 +153,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Remove-MSIApplications -Name $appName -Parameters $appInstallParameters -ContinueOnError $True
+    Remove-Folder "$appDestination" -ContinueOnError $True
+    Remove-Folder "$envAppData\$appName" -ContinueOnError $True
     Get-Process -Name $appProcesses | Stop-Process -Force
 
     # Download latest setup file(s)
