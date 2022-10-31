@@ -156,7 +156,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    
     # Show Welcome Message, Close apps automatically
     Show-InstallationWelcome -CloseApps $appProcesses -BlockExecution -Silent
 
@@ -164,14 +163,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         # Show Progress Message (With a Message to Indicate the Application is Being Uninstalled)
-        Show-InstallationProgress -StatusMessage "Uninstalling previous version. Please Wait..."
+        #Show-InstallationProgress -StatusMessage "Uninstalling previous version. Please Wait..."
         # Uninstall previous versions
         Remove-MSIApplications -Name $appName -Parameters $appInstallParameters
     }
 
     # Install latest version
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Show-InstallationProgress "Installing $appName $appVersion. This may take some time. Please wait..."
+    #Show-InstallationProgress "Installing $appName $appVersion. This may take some time. Please wait..."
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
