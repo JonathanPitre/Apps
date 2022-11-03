@@ -225,6 +225,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Configure application shortcut
     Remove-File -Path $envCommonDesktop\$appName.lnk -ContinueOnError $True
+    Copy-File -Path $envCommonStartMenuPrograms\$appName\$appName.lnk -Destination $envCommonStartMenuPrograms -ContinueOnError $True
+    Remove-Folder -Path $envCommonStartMenuPrograms\$appName -ContinueOnError $True
 
     # Go back to the parent folder
     Set-Location ..
