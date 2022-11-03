@@ -114,8 +114,15 @@
     <Exclude Copy="0">AppData\Local\Microsoft\Notifications</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office\15.0\Lync\Tracing</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office\15.0\OfficeFileCache</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\AddInClassifierCache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\Lync\Tracing</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\MruServiceCache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\OfficeFileCache</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\ResourceInfoCache</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\SmartLookupCache</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\TapCache</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\WebServiceCache</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\Wef</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office365\Powershell</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\OneDrive\logs</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\OneDrive\setup\logs</Exclude>
@@ -200,6 +207,7 @@
     <Exclude Copy="0">AppData\Roaming\Dropbox</Exclude>
     <Exclude Copy="0">AppData\Roaming\Grammarly\Updates</Exclude>
     <Exclude Copy="0">AppData\Roaming\ICAClient\Cache</Exclude>
+    <Exclude Copy="0">AppData\Roaming\Lieben Consultancy</Exclude>
     <Exclude Copy="0">AppData\Roaming\Macromedia\Flash Player\#SharedObjects</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft Teams\logs</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Installer</Exclude>
