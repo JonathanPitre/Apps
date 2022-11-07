@@ -333,6 +333,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Set-RegistryKey -Key $regKey\$regKeyProcess -Value "(Default)"
     }
 
+    # Disable autoupdate
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" -Name "Update{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" -Value "0" -Type DWord
+    # Disable per-user installation
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" -Name "Install{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" -Value "4" -Type DWord
+
     # Go back to the parent folder
     Set-Location ..
 
