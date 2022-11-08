@@ -428,6 +428,7 @@ Function Get-MicrosoftFSLogixApps
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Microsoft"
+$appShortName = "FSLogix"
 $appName = "FSLogix Apps Java RuleEditor"
 $appSetup = "FSLogixAppsJavaRuleEditorSetup.exe"
 $appProcesses = @("JavaRuleEditor")
