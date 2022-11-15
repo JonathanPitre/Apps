@@ -218,7 +218,6 @@
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\databases</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\DownloadedUpdate</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\GPUCache</Exclude>
-    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Local Storage</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\logs</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\media-stack</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\meeting-addin\Cache</Exclude>
