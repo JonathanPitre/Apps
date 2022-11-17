@@ -419,7 +419,7 @@ Function Get-MicrosoftFSLogixApps
             }
         }
 
-        Get-EvergreenApp MicrosoftFSLogixApps
+        Get-EvergreenApp -Name MicrosoftFSLogixApps
 
     }
 }

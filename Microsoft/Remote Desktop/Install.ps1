@@ -130,7 +130,7 @@ $appProcesses = @("msrdcw")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
 $appChannel = "Insider"
-$Evergreen = Get-EvergreenApp MicrosoftWvdRemoteDesktop | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Channel -eq $appChannel }
+$Evergreen = Get-EvergreenApp -Name MicrosoftWvdRemoteDesktop | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Channel -eq $appChannel }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.Uri
 $appSetup = $Evergreen.Filename
@@ -176,6 +176,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Reduced E2E latency and some performance issues by optimizing the GPU render path - https://docs.microsoft.com/en-us/windows-server/remote/remote-desktop-services/clients/windowsdesktop-whatsnew
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Terminal Server Client" -Name "IsSwapChainRenderingEnabled" -Value "1" -Type DWord
     Set-RegistryKey -Key "HKCU:\Software\Microsoft\Terminal Server Client" -Name "IsSwapChainRenderingEnabled" -Value "1" -Type DWord
+
+    # Enable AVD Multimedia Redirection - https://learn.microsoft.com/en-us/azure/virtual-desktop/multimedia-redirection?tabs=edge
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\MSRDC\Policies" -Name "ReleaseRing" -Value "insider" -Type String
 
     # Cleanup (to prevent access denied issue unloading the registry hive)
     [GC]::Collect()

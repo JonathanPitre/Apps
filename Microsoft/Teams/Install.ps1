@@ -253,7 +253,7 @@ $appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Mic
 $appConfig = Split-Path -Path $appConfigURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSER=1 ALLUSERS=1"
-$Evergreen = Get-EvergreenApp $appVendor$appName | Where-Object { $_.Ring -eq $appRing -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi" }
+$Evergreen = Get-EvergreenApp -Name $appVendor$appName | Where-Object { $_.Ring -eq $appRing -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf

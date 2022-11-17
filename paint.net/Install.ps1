@@ -130,7 +130,7 @@ $appInstallParameters = "/QB"
 $appAddParameters = "CHECKFORUPDATES=0 CHECKFORBETAS=0 DESKTOPSHORTCUT=0"
 $appArchitecture = "x64"
 $appLanguage = "fr" #en-US for English
-$Evergreen = Get-EvergreenApp PaintDotNetOfflineInstaller | Where-Object { $_.Architecture -eq $appArchitecture -and $_.URI -match "msi" }
+$Evergreen = Get-EvergreenApp -Name PaintDotNetOfflineInstaller | Where-Object { $_.Architecture -eq $appArchitecture -and $_.URI -match "msi" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf

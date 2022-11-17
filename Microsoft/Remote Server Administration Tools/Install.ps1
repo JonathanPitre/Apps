@@ -193,6 +193,7 @@ If ($envOSName -like "*Windows Server*")
         Write-Log -Message "DNS Tools are already installed!" -Severity 2 -LogType CMTrace -WriteHost $True
     }
     # Install-WindowsFeature -Name RSAT-DHCP
+    # Install-WindowsFeature -Name RSAT-DFS-Mgmt-Con
 }
 
 Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True

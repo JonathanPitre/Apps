@@ -130,7 +130,7 @@ $appProcesses = 'PDFXHost32,PDFXEdit,PDFXHost64,pdfSaverL,PDFX.ProcessPool.Worke
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
 $appAddParameters = "DESKTOP_SHORTCUTS=0 SET_AS_DEFAULT=0 SET_LITE_AS_DEFAULT=0 NOUPDATER=1 SCHEDULEUPDATER=0"
-$Evergreen = Get-EvergreenApp -Name "TrackerSoftwarePDFXChangeEditor" | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Type -eq "msi" }
+$Evergreen = Get-EvergreenApp -Name TrackerSoftwarePDFXChangeEditor | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Type -eq "msi" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
