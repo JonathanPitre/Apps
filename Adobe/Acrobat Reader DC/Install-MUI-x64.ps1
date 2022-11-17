@@ -140,7 +140,7 @@ $appVersion = $Evergreen.Version
 $appSetupURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appSetupURL -Leaf
 $appMsiSetup = "AcroPro.msi"
-$EvergreenPatch = Get-EvergreenApp -Name AdobeAcrobat | Where-Object { $_.Product -eq $appProduct -and $_.Track -eq $appTrack -and $_.Language -eq "Multi" -and $_.Architecture -eq $appArchitecture }
+$EvergreenPatch = Get-EvergreenApp -Name AdobeAcrobatDC | Where-Object { $_.Type -eq "ReaderMUI" -and $_.Architecture -eq $appArchitecture }
 $appPatchVersion = $EvergreenPatch.Version
 $appPatchURL = $EvergreenPatch.URI
 $appPatch = Split-Path -Path $appPatchURL -Leaf
@@ -195,7 +195,7 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
     If (($IsAppInstalled) -and (Test-Path -Path $appScriptDirectory\$appMsiSetup))
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Remove-MSIApplications -Name "$appVendor $appName* $appTrack*" -WildCard -Exact
+        Remove-MSIApplications -Name "$appVendor $appName*" -WildCard
     }
 
     If ((Test-Path -Path "$appScriptDirectory\$appMsiSetup") -and (Test-Path -Path $appScriptDirectory\$appPatch))
@@ -214,7 +214,7 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
         # Install latest version
         Write-Log -Message "Installing $appVendor $appName $appProduct $appTrack $appLanguage $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-MSI -Action Install -Path $appMsiSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -SkipMSIAlreadyInstalledCheck
-        $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appTrack (64-bit)" -Exact).DisplayVersion
+        $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName (64-bit)" -Exact).DisplayVersion
     }
 
     If (([version]$appPatchVersion -gt [version]$appInstalledVersion) -and (Test-Path -Path $appScriptDirectory\$appPatch))
