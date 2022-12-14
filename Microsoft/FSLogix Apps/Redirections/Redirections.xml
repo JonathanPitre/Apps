@@ -130,6 +130,8 @@
     <Exclude Copy="0">AppData\Local\Microsoft\OneNote</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Outlook</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\PlayReady</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\Teams\Current\Locales</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\Teams\current\resources\locales</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Teams\packages</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Teams\previous</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Terminal Server Client\Cache</Exclude>
@@ -213,16 +215,12 @@
     <Exclude Copy="0">AppData\Roaming\Microsoft\Installer</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Internet Explorer\UserData</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Application Cache</Exclude>
-    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\blob_storage</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Cache</Exclude>
-    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\databases</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\DownloadedUpdate</Exclude>
-    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\GPUCache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\logs</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\media-stack</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\meeting-addin\Cache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Service Worker\CacheStorage</Exclude>
-    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Service Worker\ScriptCache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\tmp</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Templates\LiveContent</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Windows\Cookies</Exclude>
