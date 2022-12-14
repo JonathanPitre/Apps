@@ -5,7 +5,7 @@
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
-$ProgressPreference = "SilentlyContinue"
+$ProgressPreference = "Continue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
@@ -162,5 +162,9 @@ Get-WindowsUpdate -RootCategories "Critical Updates", "Definition Updates", "Fea
 #Start-Process -NoNewWindow "c:\windows\system32\UsoClient.exe" -argument "ScanInstallWait" -Wait
 #Start-Process -NoNewWindow "c:\windows\system32\UsoClient.exe" -argument "StartInstall" -Wait
 
-Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
-Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
+# Only reboot if needed
+$WURebootStatus = Get-WURebootStatus | Select-Object -ExpandProperty RebootRequired
+if ($WURebootStatus) {
+    Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
+}
