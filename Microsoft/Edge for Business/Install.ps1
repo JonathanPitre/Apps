@@ -43,17 +43,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -94,7 +94,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -121,82 +121,6 @@ Foreach ($Module in $Modules)
 }
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
-
-function Get-MicrosoftEdgePolicyOnline
-{
-    <#
-    .SYNOPSIS
-    Returns latest Version and Uri for the Microsoft Edge Admx files
-#>
-
-    try
-    {
-        $EvergreenADMX = (Get-EvergreenApp -Name MicrosoftEdge | Where-Object { $_.Channel -eq "Policy" })
-        # Return Evergreen object
-        return $EvergreenADMX
-    }
-    catch
-    {
-        Throw $_
-    }
-
-}
-function Get-MicrosoftEdgeAdmx
-{
-    <#
-    .SYNOPSIS
-    Process Microsoft Edge (Chromium) Admx files
-    .PARAMETER Version
-    Current Version present
-    .PARAMETER PolicyStore
-    Destination for the Admx files
-#>
-
-    param(
-        [string]$Version,
-        [string]$PolicyStore = $null,
-        [string[]]$Languages = $null
-    )
-
-    $evergreen = Get-MicrosoftEdgePolicyOnline
-    $productname = "Microsoft Edge (Chromium)"
-
-    # See if this is a newer version
-    if (-not $Version -or [version]$evergreen.Version -gt [version]$Version)
-    {
-        Write-Verbose "Found new version $($evergreen.Version) for '$($productname)'"
-
-        # Download and process
-        $ADMXzip = Split-Path -Path $EvergreenADMX.URI -Leaf
-
-        try
-        {
-            # Download
-            Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-            Invoke-WebRequest -Uri $evergreen.URI -UseBasicParsing -OutFile $ADMXzip
-
-            # Extract
-            New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-            Write-Log -Message "Extracting $appVendor $appName $appMajorVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-            Expand-Archive -Path $ADMXzip -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
-
-
-            # Cleanup
-            Move-Item -Path $appScriptDirectory\PolicyDefinitions\windows\admx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
-            Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "examples", "html", "mac", "windows", "VERSION" -Force -Recurse
-            Remove-File -Path $appScriptDirectory\*.zip -ContinueOnError $True
-        }
-        catch
-        {
-            Throw $_
-        }
-    }
-    else
-    {
-        # Version already processed
-        return $null
-    }
-}
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -229,11 +153,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-Location -Path $appVersion
 
     # Delete machine policies to prevent issue during installation
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\Update" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\$appVendor\$appName" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\Temp" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\Update" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\$appVendor\$appName" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\Edge" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
 
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
@@ -256,12 +179,23 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Remove previous install folders
-    Remove-Folder -Path "$envLocalAppData\$appVendor\$appName" -ContinueOnError $True
-    Remove-Folder -Path "$envLocalAppData\$appVendor\$($appName)Update" -ContinueOnError $True
-    Remove-Folder -Path "$envLocalAppData\$appVendor\Temp" -ContinueOnError $True
-    Remove-Folder -Path "$envProgramFilesX86\$appVendor\$appName" -ContinueOnError $True
-    Remove-Folder -Path "$envProgramFilesX86\$appVendor\$($appName)Update" -ContinueOnError $True
-    Remove-Folder -Path "$envProgramFilesX86\$appVendor\Temp" -ContinueOnError $True
+    Remove-Folder -Path "$envLocalAppData\Microsoft\Edge" -ContinueOnError $True
+    Remove-Folder -Path "$envLocalAppData\Microsoft\EdgeUpdate" -ContinueOnError $True
+    Remove-Folder -Path "$envLocalAppData\Microsoft\Temp" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFilesX86\Microsoft\$appName" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFilesX86\Microsoft\EdgeCore" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFilesX86\Microsoft\EdgeUpdate" -ContinueOnError $True
+    Remove-Folder -Path "$envProgramFilesX86\Microsoft\Temp" -ContinueOnError $True
+
+    # Remove previous registry entries
+    Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Edge" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKCU:\Software\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{ 9459C573-B17A-45AE-9F64-1857B5D58CEE}" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Edge" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge Update" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge" -Recurse -ContinueOnError $True
+
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
@@ -284,9 +218,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
-
-    # Download latest policy definitions
-    Get-MicrosoftEdgeAdmx
 
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
