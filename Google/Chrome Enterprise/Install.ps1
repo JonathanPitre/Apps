@@ -136,11 +136,6 @@ $Evergreen = Get-EvergreenApp -Name GoogleChrome | Where-Object { $_.Architectur
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
-$appURLADMX = "https://dl.google.com/dl/edgedl/chrome/policy/policy_templates.zip"
-$appADMX = Split-Path -Path $appURLADMX -Leaf
-$appURLADMX2 = "https://dl.google.com/dl/update2/enterprise/googleupdateadmx.zip"
-$appADMX2 = Split-Path -Path $appURLADMX2 -Leaf
-$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Google/Chrome%20Enterprise/master_preferences"
 $appConfig = Split-Path -Path $appConfigURL -Leaf
 $appDestination = "$env:ProgramFiles\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
@@ -221,20 +216,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
-
-    # Download latest policy definitions
-    Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appScriptDirectory\$appADMX
-    Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX2 -OutFile $appScriptDirectory\$appADMX2
-    New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-    If (Get-ChildItem -Path $appScriptDirectory -Filter *.zip)
-    {
-        Get-ChildItem -Path $appScriptDirectory -Filter *.zip | Expand-Archive -DestinationPath $appScriptDirectory\PolicyDefinitions -Force
-        Remove-File -Path $appScriptDirectory\*.zip -ContinueOnError $True
-    }
-    Move-Item -Path $appScriptDirectory\PolicyDefinitions\GoogleUpdateAdmx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
-    Move-Item -Path $appScriptDirectory\PolicyDefinitions\windows\admx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
-    Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "GoogleUpdateAdmx", "chromeos", "common", "windows", "VERSION" -Force -Recurse
 
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
