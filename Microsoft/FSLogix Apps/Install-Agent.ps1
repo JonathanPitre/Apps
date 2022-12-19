@@ -468,9 +468,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    # Download latest version of Jim Moyle's Invoke-FslShrinkDisk.ps1 script
-    Invoke-WebRequest -UseBasicParsing -Uri $appURLScript -OutFile "$appScriptDirectory\FileServer Maintenance\Invoke-FslShrinkDisk.ps1"
-
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\x64\Release\$appSetup -Parameters $appInstallParameters
 
