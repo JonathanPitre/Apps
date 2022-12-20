@@ -227,7 +227,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
         # Configure application shortcut
-        New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor $appName.lnk" -TargetPath "$appDestination\Citrix.CQI.exe"
+        New-Shortcut -Path "$envCommonStartMenuPrograms\$appVendor $appName.lnk" -TargetPath "$appDestination\Citrix.CQI.exe"
+
+        # Disbale automatic startup
+        $regAppSetup = Get-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Value "AppSetup"
+        $regCQI = "`"C:\Program Files (x86)\Citrix\HDX\bin\Connection Quality Indicator\Launcher.cmd`""
+        $regAppSetup = $regAppSetup.Replace(",$regCQI", "")
+        Set-RegistryKey "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "AppSetup" -Value $regAppSetup -Type String
 
         # Go back to the parent folder
         Set-Location ..
