@@ -140,7 +140,7 @@ Function Get-MicrosoftVisualCPlusPlusVersion
     }
     Finally
     {
-        $RegEx = "(Visual C\+\+ \d{4} Redistributable) \- ((?:\d+\.)+(?:\d+))"
+        $RegEx = "(Visual C\+\+ \d{4} Redistributable) - ((?:\d+\.)+(?:\d+))"
         $Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[2].Value
     }
     return $Version
@@ -150,14 +150,14 @@ Function Get-MicrosoftVisualCPlusPlusVersion
 
 $appName = "VisualCppRedistAIO"
 $appName2 = "Visual C++ 2022"
-$Evergreen = Get-EvergreenApp -Name $appName
 $appVersion = Get-MicrosoftVisualCPlusPlusVersion
 $appVersion = $appVersion.Substring(0, $appVersion.Length - 2)
+$Evergreen = Get-EvergreenApp -Name $appName
 $appSetupVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf
 $appSetup = "VisualCppRedist_AIO_x86_x64.exe"
-$appInstallParameters = "/ai9"
+$appInstallParameters = "/aiV"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName2")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName2").DisplayVersion | Select-Object -First 1
 
