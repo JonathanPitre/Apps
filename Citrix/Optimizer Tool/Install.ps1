@@ -150,72 +150,6 @@ Function Get-CitrixOptimizerTool
     }
 }
 
-Function Get-CitrixDownload
-{
-    <#
-.SYNOPSIS
-  Downloads a Citrix file from Citrix.com utilizing authentication
-.DESCRIPTION
-  Downloads a Citrix file from Citrix.com utilizing authentication
-.PARAMETER CitrixKB
-  Citrix KB Article number
-.PARAMETER CitrixFile
-  File name to be downloaded
-.PARAMETER FilePath
-  Path to store downloaded file
-.PARAMETER CitrixUserName
-  Citrix.com username
-.PARAMETER CitrixPassword
-  Citrix.com password
-.EXAMPLE
-  Get-CitrixDownload -CitrixKB "220774" -CitrixFile "CitrixCQI.zip" -CitrixUserName "MyCitrixUsername" -CitrixPassword "MyCitrixPassword"
-#>
-    Param(
-        [Parameter(Mandatory = $true)]$CitrixKB,
-        [Parameter(Mandatory = $true)]$CitrixFile,
-        [Parameter(Mandatory = $true)]$FilePath,
-        [Parameter(Mandatory = $true)]$CitrixUserName,
-        [Parameter(Mandatory = $true)]$CitrixPassword
-    )
-    #Initialize Session
-    Invoke-WebRequest "https://identity.citrix.com/Utility/STS/Sign-In" -SessionVariable websession -UseBasicParsing | Out-Null
-
-    #Set Form
-    $Form = @{
-        "persistent" = "1"
-        "userName"   = $CitrixUserName
-        "loginbtn"   = "Log+in"
-        "password"   = $CitrixPassword
-        "returnURL"  = "https://login.citrix.com/bridge?url=https://support.citrix.com/article/CTX${CitrixKB}"
-        "errorURL"   = "https://login.citrix.com?url=https://support.citrix.com/article/CTX${CitrixKB}&err=y"
-    }
-
-    #Authenticate
-    Try
-    {
-        Invoke-WebRequest -Uri ("https://identity.citrix.com/Utility/STS/Sign-In") -WebSession $websession -Method POST -Body $Form -ContentType "application/x-www-form-urlencoded" -UseBasicParsing | Out-Null
-    }
-    Catch
-    {
-        If ($_.Exception.Response.StatusCode.Value__ -eq 500)
-        {
-            Write-Verbose "500 returned on auth. Ignoring"
-            Write-Verbose $_.Exception.Response
-            Write-Verbose $_.Exception.Message
-        }
-        Else
-        {
-            Throw $_
-        }
-    }
-
-    #$OutFile = ($FilePath + $CitrixFile)
-    $OutFile = Join-Path -Path $FilePath -ChildPath $CitrixFile
-    #Download
-    Invoke-WebRequest -WebSession $websession -Uri "https://fileservice.citrix.com/download/secured/support/article/CTX${CitrixKB}/downloads/${CitrixFile}" -OutFile $OutFile -UseBasicParsing
-    return $OutFile
-}
-
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Citrix"
@@ -226,12 +160,13 @@ $appVersion = $Evergreen.Version
 $appURL = $Evergreen.Uri
 $appZip = Split-Path -Path $appURL -Leaf
 $appSetup = "CitrixOptimizerTool.exe"
-$appCitrixKB = "224676"
 $appDestination = "$env:ProgramFiles\Citrix\Optimizer Tool"
 [boolean]$IsAppInstalled = Test-Path -Path "$appDestination\$appSetup"
 $appInstalledVersion = If ($IsAppInstalled) { Get-FileVersion -File "$appDestination\$appSetup" }
-$appTemplateURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Citrix/Optimizer Tool/Citrix_Windows_$($envOSVersionMajor)_ITI.xml"
+$appTemplateURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Citrix/Optimizer Tool/ITI_Windows_$($envOSVersionMajor)_2009.xml"
 $appTemplate = Split-Path -Path $appTemplateURL -Leaf
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Citrix/Optimizer Tool/CitrixOptimizerTool.exe.config"
+$appConfig = Split-Path -Path $appConfigURL -Leaf
 $appInstallParameters = "-Source `"$appDestination\Templates\$appTemplate`" -Mode Execute -OutputLogFolder `"$appDestination\Logs`" -OutputHtml `"$appDestination\Reports\Report.html`" -OutputXml `"$appDestination\Rollback\Rollback.xml`""
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
@@ -244,69 +179,62 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
     {
-        Write-Log -Message "Signing in with your Citrix account..." -Severity 1 -LogType CMTrace -WriteHost $True
-        $CitrixUserName = Read-Host -Prompt "Please supply your Citrix.com username"
-        $CitrixPassword1 = Read-Host -Prompt "Please supply your Citrix.com password" -AsSecureString
-        $CitrixPassword2 = Read-Host -Prompt "Please supply your Citrix.com password once more" -AsSecureString
-        $CitrixPassword1Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword1))
-        $CitrixPassword2Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword2))
+        # Download latest version
+        Write-Log -Message "$appVendor $appName $appVersion MUST BE DOWNLOADED MANUALLY FIRST!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Start-Sleep -Seconds 5
+        Exit-Script
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
 
-        If ($CitrixPassword1Temp -ne $CitrixPassword2Temp)
+        # Download configuration to add community template marketplace
+        If (-Not(Test-Path -Path "$appScriptDirectory\Templates\$appConfig"))
         {
-            Write-Log -Message "The supplied Citrix passwords missmatch!" -Severity 3 -LogType CMTrace -WriteHost $True
-            Exit-Script -ExitCode 1
+            Write-Log -Message "Downloading $appVendor $appName configuration file..." -Severity 1 -LogType CMTrace -WriteHost $True
+            Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile "$appScriptDirectory\$appConfig"
+        }
+        Else
+        {
+            Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
         }
 
-        Remove-Variable -Name CitrixPassword1Temp, CitrixPassword2Temp
-        $CitrixCredentials = New-Object System.Management.Automation.PSCredential ($CitrixUserName, $CitrixPassword1)
+        # Download template
+        If (-Not(Test-Path -Path "$appScriptDirectory\Templates\$appTemplate"))
+        {
+            Write-Log -Message "Downloading $appVendor $appName template file..." -Severity 1 -LogType CMTrace -WriteHost $True
+            New-Folder -Path "$appScriptDirectory\Templates"
+            Invoke-WebRequest -UseBasicParsing -Uri $appTemplateURL -OutFile "$appScriptDirectory\Templates\$appTemplate"
+        }
+        Else
+        {
+            Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        }
 
-        # Verify Citrix credentials
-        $CitrixUserName = $CitrixCredentials.UserName
-        $CitrixPassword = $CitrixCredentials.GetNetworkCredential().Password
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Get-Process -Name $appProcesses | Stop-Process -Force
 
-        # Download latest version
-        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-CitrixDownload -CitrixKB $appCitrixKB -CitrixFile $appZip -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -FilePath $appScriptDirectory\$appVersion
-        Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appVersion
-        Remove-File -Path $appZip
+        Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Remove-Folder -Path "$env:ProgramFiles\Citrix\Optimizer" -ContinueOnError $True
+        If (-Not(Test-Path -Path $appDestination)) { New-Folder -Path $appDestination }
+        Copy-File -Path "$appScriptDirectory\$appVersion\*" -Destination $appDestination -Recurse
+        Copy-File -Path "$appScriptDirectory\$appConfig " -Destination $appDestination -Recurse
+        Copy-File -Path "$appScriptDirectory\Templates\*" -Destination "$appDestination\Templates"
+        New-Folder -Path "$appDestination\Logs"
+        New-Folder -Path "$appDestination\Rollback"
+        New-Folder -Path "$appDestination\Reports"
+        Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "$appVendor $appName $appVersion must be run manually to optimize the system." -Severity 1 -LogType CMTrace -WriteHost $True
+        #Write-Log -Message "Executing $appVendor $appName $appVersion optimizations from $appTemplate..." -Severity 1 -LogType CMTrace -WriteHost $True
+        #Execute-Process -Path powershell.exe -Parameters "-file `"$appDestination\CtxOptimizerEngine.ps1`" $appInstallParameters" -WindowStyle Hidden -CreateNoWindow
+
+        # Configure application shortcut
+        New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor $appName.lnk" -TargetPath "$appDestination\$appSetup"
+
+        Write-Log -Message "$appVendor $appName $appVersion applied the optimizations successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     }
-    Else
-    {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
-
-    # Download required config template
-    If (-Not(Test-Path -Path $appScriptDirectory\$appTemplate))
-    {
-        Write-Log -Message "Downloading $appVendor $appName template file..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appTemplateURL -OutFile $appScriptDirectory\$appTemplate
-    }
-    Else
-    {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
-
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcesses | Stop-Process -Force
-
-    Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Remove-Folder -Path "$env:ProgramFiles\Citrix\Optimizer" -ContinueOnError $True
-    If (-Not(Test-Path -Path $appDestination)) { New-Folder -Path $appDestination }
-    Copy-File -Path "$appScriptDirectory\$appVersion\*" -Destination $appDestination -Recurse
-    Copy-File -Path "$appScriptDirectory\$appTemplate" -Destination "$appDestination\Templates"
-    New-Folder -Path "$appDestination\Logs"
-    New-Folder -Path "$appDestination\Rollback"
-    New-Folder -Path "$appDestination\Reports"
-    Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
-    Write-Log -Message "$appVendor $appName $appVersion must be run manually to optimize the system." -Severity 1 -LogType CMTrace -WriteHost $True
-    #Write-Log -Message "Executing $appVendor $appName $appVersion optimizations from $appTemplate..." -Severity 1 -LogType CMTrace -WriteHost $True
-    #Execute-Process -Path powershell.exe -Parameters "-file `"$appDestination\CtxOptimizerEngine.ps1`" $appInstallParameters" -WindowStyle Hidden -CreateNoWindow
-
-    # Configure application shortcut
-    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor $appName.lnk" -TargetPath "$appDestination\$appSetup"
-
-    Write-Log -Message "$appVendor $appName $appVersion applied the optimizations successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
+
 Else
 {
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
