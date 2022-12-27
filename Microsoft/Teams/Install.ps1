@@ -252,7 +252,7 @@ $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Teams/desktop-config.json"
 $appConfig = Split-Path -Path $appConfigURL -Leaf
 $appInstallParameters = "/QB"
-$appAddParameters = "ALLUSER=1 ALLUSERS=1"
+$appAddParameters = "ALLUSERS=1 ALLUSER=1 OPTIONS='noAutoStart=true"
 $Evergreen = Get-EvergreenApp -Name $appVendor$appName | Where-Object { $_.Ring -eq $appRing -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
