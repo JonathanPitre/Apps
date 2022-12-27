@@ -180,7 +180,7 @@ $appProcesses = @("BrokerAgent", "picaSessionAgent")
 $appServices = @("CitrixTelemetryService")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enable_ss_ports /exclude "Citrix Personalization for App-V - VDA","Citrix Supportability Tools","Citrix VDA Upgrade Agent" /includeadditional "Machine Identity Service","Citrix Profile Management","Citrix Profile Management WMI Plug-in","Citrix MCS IODriver","Citrix Rendezvous V2","Citrix Web Socket VDA Registration Tool" /mastermcsimage /noreboot /noresume /quiet /remove_appdisk_ack /remove_pvd_ack'
+$appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enable_ss_ports /exclude "Citrix Personalization for App-V - VDA","Citrix VDA Upgrade Agent" /includeadditional "Citrix MCS IODriver","Citrix Profile Management","Citrix Profile Management WMI Plug-in","Citrix Rendezvous V2","Citrix Web Socket VDA Registration Tool","Machine Identity Service" /mastermcsimage /noreboot /noresume /quiet /remove_appdisk_ack /remove_pvd_ack'
 $appVersion = (Get-CitrixVDA).Version
 $appSetup = "VDAServerSetup_$appVersion.exe"
 $appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
