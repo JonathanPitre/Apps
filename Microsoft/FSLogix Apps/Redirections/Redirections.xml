@@ -75,6 +75,7 @@
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\Default\BudgetDatabase</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\Default\Cache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\Default\Code Cache</Exclude>
+    <Exclude Copy="0">AppData\local\Microsoft\Edge\User Data\Default\DualEngine</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\Default\GPUCache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\Default\IndexedDB</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\Default\JumpListIcons</Exclude>
@@ -215,10 +216,12 @@
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Application Cache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Cache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\DownloadedUpdate</Exclude>
+    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\GPUCache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\logs</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\media-stack</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\meeting-addin\Cache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Service Worker\CacheStorage</Exclude>
+    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Service Worker\ScriptCache</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\tmp</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Templates\LiveContent</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Windows\Cookies</Exclude>
