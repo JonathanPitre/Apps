@@ -127,8 +127,6 @@
     <Exclude Copy="0">AppData\Local\Microsoft\OneDrive\logs</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\OneDrive\setup\logs</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\OneDrive\Update</Exclude>
-    <Exclude Copy="0">AppData\Local\Microsoft\OneNote</Exclude>
-    <Exclude Copy="0">AppData\Local\Microsoft\Outlook</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\PlayReady</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Teams\Current\Locales</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Teams\current\resources\locales</Exclude>
