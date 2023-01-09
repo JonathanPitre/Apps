@@ -122,24 +122,6 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
-Function Get-MicrosoftOneDriveAdmx
-{
-    try
-    {
-        If (Test-Path -Path "$appDestination\$appVersion\adm\$appName.admx")
-        {
-            Write-Log -Message "Copying $appVendor $appName $appLongName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-            Copy-File -Path "$appDestination\$appVersion\adm\$appName.admx" -Destination "$appScriptDirectory\PolicyDefinitions" -ContinueOnError $True
-            Copy-File -Path "$appDestination\$appVersion\adm\$appName.adml" -Destination "$appScriptDirectory\PolicyDefinitions\en-US" -ContinueOnError $True
-            Copy-File -Path "$appDestination\$appVersion\adm\fr\$appName.adml" -Destination "$appScriptDirectory\PolicyDefinitions\fr-FR" -ContinueOnError $True
-        }
-    }
-    catch
-    {
-        Throw $_
-    }
-}
-
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Microsoft"
@@ -304,9 +286,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-Item -Path "$envSystemDrive\Users\Default\*.LOG2" -Force
     Remove-Item -Path "$envSystemDrive\Users\Default\*.blf" -Force
     Remove-Item -Path "$envSystemDrive\Users\Default\*.regtrans-ms" -Force
-
-    # Get latest policy definitions
-    Get-MicrosoftOneDriveAdmx
 
     # Stop and disable unneeded scheduled tasks
     Get-ScheduledTask -TaskName "$appName*" | Stop-ScheduledTask
