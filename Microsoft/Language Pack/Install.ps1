@@ -126,7 +126,6 @@ Foreach ($Module in $Modules)
 
 $appVendor = "Microsoft"
 $URL = "https://docs.microsoft.com/en-us/azure/virtual-desktop/language-packs"
-$currentYear = $currentDate.Split("-")[2]
 $envOSDisplayVersion = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion").DisplayVersion
 $Language = "fr-ca"
 
@@ -153,7 +152,7 @@ $inboxAppsIsoUrl = ($WebResponse | Select-String -Pattern $RegEx).Matches.Groups
 $inboxAppsIso = Split-Path -Path $inboxAppsIsoUrl -Leaf
 
 # Local Experience Pack (LXP) ISO
-$RegEx = "(https.+.iso).+(Windows \d{2}\, version \d{4} or later \d{2}C $currentYear LXP ISO)"
+$RegEx = "(https.+.iso).+(Windows \d{2}\, version \d{4} or later \d{2}C \d{4} LXP ISO)"
 $DownloadCount = ($WebResponse | Select-String -Pattern $RegEx -AllMatches).Matches.Count
 $DownloadCount = $DownloadCount - 1
 $LXPisoUrl = ($WebResponse | Select-String -Pattern $RegEx -AllMatches).Matches[$DownloadCount].Groups[1].Value
