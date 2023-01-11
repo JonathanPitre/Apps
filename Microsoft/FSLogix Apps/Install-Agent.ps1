@@ -581,6 +581,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxccds.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxsvc.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxrobocopy.exe" -Force
+    # Avoid locked VHDX files and local_username directories at logoff
+    Add-MpPreference -ExclusionProcess "%windir%\System32\lsass.exe" -Force
 
     # Add built-in administrators group to exclude list
     Add-LocalGroupMember -Group "FSLogix ODFC Exclude List" -Member "BUILTIN\Administrators"
