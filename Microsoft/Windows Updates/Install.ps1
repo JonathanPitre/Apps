@@ -163,7 +163,7 @@ Get-WindowsUpdate -RootCategories "Critical Updates", "Definition Updates", "Fea
 #Start-Process -NoNewWindow "c:\windows\system32\UsoClient.exe" -argument "StartInstall" -Wait
 
 # Only reboot if needed
-$WURebootStatus = Get-WURebootStatus | Select-Object -ExpandProperty RebootRequired
+$WURebootStatus = Get-WURebootStatus -Silent | Select-Object -ExpandProperty RebootRequired
 if ($WURebootStatus) {
     Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
