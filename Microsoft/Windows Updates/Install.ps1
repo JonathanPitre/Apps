@@ -141,7 +141,7 @@ Stop-ServiceAndDependencies -Name $appService
 Remove-RegistryKey -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Recurse -ContinueOnError $True
 
 # Get updates for other Microsoft products
-$null = Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d -Confirm:$false
+$null = Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d -Confirm:$False
 
 # Pause and give the service time to update
 Start-Sleep 30
@@ -158,7 +158,7 @@ Get-WindowsUpdate -RootCategories "Upgrades" -NotTitle "Preview" -MicrosoftUpdat
 
 Get-WindowsUpdate -RootCategories "Critical Updates", "Definition Updates", "Feature Packs", "Security Updates", "Service Packs", "Tools", "Update Rollups", "Updates" -NotTitle "Preview" -MicrosoftUpdate -Install -AcceptAll -UpdateType Software -IgnoreReboot -IgnoreUserInput | Out-File $appLog -Append
 
-Write-Host $appScriptDirectory
+Write-Host "Script Name: $appScriptDirectory"
 
 # Windows 10 native way
 #Start-Process -NoNewWindow "c:\windows\system32\UsoClient.exe" -argument "ScanInstallWait" -Wait
