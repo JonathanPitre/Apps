@@ -21,7 +21,7 @@ Function Get-ScriptDirectory
     {
         If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
         ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-        ElseIf ([bool]$MyInvocation) { $MyInvocation.MyCommand.name } # Windows PowerShell 3.0-5.1
+        ElseIf ([bool]$MyInvocation) { $MyInvocation.MyCommand.Path } # Windows PowerShell 3.0-5.1
         Else
         {
             Write-Host -Object "Cannot resolve script file's path!" -ForegroundColor Red
@@ -168,3 +168,4 @@ if ($WURebootStatus) {
     Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
 }
+$appScriptDirectory
