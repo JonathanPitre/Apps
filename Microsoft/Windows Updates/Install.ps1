@@ -21,10 +21,10 @@ Function Get-ScriptDirectory
     {
         If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
         ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+        ElseIf ([bool]$MyInvocation) { $MyInvocation.MyCommand.name } # Windows PowerShell 3.0-5.1
         Else
         {
-            Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
+            Write-Host -Object "Cannot resolve script file's path!" -ForegroundColor Red
             Exit 1
         }
     }
@@ -163,7 +163,7 @@ Get-WindowsUpdate -RootCategories "Critical Updates", "Definition Updates", "Fea
 #Start-Process -NoNewWindow "c:\windows\system32\UsoClient.exe" -argument "StartInstall" -Wait
 
 # Only reboot if needed
-$WURebootStatus = Get-WURebootStatus -Silent
+[bool]$WURebootStatus = Get-WURebootStatus -Silent
 if ($WURebootStatus) {
     Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
