@@ -374,6 +374,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Configure application shortcut
     Copy-File -Path "$envCommonStartMenuPrograms\$appVendor $appName.lnk" -Destination "$envCommonStartMenuPrograms\$appName.lnk" -ContinueFileCopyOnError $True
     Remove-File -Path "$envCommonStartMenuPrograms\$appVendor $appName.lnk" -ContinueOnError $True
+    Remove-File -Path "$envCommonStartMenuPrograms\$appVendor $appName (work or school).lnk" -ContinueOnError $True
     Remove-Folder -Path "$envCommonStartMenuPrograms\$appVendor Corporation" -ContinueOnError $True
 
     # Register Teams add-in for Outlook - https://microsoftteams.uservoice.com/forums/555103-public/suggestions/38846044-fix-the-teams-meeting-addin-for-outlook
