@@ -114,11 +114,9 @@
     <Exclude Copy="0">AppData\Local\Microsoft\MSOIdentityCRL\Tracing</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Notifications</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office\15.0\Lync\Tracing</Exclude>
-    <Exclude Copy="0">AppData\Local\Microsoft\Office\15.0\OfficeFileCache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\AddInClassifierCache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\Lync\Tracing</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\MruServiceCache</Exclude>
-    <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\OfficeFileCache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\ResourceInfoCache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\SmartLookupCache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Office\16.0\TapCache</Exclude>
@@ -260,7 +258,6 @@
     <Exclude Copy="0">Favorites</Exclude>
     <Exclude Copy="0">Links</Exclude>
     <Exclude Copy="0">Music</Exclude>
-    <Exclude Copy="0">OneDrive</Exclude>
     <Exclude Copy="0">Pictures</Exclude>
     <Exclude Copy="0">Saved Games</Exclude>
     <Exclude Copy="0">ShareFile</Exclude>
@@ -269,14 +266,11 @@
   </Excludes>
   <Includes>
     <Include Copy="3">AppData\Local\Apps</Include>
-    <Include Copy="3">AppData\Local\Microsoft\Credentials</Include>
     <Include Copy="3">AppData\Local\Microsoft\OneAuth</Include>
     <Include Copy="3">AppData\Local\Microsoft\Windows\Caches</Include>
     <Include Copy="3">AppData\Local\Packages</Include>
     <Include Copy="3">AppData\LocalLow\Sun\Java\Deployment\security</Include>
-    <Include Copy="3">AppData\Roaming\Microsoft\Credentials</Include>
     <Include Copy="3">AppData\Roaming\Microsoft\Crypto</Include>
-    <Include Copy="3">AppData\Roaming\Microsoft\Protect</Include>
     <Include Copy="3">AppData\Roaming\Microsoft\SystemCertificates</Include>
   </Includes>
 </FrxProfileFolderRedirection>
