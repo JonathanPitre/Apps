@@ -175,14 +175,24 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Add Windows Firewall rules
     # HDX Teams rule - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/multimedia/opt-ms-teams.html
-    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Teams")) {
-        New-NetFirewallRule -Displayname "$appVendor $appName $appName2 HDX Teams" -Direction Inbound -Profile 'Domain, Private, Public' -Program "$appDestination\HdxRtcEngine.exe" -Protocol TCP
-        New-NetFirewallRule -Displayname "$appVendor $appName $appName2 HDX Teams" -Direction Inbound -Profile 'Domain, Private, Public' -Program "$appDestination\HdxRtcEngine.exe" -Protocol UDP
+    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX RTC Engine"))
+    {
+        New-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX RTC Engine" -Direction Inbound -Profile 'Domain, Private, Public' -Program "$appDestination\HdxRtcEngine.exe" -Protocol TCP -Description "$appVendor $appName $appName2 HDX RTC Engine"
+        New-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX RTC Engine" -Direction Inbound -Profile 'Domain, Private, Public' -Program "$appDestination\HdxRtcEngine.exe" -Protocol UDP -Description "$appVendor $appName $appName2 HDX RTC Engine"
     }
+
+    <#
+    # HDX Browser required for Browser Content Redirection
+    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Browser"))
+    {
+        New-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Browser" -Direction Inbound -Profile 'Domain, Private, Public' -Program "$appDestination\HdxBrowser.exe" -Protocol TCP -Description "$appVendor $appName $appName2 HDX Browser"
+        New-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Browser" -Direction Inbound -Profile 'Domain, Private, Public' -Program "$appDestination\HdxBrowser.exe" -Protocol UDP -Description "$appVendor $appName $appName2 HDX Browser"
+    }
+    #>
 
     # HDX Audio Real-time Transport UDP rule required with VDA 2112
     If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Audio Real-time Transport")) {
-        New-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Audio Real-time Transport" -Direction Inbound -Protocol UDP -LocalPort 16500-16501 -Profile 'Domain, Private, Public' -Program "$appDestination\wfica32.exe"
+        New-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Audio Real-time Transport" -Direction Inbound -Protocol UDP -LocalPort 16500-16509 -Profile 'Domain, Private, Public' -Program "$appDestination\wfica32.exe" -Description "$appVendor $appName $appName2 HDX Audio Real-time Transport"
     }
 
     # Registry Optimizations
@@ -193,8 +203,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Mouse" -Name "MouseTimer" -Type "String" -Value "25"
 
     # Don't sync keyboard layout
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Keyboard" -Name "LocalIME" -Type "String" -Value "0"
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Keyboard" -Name "KeyboardSyncMode" -Type "String" -Value "(Server Default)"
+    #Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Keyboard" -Name "LocalIME" -Type "String" -Value "0"
+    #Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Keyboard" -Name "KeyboardSyncMode" -Type "String" -Value "(Server Default)"
 
     # Copy policy definitions files to lacal computer
     Copy-File -Path $appDestination\Configuration\*.admx, $appDestination\Configuration\en-us -Destination $envWinDir\PolicyDefinitions -Recurse
