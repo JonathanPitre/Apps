@@ -4,7 +4,9 @@
     <Product ID="ProPlus2021Volume" PIDKEY="FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH">
       <Language ID="en-us" />
       <Language ID="fr-fr" />
+      <ExcludeApp ID="Groove" />
       <ExcludeApp ID="Lync" />
+      <ExcludeApp ID="OneDrive" />
     </Product>
     <Product ID="LanguagePack">
       <Language ID="en-us" />
@@ -14,6 +16,7 @@
   <Property Name="SharedComputerLicensing" Value="0" />
   <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
   <Property Name="DeviceBasedLicensing" Value="0" />
+  <Property Name="PinIconsToTaskbar" Value="TRUE" />
   <Property Name="SCLCacheOverride" Value="0" />
   <Property Name="AUTOACTIVATE" Value="1" />
   <Updates Enabled="FALSE" />

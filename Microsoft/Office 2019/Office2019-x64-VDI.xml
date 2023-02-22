@@ -9,8 +9,8 @@
       <ExcludeApp ID="OneDrive" />
     </Product>
     <Product ID="LanguagePack">
-      <Language ID="fr-fr" />
       <Language ID="en-us" />
+      <Language ID="fr-fr" />
     </Product>
   </Add>
   <Property Name="SharedComputerLicensing" Value="1" />
@@ -19,8 +19,6 @@
   <Property Name="PinIconsToTaskbar" Value="TRUE" />
   <Property Name="SCLCacheOverride" Value="0" />
   <Property Name="AUTOACTIVATE" Value="1" />
-
-
   <Updates Enabled="FALSE" />
   <RemoveMSI>
     <IgnoreProduct ID="PrjPro" />
