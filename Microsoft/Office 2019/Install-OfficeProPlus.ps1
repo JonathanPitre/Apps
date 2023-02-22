@@ -43,17 +43,17 @@ Function Initialize-Module
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -94,7 +94,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -118,18 +118,6 @@ $appScriptDirectory = Get-ScriptDirectory
 Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
-}
-
-# Download required config file
-Set-Location -Path $appScriptDirectory
-If (-Not(Test-Path -Path $appScriptDirectory\$appConfig))
-{
-    Write-Log -Message "Downloading $appVendor $appName Config.." -Severity 1 -LogType CMTrace -WriteHost $True
-    Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
-}
-Else
-{
-    Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
 }
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
@@ -193,21 +181,21 @@ Else
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Microsoft"
-$appName = "Visio"
+$appName = "Office Professional Plus 2019"
 $appSetup = "setup.exe"
-$appProcesses = @("VISIO")
-$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Office%20365/Visio365-x64-VDI.xml"
+$appProcesses = @("OUTOOK", "EXCEL", "MSACCESS", "WINPROJ", "LYNC", "VISIO", "ONENOTE", "POWERPNT", "MSPUB")
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Office%202019/Office2019-x64-VDI.xml"
 $appConfig = Split-Path -Path $appConfigURL -Leaf
 $appBitness = ([xml](Get-Content -Path $appScriptDirectory\$appConfig)).SelectNodes("//Add/@OfficeClientEdition").Value
 $appChannel = ([xml](Get-Content -Path $appScriptDirectory\$appConfig)).SelectNodes("//@Channel").Value
 $appDownloadParameters = "/download .\$appConfig"
 $appInstallParameters = "/configure .\$appConfig"
-$Evergreen = Get-EvergreenApp -Name Microsoft365Apps | Where-Object {$_.Channel -eq $appChannel}
+$Evergreen = Get-EvergreenApp -Name Microsoft365Apps | Where-Object { $_.Channel -eq $appChannel }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appUninstallerDir = "$appScriptDirectory\Remove-PreviousOfficeInstalls"
-If ($appBitness -eq "64") {$appDestination = "$env:ProgramFiles\Microsoft Office\root\Office16"}
-If ($appBitness -eq "86") {$appDestination = "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16"}
+If ($appBitness -eq "64") { $appDestination = "$env:ProgramFiles\Microsoft Office\root\Office16" }
+If ($appBitness -eq "86") { $appDestination = "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16" }
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName .+ " -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName .* " -RegEx).DisplayVersion | Sort-Object -Descending | Select-Object -First 1
 
@@ -225,12 +213,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Uninstall previous version(s)
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
+    
     # Download cleanup script
     Get-MicrosoftOfficeUninstaller
-    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true -ProductsToRemove $appName
+    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true
 
     # Download latest version
-    If (-Not(Test-Path -Path .\$appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path .\$appVersion)) { New-Folder -Path $appVersion }
     Copy-File $appConfig, $appSetup -Destination $appVersion -ContinueFileCopyOnError $True
     Set-Location -Path .\$appVersion
 
@@ -246,10 +235,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName x$appBitness $appChannel..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -Passthru
+    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -PassThru
     Get-Process -Name OfficeC2RClient | Stop-Process -Force
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Rename-Item -Path "$envCommonStartMenuPrograms\OneNote 2016.lnk" -NewName "$envCommonStartMenuPrograms\OneNote.lnk"
     Get-ScheduledTask -TaskName "Office*" | Stop-ScheduledTask
     Get-ScheduledTask -TaskName "Office*" | Disable-ScheduledTask
 

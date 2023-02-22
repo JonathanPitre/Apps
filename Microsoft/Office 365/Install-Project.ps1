@@ -138,7 +138,7 @@ Function Get-MicrosoftOfficeUninstaller
 {
     <#
     .SYNOPSIS
-    Process Office Admx files
+    Download Microsoft Office Uninstaller files
 
     .PARAMETER UninstallerURL
     Uninstaller URL repo
@@ -202,9 +202,6 @@ $appChannel = ([xml](Get-Content -Path $appScriptDirectory\$appConfig)).SelectNo
 $appDownloadParameters = "/download .\$appConfig"
 $appInstallParameters = "/configure .\$appConfig"
 $Evergreen = Get-EvergreenApp -Name Microsoft365Apps | Where-Object {$_.Channel -eq $appChannel}
-$EvergreenADMX = Get-MicrosoftOfficeAdmxOnline | Where-Object { $_.Architecture -match $appBitness }
-$appADMXURL = $EvergreenADMX.URI
-$appADMX = Split-Path -Path $appADMXURL -Leaf
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appUninstallerDir = "$appScriptDirectory\Remove-PreviousOfficeInstalls"

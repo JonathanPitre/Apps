@@ -122,23 +122,82 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
+Function Get-MicrosoftOfficeUninstaller
+{
+    <#
+    .SYNOPSIS
+    Download Microsoft Office Uninstaller files
+
+    .PARAMETER UninstallerURL
+    Uninstaller URL repo
+
+#>
+
+    param(
+        [string]$UninstallerURL = "https://raw.githubusercontent.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/master/Office-ProPlus-Deployment/Remove-PreviousOfficeInstalls"
+    )
+
+    try
+    {
+        # Download
+        If (-Not(Test-Path -Path $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1))
+        {
+            Write-Log -Message "Downloading $appVendor $appName cleanup scripts..." -Severity 1 -LogType CMTrace -WriteHost $True
+            New-Folder -Path $appUninstallerDir
+            Invoke-WebRequest -Uri $UninstallerURL\OffScrub03.vbs -UseBasicParsing -OutFile $appUninstallerDir\OffScrub03.vbs
+            Invoke-WebRequest -Uri $UninstallerURL\OffScrub07.vbs -UseBasicParsing -OutFile $appUninstallerDir\OffScrub07.vbs
+            Invoke-WebRequest -Uri $UninstallerURL\OffScrub10.vbs -UseBasicParsing -OutFile $appUninstallerDir\OffScrub10.vbs
+            Invoke-WebRequest -Uri $UninstallerURL\OffScrub_O15msi.vbs -UseBasicParsing -OutFile $appUninstallerDir\OffScrub_O15msi.vbs
+            Invoke-WebRequest -Uri $UninstallerURL\OffScrub_O16msi.vbs -UseBasicParsing -OutFile $appUninstallerDir\OffScrub_O16msi.vbs
+            Invoke-WebRequest -Uri $UninstallerURL\OffScrubc2r.vbs -UseBasicParsing -OutFile $appUninstallerDir\OffScrubc2r.vbs
+            Invoke-WebRequest -Uri $UninstallerURL\Office2013Setup.exe -UseBasicParsing -OutFile $appUninstallerDir\Office2013Setup.exe
+            Invoke-WebRequest -Uri $UninstallerURL\Office2016Setup.exe -UseBasicParsing -OutFile $appUninstallerDir\Office2016Setup.exe
+            Invoke-WebRequest -Uri $UninstallerURL\Remove-PreviousOfficeInstalls.ps1 -UseBasicParsing -OutFile $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1
+        }
+        Else
+        {
+            Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        }
+
+    }
+    catch
+    {
+        Throw $_
+    }
+}
+
+# Download required config file
+Set-Location -Path $appScriptDirectory
+If (-Not(Test-Path -Path $appScriptDirectory\$appConfig))
+{
+    Write-Log -Message "Downloading $appVendor $appName Config.." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
+}
+Else
+{
+    Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+}
+
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Microsoft"
-$appName = "Office"
-$appMajorVersion = "2019"
+$appName = "Office LTSC Professional Plus 2021"
 $appSetup = "setup.exe"
 $appProcesses = @("OUTOOK", "EXCEL", "MSACCESS", "WINPROJ", "LYNC", "VISIO", "ONENOTE", "POWERPNT", "MSPUB")
-$appConfig = "Office2019-x64-VDI.xml"
-$appBitness = ([xml](Get-Content $appConfig)).SelectNodes("//Add/@OfficeClientEdition").Value
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Office%202021/Office2021-x64-VDI.xml"
+$appConfig = Split-Path -Path $appConfigURL -Leaf
+$appBitness = ([xml](Get-Content -Path $appScriptDirectory\$appConfig)).SelectNodes("//Add/@OfficeClientEdition").Value
+$appChannel = ([xml](Get-Content -Path $appScriptDirectory\$appConfig)).SelectNodes("//@Channel").Value
 $appDownloadParameters = "/download .\$appConfig"
 $appInstallParameters = "/configure .\$appConfig"
-$Evergreen = Get-EvergreenApp -Name Microsoft365Apps | Where-Object { $_.Channel -eq "$appName $appMajorVersion Enterprise" }
+$Evergreen = Get-EvergreenApp -Name Microsoft365Apps | Where-Object { $_.Channel -eq $appChannel }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appDestination = "$env:ProgramFiles\Microsoft Office\root\Office16"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName .+ $appMajorVersion" -RegEx)
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName .* $appMajorVersion" -RegEx).DisplayVersion
+$appUninstallerDir = "$appScriptDirectory\Remove-PreviousOfficeInstalls"
+If ($appBitness -eq "64") { $appDestination = "$env:ProgramFiles\Microsoft Office\root\Office16" }
+If ($appBitness -eq "86") { $appDestination = "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16" }
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName .+ " -RegEx)
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName .* " -RegEx).DisplayVersion | Sort-Object -Descending | Select-Object -First 1
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
@@ -146,30 +205,27 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptDirectory
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appSetup))
-    {
-        Write-Log -Message "Downloading the latest version of $appVendor $appName 365 Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
-    }
-    Else
-    {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
-
+    # Download latest setup file(s)
+    Write-Log -Message "Downloading the latest version of $appVendor Office Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     $appSetupVersion = (Get-Command .\$appSetup).FileVersionInfo.FileVersion
 
+    # Uninstall previous version(s)
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
-    # https://github.com/OfficeDev/Office-IT-Pro-Deployment-Scripts/blob/master/Office-ProPlus-Deployment/Remove-PreviousOfficeInstalls/Remove-PreviousOfficeInstalls.ps1
-    .\Remove-PreviousOfficeInstalls\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true
+    
+    # Download cleanup script
+    Get-MicrosoftOfficeUninstaller
+    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true
 
-    If (-Not(Test-Path -Path .\$appSetupVersion)) { New-Folder -Path $appSetupVersion }
-    Copy-File .\$appConfig, $appSetup -Destination $appSetupVersion -ContinueFileCopyOnError $True
-    Set-Location -Path .\$appSetupVersion
+    # Download latest version
+    If (-Not(Test-Path -Path .\$appVersion)) { New-Folder -Path $appVersion }
+    Copy-File $appConfig, $appSetup -Destination $appVersion -ContinueFileCopyOnError $True
+    Set-Location -Path .\$appVersion
 
     If (-Not(Test-Path -Path .\Office\Data\v$appBitness.cab))
     {
-        Write-Log -Message "Downloading $appVendor $appName $appMajorVersion $appBitness via ODT $appSetupVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName x$appBitness $appChannel..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-Process -Path .\$appSetup -Parameters $appDownloadParameters -PassThru
     }
     Else
@@ -177,21 +233,22 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Write-Log -Message "Installing $appVendor $appName $appMajorVersion $appBitness..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Install latest version
+    Write-Log -Message "Installing $appVendor $appName x$appBitness $appChannel..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -PassThru
     Get-Process -Name OfficeC2RClient | Stop-Process -Force
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
     Rename-Item -Path "$envCommonStartMenuPrograms\OneNote 2016.lnk" -NewName "$envCommonStartMenuPrograms\OneNote.lnk"
-    Get-ScheduledTask -TaskName "$appName*" | Stop-ScheduledTask
-    Get-ScheduledTask -TaskName "$appName*" | Disable-ScheduledTask
+    Get-ScheduledTask -TaskName "Office*" | Stop-ScheduledTask
+    Get-ScheduledTask -TaskName "Office*" | Disable-ScheduledTask
 
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appVendor $appName $appMajorVersion $appBitness was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName x$appBitness $appChannel was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
 {
-    Write-Log -Message "$appVendor $appName $appMajorVersion $appBitness is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName x$appBitness $appChannel is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }

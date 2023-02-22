@@ -1,26 +1,21 @@
-<Configuration ID="db6e8ad5-84d3-4256-9ce8-55ce762e8367">
-  <Info Description="Office 2019 Optimized for VDI" />
-  <Add OfficeClientEdition="64" Channel="PerpetualVL2019">
-    <Product ID="ProPlus2019Volume" PIDKEY="NMMKJ-6RK4F-KMJVX-8D9MJ-6MWKP">
+<Configuration ID="cdf7d47a-fcf6-401c-a1aa-aa15a5aaa449">
+  <Info Description="Office 2021 Optimized for VDI" />
+  <Add OfficeClientEdition="64" Channel="PerpetualVL2021">
+    <Product ID="ProPlus2021Volume" PIDKEY="FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH">
       <Language ID="en-us" />
       <Language ID="fr-fr" />
-      <ExcludeApp ID="Groove" />
       <ExcludeApp ID="Lync" />
-      <ExcludeApp ID="OneDrive" />
     </Product>
     <Product ID="LanguagePack">
-      <Language ID="fr-fr" />
       <Language ID="en-us" />
+      <Language ID="fr-fr" />
     </Product>
   </Add>
-  <Property Name="SharedComputerLicensing" Value="1" />
+  <Property Name="SharedComputerLicensing" Value="0" />
   <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
   <Property Name="DeviceBasedLicensing" Value="0" />
-  <Property Name="PinIconsToTaskbar" Value="TRUE" />
   <Property Name="SCLCacheOverride" Value="0" />
   <Property Name="AUTOACTIVATE" Value="1" />
-
-
   <Updates Enabled="FALSE" />
   <RemoveMSI>
     <IgnoreProduct ID="PrjPro" />
@@ -93,5 +88,4 @@
     <User Key="software\microsoft\office\16.0\word\options" Name="linkedinresumeassistant" Value="0" Type="REG_DWORD" App="word16" Id="L_LinkedInResumeAssistant" />
   </AppSettings>
   <Display Level="Full" AcceptEULA="TRUE" />
-  <Logging Level="Standard" Path="%TEMP%" />
 </Configuration>

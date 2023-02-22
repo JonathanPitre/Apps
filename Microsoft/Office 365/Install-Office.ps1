@@ -122,107 +122,11 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
-Function Get-MicrosoftOfficeAdmxOnline
-{
-    <#
-    .SYNOPSIS
-    Get the latest Version and Uri for the Office 365 Admx files (both x64 and x86)
-#>
-
-    $id = "49030"
-    $urlversion = "https://www.microsoft.com/en-us/download/details.aspx?id=$($id)"
-    $urldownload = "https://www.microsoft.com/en-us/download/confirmation.aspx?id=$($id)"
-    try
-    {
-        # Load page for version scrape
-        $web = Invoke-WebRequest -UseBasicParsing -Uri $urlversion -ErrorAction SilentlyContinue
-        $str = ($web.ToString() -split "[`r`n]" | Select-String "Version:").ToString()
-        # Grab version
-        $Version = ($str | Select-String -Pattern "(\d+(\.\d+){1,4})" -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Value }).ToString()
-        # load page for uri scrape
-        $web = Invoke-WebRequest -UseBasicParsing -Uri $urldownload -ErrorAction SilentlyContinue -MaximumRedirection 0
-        # Grab x86 version
-        $URLx86 = ($web.Links | Where-Object { $_.outerHTML -like "*click here to download manually*" -and $_.href -like "*.exe" -and $_.href -like "*x86*" } | Select-Object -First 1).href
-        # Grab x64 version
-        $URLx64 = ($web.Links | Where-Object { $_.outerHTML -like "*click here to download manually*" -and $_.href -like "*.exe" -and $_.href -like "*x64*" } | Select-Object -First 1).href
-
-        if ($Version -and $URLx86)
-        {
-            [PSCustomObject] @{
-                Version      = $Version
-                Architecture = "x86"
-                URI          = $URLx86
-            }
-        }
-
-        if ($Version -and $URLx64)
-        {
-            [PSCustomObject] @{
-                Version      = $Version
-                Architecture = "x64"
-                URI          = $URLx64
-            }
-        }
-
-    }
-    catch
-    {
-        Throw $_
-    }
-}
-
-Function Get-MicrosoftOfficeAdmx
-{
-    <#
-    .SYNOPSIS
-    Process Office Admx files
-
-    .PARAMETER Version
-    Current Version present
-
-    .PARAMETER Architecture
-    Architecture (x86 or x64)
-#>
-
-    param(
-        [string]$Version,
-        [string]$Architecture = "x64"
-    )
-
-    try
-    {
-        # Download
-        If (-Not(Test-Path -Path $appScriptDirectory\$appADMX))
-        {
-            Write-Log -Message "Downloading $appVendor $appName $appMajorVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-            Invoke-WebRequest -Uri $appADMXURL -UseBasicParsing -OutFile $appScriptDirectory\$appADMX
-        }
-        Else
-        {
-            Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-        }
-
-        # Extract
-        Write-Log -Message "Extracting $appVendor $appName $appMajorVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-        $null = Execute-Process -Path $appScriptDirectory\$appADMX -Parameters "/quiet /norestart /extract:`"$appScriptDirectory\PolicyDefinitions`""
-
-        # Cleanup
-        Move-Item -Path $appScriptDirectory\PolicyDefinitions\admx\* -Destination $appScriptDirectory\PolicyDefinitions -Force
-        Remove-Item -Path $appScriptDirectory\PolicyDefinitions -Include "admin", "admx", "*.xlsx" -Force -Recurse
-        Remove-Item -Path $appScriptDirectory\$appADMX -Recurse -Force
-
-    }
-    catch
-    {
-        Throw $_
-    }
-}
-
 Function Get-MicrosoftOfficeUninstaller
 {
     <#
     .SYNOPSIS
-    Process Office Admx files
+    Download Microsoft Office Uninstaller files
 
     .PARAMETER UninstallerURL
     Uninstaller URL repo
@@ -287,9 +191,6 @@ $appChannel = ([xml](Get-Content -Path $appScriptDirectory\$appConfig)).SelectNo
 $appDownloadParameters = "/download .\$appConfig"
 $appInstallParameters = "/configure .\$appConfig"
 $Evergreen = Get-EvergreenApp -Name Microsoft365Apps | Where-Object {$_.Channel -eq $appChannel}
-$EvergreenADMX = Get-MicrosoftOfficeAdmxOnline | Where-Object { $_.Architecture -match $appBitness }
-$appADMXURL = $EvergreenADMX.URI
-$appADMX = Split-Path -Path $appADMXURL -Leaf
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appUninstallerDir = "$appScriptDirectory\Remove-PreviousOfficeInstalls"
@@ -308,9 +209,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Downloading the latest version of $appVendor Office Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
     Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     $appSetupVersion = (Get-Command .\$appSetup).FileVersionInfo.FileVersion
-
-    # Download latest policy definitions
-    Get-MicrosoftOfficeAdmx
 
     # Uninstall previous version(s)
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
