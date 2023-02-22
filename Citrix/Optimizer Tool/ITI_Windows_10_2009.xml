@@ -5,7 +5,7 @@
     <version>1.0</version>
     <id>009BBD27-D05A-49EF-995D-20152DA7DDC2</id>
     <displayname>Windows 10 versions 20H2, 21H2, 21H2 (2009) from ITI</displayname>
-    <description>Windows 10 versions 20H2, 21H2, 21H2 (2009) from ITI</description>
+    <description>OS optimizations for Windows 10 Non-Persistent</description>
     <category>OS Optimizations</category>
     <author>Jonathan Pitre</author>
     <lastupdatedate>6/10/2022</lastupdatedate>
@@ -1773,7 +1773,7 @@ This can have significant impact on performance.</description>
 [String]$m_DesiredPlanID = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"; #This is High Performance
 [String]$m_CurrentPlan = powercfg /GetActiveScheme
 
-# We could use RegEx, but it's just so hard to read. Insetad, using ":" as first delimiter and " " as second delimiter. Output of this command is localized, so we need to keep this as simple as possible. 
+# We could use RegEx, but it's just so hard to read. Insetad, using ":" as first delimiter and " " as second delimiter. Output of this command is localized, so we need to keep this as simple as possible.
 [String]$m_CurrentPlanID = $m_CurrentPlan.Substring($m_CurrentPlan.IndexOf(":") + 2).Split(" ")[0];
 
 # We want to compare current plan with "High Performance" - this is localized, so we are using scheme ID instead
@@ -1791,13 +1791,13 @@ Return;]]></value>
           <value><![CDATA[[String]$m_DesiredPlanID = "8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c"; #This is High Performance
 [String]$m_CurrentPlan = powercfg /GetActiveScheme
 
-# We could use RegEx, but it's just so hard to read. Insetad, using ":" as first delimiter and " " as second delimiter. Output of this command is localized, so we need to keep this as simple as possible. 
+# We could use RegEx, but it's just so hard to read. Insetad, using ":" as first delimiter and " " as second delimiter. Output of this command is localized, so we need to keep this as simple as possible.
 [String]$m_CurrentPlanID = $m_CurrentPlan.Substring($m_CurrentPlan.IndexOf(":") + 2).Split(" ")[0];
 
 # We want to compare current plan with "High Performance" - this is localized, so we are using scheme ID instead
 If ($m_CurrentPlanID -eq $m_DesiredPlanID) {
-              $Global:CTXOE_Result = $True; 
-              $Global:CTXOE_Details = "Mode already configured, skipping";    
+              $Global:CTXOE_Result = $True;
+              $Global:CTXOE_Details = "Mode already configured, skipping";
               Return;
 }
 
@@ -1822,13 +1822,13 @@ $Global:CTXOE_Details = "Wrong mode is selected. Power management schema ID: $m_
 [String]$m_DesiredPlanID = "381b4222-f694-41f0-9685-ff5bb260df2e"; #This is Balanced
 [String]$m_CurrentPlan = powercfg /GetActiveScheme
 
-# We could use RegEx, but it's just so hard to read. Insetad, using ":" as first delimiter and " " as second delimiter. Output of this command is localized, so we need to keep this as simple as possible. 
+# We could use RegEx, but it's just so hard to read. Insetad, using ":" as first delimiter and " " as second delimiter. Output of this command is localized, so we need to keep this as simple as possible.
 [String]$m_CurrentPlanID = $m_CurrentPlan.Substring($m_CurrentPlan.IndexOf(":") + 2).Split(" ")[0];
 
 # We want to compare current plan with "Balanced" - this is localized, so we are using scheme ID instead
 If ($m_CurrentPlanID -eq $m_DesiredPlanID) {
-              $Global:CTXOE_Result = $True; 
-              $Global:CTXOE_Details = "Mode already configured, skipping";    
+              $Global:CTXOE_Result = $True;
+              $Global:CTXOE_Details = "Mode already configured, skipping";
               Return;
 }
 
