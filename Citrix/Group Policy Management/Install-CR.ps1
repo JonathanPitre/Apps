@@ -1,41 +1,83 @@
-# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
+#region Initialisations
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
+# Unblock ps1 script
+Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT", "Evergreen") # Modules list
 
-Function Get-ScriptDirectory
+Function Get-ScriptPath
 {
-    Remove-Variable appScriptDirectory
-    Try
+    <#
+    .SYNOPSIS
+        Get-ScriptPath returns the path of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+
+    Begin
     {
-        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
-        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+        Remove-Variable appScriptPath
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code
+        ElseIf ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") { Split-Path -Path $My$MyInvocation.MyCommand.Source } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Path } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { Split-Path -Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.PSScriptRoot) { $MyInvocation.PSScriptRoot } # Windows PowerShell 3.0+
+        ElseIf ($MyInvocation.MyCommand.Path) { Split-Path -Path $MyInvocation.MyCommand.Path -Parent } # Windows PowerShell
         Else
         {
-            Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
+            Write-Host -Object "Unable to resolve script's file path!" -ForegroundColor Red
             Exit 1
         }
     }
-    Catch
-    {
-        Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
-        Exit 2
-    }
 }
 
-Function Initialize-Module
+Function Get-ScriptName
+{
+    <#
+    .SYNOPSIS
+        Get-ScriptName returns the name of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+    Begin
+    {
+        Remove-Variable appScriptName
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path -Leaf } # Visual Studio Code Host
+        ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        Else
+        {
+            Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
+            Exit 1
+        }
+    }
+}
 {
     [CmdletBinding()]
     Param
@@ -111,17 +153,19 @@ Function Initialize-Module
     }
 }
 
-# Get the current script directory
-$appScriptDirectory = Get-ScriptDirectory
+[string]$appScriptPath = Get-ScriptPath # Get the current script path
+[string]$appScriptName = Get-ScriptName # Get the current script name
 
 # Install and import modules list
 Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+#endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
+#region Functions
 Function Get-CitrixDownload
 {
     <#
@@ -195,6 +239,8 @@ Function Get-CitrixDownload
     return $OutFile
 }
 
+#endregion
+
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Citrix"
@@ -217,7 +263,7 @@ $appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2
 
 If ($appVersion -gt $appInstalledVersion)
 {
-    Set-Location -Path $appScriptDirectory
+    Set-Location -Path $appScriptPath
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion
 
@@ -241,7 +287,7 @@ If ($appVersion -gt $appInstalledVersion)
         }
     }
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup) -or (Get-ChildItem).Length -lt 1024kb)
+    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup) -or (Get-ChildItem).Length -lt 1024kb)
     {
         Write-Log -Message "Citrix credentials for downloading the $appVendor $appName2" -Severity 1 -LogType CMTrace -WriteHost $True
         $CitrixUserName = Read-Host -Prompt "Please supply your Citrix.com username"

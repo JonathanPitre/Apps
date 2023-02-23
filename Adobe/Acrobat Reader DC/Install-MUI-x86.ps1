@@ -1,41 +1,83 @@
-# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
+#region Initialisations
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
+# Unblock ps1 script
+Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT", "Evergreen") # Modules list
 
-Function Get-ScriptDirectory
+Function Get-ScriptPath
 {
-    Remove-Variable appScriptDirectory
-    Try
+    <#
+    .SYNOPSIS
+        Get-ScriptPath returns the path of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+
+    Begin
     {
-        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
-        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+        Remove-Variable appScriptPath
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code
+        ElseIf ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") { Split-Path -Path $My$MyInvocation.MyCommand.Source } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Path } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { Split-Path -Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.PSScriptRoot) { $MyInvocation.PSScriptRoot } # Windows PowerShell 3.0+
+        ElseIf ($MyInvocation.MyCommand.Path) { Split-Path -Path $MyInvocation.MyCommand.Path -Parent } # Windows PowerShell
         Else
         {
-            Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
+            Write-Host -Object "Unable to resolve script's file path!" -ForegroundColor Red
             Exit 1
         }
     }
-    Catch
-    {
-        Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
-        Exit 2
-    }
 }
 
-Function Initialize-Module
+Function Get-ScriptName
+{
+    <#
+    .SYNOPSIS
+        Get-ScriptName returns the name of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+    Begin
+    {
+        Remove-Variable appScriptName
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path -Leaf } # Visual Studio Code Host
+        ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        Else
+        {
+            Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
+            Exit 1
+        }
+    }
+}
 {
     [CmdletBinding()]
     Param
@@ -53,7 +95,8 @@ Function Initialize-Module
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
+        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -111,16 +154,20 @@ Function Initialize-Module
     }
 }
 
-# Get the current script directory
-$appScriptDirectory = Get-ScriptDirectory
+[string]$appScriptPath = Get-ScriptPath # Get the current script path
+[string]$appScriptName = Get-ScriptName # Get the current script name
 
 # Install and import modules list
 Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+#endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
+
+#region Functions
+#endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -159,20 +206,20 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $app
 
 If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
 {
-    Set-Location -Path $appScriptDirectory
+    Set-Location -Path $appScriptPath
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appMsiSetup))
+    If (-Not(Test-Path -Path $appScriptPath\$appMsiSetup))
     {
         Write-Log -Message "Downloading $appVendor $appName $appProduct $appTrack $appLanguage $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appSetupURL -OutFile $appSetup
         Write-Log -Message "Extracting $appVendor $appName $appProduct $appTrack $appLanguage $appArchitecture $appVersion MSI..." -Severity 1 -LogType CMTrace -WriteHost $True
-        New-Folder -Path "$appScriptDirectory\MSI"
+        New-Folder -Path "$appScriptPath\MSI"
         # Extract MSI
-        Execute-Process -Path .\$appSetup -Parameters "-sfx_o`"$appScriptDirectory\MSI`" -sfx_ne"
-        Copy-File -Path "$appScriptDirectory\MSI\*" -Destination $appScriptDirectory -Recurse
-        Remove-Folder -Path "$appScriptDirectory\MSI"
-        Remove-File -Path "$appScriptDirectory\$appSetup"
+        Execute-Process -Path .\$appSetup -Parameters "-sfx_o`"$appScriptPath\MSI`" -sfx_ne"
+        Copy-File -Path "$appScriptPath\MSI\*" -Destination $appScriptPath -Recurse
+        Remove-Folder -Path "$appScriptPath\MSI"
+        Remove-File -Path "$appScriptPath\$appSetup"
     }
     Else
     {
@@ -180,16 +227,16 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
     }
 
     # Download latest patch
-    If (-Not(Test-Path -Path $appScriptDirectory\$appPatch))
+    If (-Not(Test-Path -Path $appScriptPath\$appPatch))
     {
         Write-Log -Message "Downloading $appVendor $appName $appProduct $appTrack $appArchitecture $appPatchVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appPatchURL -OutFile $appPatch
         # Modify setup.ini according to latest patch
-        If ((Test-Path -Path $appScriptDirectory\$appPatch) -and (Test-Path -Path $appScriptDirectory\$appPatch\setup.ini))
+        If ((Test-Path -Path $appScriptPath\$appPatch) -and (Test-Path -Path $appScriptPath\$appPatch\setup.ini))
         {
-            Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Startup" -Key "CmdLine" -Value "/sPB /rs /msi $appAddParameters"
-            Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Product" -Key "CmdLine" -Value "TRANSFORMS=`"$appTransform`""
-            Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Product" -Key "PATCH" -Value $appPatch
+            Set-IniValue -FilePath $appScriptPath\setup.ini -Section "Startup" -Key "CmdLine" -Value "/sPB /rs /msi $appAddParameters"
+            Set-IniValue -FilePath $appScriptPath\setup.ini -Section "Product" -Key "CmdLine" -Value "TRANSFORMS=`"$appTransform`""
+            Set-IniValue -FilePath $appScriptPath\setup.ini -Section "Product" -Key "PATCH" -Value $appPatch
         }
     }
     Else
@@ -200,25 +247,25 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
     # Download latest policy definitions
     Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
     Invoke-WebRequest -UseBasicParsing -Uri $appADMXurl -OutFile $appADMX
-    New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-    Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
-    Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\*.adm
+    New-Folder -Path "$appScriptPath\PolicyDefinitions"
+    Expand-Archive -Path $appADMX -DestinationPath "$appScriptPath\PolicyDefinitions" -Force
+    Remove-File -Path $appADMX, $appScriptPath\PolicyDefinitions\*.adm
 
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
-    If (($IsAppInstalled) -and (Test-Path -Path $appScriptDirectory\$appMsiSetup))
+    If (($IsAppInstalled) -and (Test-Path -Path $appScriptPath\$appMsiSetup))
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Remove-MSIApplications -Name "$appVendor $appName*" -WildCard
     }
 
-    If ((Test-Path -Path "$appScriptDirectory\$appMsiSetup") -and (Test-Path -Path $appScriptDirectory\$appPatch))
+    If ((Test-Path -Path "$appScriptPath\$appMsiSetup") -and (Test-Path -Path $appScriptPath\$appPatch))
     {
         # Download required transform file
-        If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
+        If (-Not(Test-Path -Path $appScriptPath\$appTransform))
         {
             Write-Log -Message "Downloading $appVendor $appName $appProduct $appTrack $appArchitecture transform..." -Severity 1 -LogType CMTrace -WriteHost $True
-            Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptDirectory\$appTransform
+            Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptPath\$appTransform
         }
         Else
         {
@@ -230,7 +277,7 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
         Execute-MSI -Action Install -Path $appMsiSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -SkipMSIAlreadyInstalledCheck
 	$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion
     }
-    If (([version]$appPatchVersion -gt [version]$appInstalledVersion) -and (Test-Path -Path $appScriptDirectory\$appPatch))
+    If (([version]$appPatchVersion -gt [version]$appInstalledVersion) -and (Test-Path -Path $appScriptPath\$appPatch))
     {
         # Install latest patch
         Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
@@ -244,7 +291,7 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
     }
 
     # Install Extended Asian Language Font Pack
-    If (-Not(Test-Path -Path $appScriptDirectory\$appFont))
+    If (-Not(Test-Path -Path $appScriptPath\$appFont))
     {
         Write-Log -Message "Downloading $appVendor $appName $appShortVersion Extended Asian Language Font Pack..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appFontURL -OutFile $appFont
@@ -259,7 +306,7 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
     }
 
     # Install Spelling Dictionaries
-    If (-Not(Test-Path -Path $appScriptDirectory\$appDIC))
+    If (-Not(Test-Path -Path $appScriptPath\$appDIC))
     {
         Write-Log -Message "Downloading $appVendor $appName $appShortVersion Spelling Dictionaries..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appDicURL -OutFile $appDic

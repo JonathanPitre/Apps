@@ -1,14 +1,17 @@
-﻿# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
+﻿# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
+#region Initialisations
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
+# Unblock ps1 script
+Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
@@ -112,7 +115,7 @@ Function Initialize-Module
 }
 
 # Get the current script directory
-$appScriptDirectory = Get-ScriptDirectory
+$appScriptPath = Get-ScriptDirectory
 
 # Install and import modules list
 Foreach ($Module in $Modules)
@@ -121,6 +124,9 @@ Foreach ($Module in $Modules)
 }
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
+
+#region Functions
+#endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -144,12 +150,12 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersio
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
-	Set-Location -Path $appScriptDirectory
+	Set-Location -Path $appScriptPath
 	If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
 	Set-Location -Path $appVersion
 
 	# Download latest setup file(s)
-	If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
+	If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
  {
 		Write-Log -Message "Downloading $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
 		Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
@@ -168,19 +174,19 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 	}
 
 	# Download required config file
-	If (-Not(Test-Path -Path $appScriptDirectory\$appConfig))
+	If (-Not(Test-Path -Path $appScriptPath\$appConfig))
  {
 		Write-Log -Message "Downloading $appName config file..." -Severity 1 -LogType CMTrace -WriteHost $True
-		Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
+		Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptPath\$appConfig
 	}
 	Else
  {
 		Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
 	}
-	If (-Not(Test-Path -Path $appScriptDirectory\$appConfigHotkeys))
+	If (-Not(Test-Path -Path $appScriptPath\$appConfigHotkeys))
  {
 		Write-Log -Message "Downloading $appName config file..." -Severity 1 -LogType CMTrace -WriteHost $True
-		Invoke-WebRequest -UseBasicParsing -Uri $appConfigHotkeysURL -OutFile $appScriptDirectory\$appConfigHotkeys
+		Invoke-WebRequest -UseBasicParsing -Uri $appConfigHotkeysURL -OutFile $appScriptPath\$appConfigHotkeys
 	}
 	Else
  {
@@ -199,8 +205,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 	New-Folder -Path "$envSystemDrive\Users\Default\AppData\Roaming\$appName"
 	New-Folder -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
 	New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\$appName.lnk" -TargetPath "$appDestination\$appName.exe" -Arguments "-silent" -WorkingDirectory "$appDestination"
-	Copy-File -Path "$appScriptDirectory\$appConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\$appName" -ContinueOnError $True
-	Copy-File -Path "$appScriptDirectory\$appConfigHotkeys" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\$appName" -ContinueOnError $True
+	Copy-File -Path "$appScriptPath\$appConfig" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\$appName" -ContinueOnError $True
+	Copy-File -Path "$appScriptPath\$appConfigHotkeys" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\$appName" -ContinueOnError $True
 
 	# Disable automatic updates check - https://getsharex.com/changelog
 	Set-RegistryKey -Key "HKLM:\SOFTWARE\$appName" -Name "DisableUpdateCheck" -Type "DWord" -Value "1"

@@ -1,41 +1,83 @@
-﻿# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
+﻿# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
+#region Initialisations
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
+# Unblock ps1 script
+Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT", "Evergreen") # Modules list
 
-Function Get-ScriptDirectory
+Function Get-ScriptPath
 {
-    Remove-Variable appScriptDirectory
-    Try
+    <#
+    .SYNOPSIS
+        Get-ScriptPath returns the path of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+
+    Begin
     {
-        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
-        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+        Remove-Variable appScriptPath
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code
+        ElseIf ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") { Split-Path -Path $My$MyInvocation.MyCommand.Source } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Path } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { Split-Path -Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.PSScriptRoot) { $MyInvocation.PSScriptRoot } # Windows PowerShell 3.0+
+        ElseIf ($MyInvocation.MyCommand.Path) { Split-Path -Path $MyInvocation.MyCommand.Path -Parent } # Windows PowerShell
         Else
         {
-            Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
+            Write-Host -Object "Unable to resolve script's file path!" -ForegroundColor Red
             Exit 1
         }
     }
-    Catch
-    {
-        Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
-        Exit 2
-    }
 }
 
-Function Initialize-Module
+Function Get-ScriptName
+{
+    <#
+    .SYNOPSIS
+        Get-ScriptName returns the name of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+    Begin
+    {
+        Remove-Variable appScriptName
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path -Leaf } # Visual Studio Code Host
+        ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        Else
+        {
+            Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
+            Exit 1
+        }
+    }
+}
 {
     [CmdletBinding()]
     Param
@@ -111,17 +153,19 @@ Function Initialize-Module
     }
 }
 
-# Get the current script directory
-$appScriptDirectory = Get-ScriptDirectory
+[string]$appScriptPath = Get-ScriptPath # Get the current script path
+[string]$appScriptName = Get-ScriptName # Get the current script name
 
 # Install and import modules list
 Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+#endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
+#region Functions
 Function Get-DruideAntidote
 {
     [OutputType([System.Management.Automation.PSObject])]
@@ -214,6 +258,8 @@ Function Get-DruideAntidote
     }
 }
 
+#endregion
+
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Druide"
@@ -249,7 +295,7 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName \d{2}" -RegEx -
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
-    Set-Location -Path $appScriptDirectory
+    Set-Location -Path $appScriptPath
     If (-Not(Test-Path -Path $appPatchVersion)) { New-Folder -Path $appPatchVersion }
 
     # Uninstall previous versions
@@ -261,43 +307,43 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Download latest Gestionnaire Multipostes setup
     Write-Log -Message "Downloading $appVendor $appName $appShortVersion Gestionnaire Multipostes..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Invoke-WebRequest -UseBasicParsing -Uri $appUrlGestionnaire -OutFile $appScriptDirectory\$appGestionnaire
+    Invoke-WebRequest -UseBasicParsing -Uri $appUrlGestionnaire -OutFile $appScriptPath\$appGestionnaire
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptDirectory\$appPatchVersion\$appPatchAntidote))
+    If (-Not(Test-Path -Path $appScriptPath\$appPatchVersion\$appPatchAntidote))
     {
         Write-Log -Message "Downloading $appVendor $appName $appPatchVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appUrlPatchAntidote -OutFile $appScriptDirectory\$appPatchVersion\$appPatchAntidote
+        Invoke-WebRequest -UseBasicParsing -Uri $appUrlPatchAntidote -OutFile $appScriptPath\$appPatchVersion\$appPatchAntidote
     }
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appPatchVersion\$appPatchAntidoteF))
+    If (-Not(Test-Path -Path $appScriptPath\$appPatchVersion\$appPatchAntidoteF))
     {
         Write-Log -Message "Downloading $appVendor $appName $appPatchVersion French module patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appUrlPatchAntidoteF -OutFile $appScriptDirectory\$appPatchVersion\$appPatchAntidoteF
+        Invoke-WebRequest -UseBasicParsing -Uri $appUrlPatchAntidoteF -OutFile $appScriptPath\$appPatchVersion\$appPatchAntidoteF
     }
 
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
-    If (-Not(Test-Path -Path $appScriptDirectory\$appPatchVersion\$appPatchAntidoteE))
+    If (-Not(Test-Path -Path $appScriptPath\$appPatchVersion\$appPatchAntidoteE))
     {
         Write-Log -Message "Downloading $appVendor $appName $appPatchVersion English module patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appUrlPatchAntidoteE -OutFile $appScriptDirectory\$appPatchVersion\$appPatchAntidoteE
+        Invoke-WebRequest -UseBasicParsing -Uri $appUrlPatchAntidoteE -OutFile $appScriptPath\$appPatchVersion\$appPatchAntidoteE
     }
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    If (-Not(Test-Path -Path $appScriptDirectory\$appPatchVersion\$appPatchConnectix))
+    If (-Not(Test-Path -Path $appScriptPath\$appPatchVersion\$appPatchConnectix))
     {
         Write-Log -Message "Downloading $appVendor $appName $appPatchVersion Connectix patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appUrlPatchConnectix -OutFile $appScriptDirectory\$appPatchVersion\$appPatchConnectix
+        Invoke-WebRequest -UseBasicParsing -Uri $appUrlPatchConnectix -OutFile $appScriptPath\$appPatchVersion\$appPatchConnectix
     }
     Else
     {
@@ -305,18 +351,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Antidote setup
-    If ((Test-Path -Path $appScriptDirectory\$appSetupAntidote) -and (Test-Path -Path $appScriptDirectory\$appTransformAntidote))
+    If ((Test-Path -Path $appScriptPath\$appSetupAntidote) -and (Test-Path -Path $appScriptPath\$appTransformAntidote))
     {
         Write-Log -Message "Installing $appVendor $appName $appPatchVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         # Install latest Antidote version
-        Execute-MSI -Action Install -Path $appSetupAntidote -Parameters $appInstallParameters -Transform $appTransformAntidote -Patch "$appScriptDirectory\$appPatchVersion\$appPatchAntidote"
+        Execute-MSI -Action Install -Path $appSetupAntidote -Parameters $appInstallParameters -Transform $appTransformAntidote -Patch "$appScriptPath\$appPatchVersion\$appPatchAntidote"
     }
-    ElseIf (($isAppInstalled) -and (Test-Path -Path "$appScriptDirectory\$appPatchVersion\$appPatchAntidote"))
+    ElseIf (($isAppInstalled) -and (Test-Path -Path "$appScriptPath\$appPatchVersion\$appPatchAntidote"))
     {
         # Install latest Antidote patch
         Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
         Write-Log -Message "Installing  $appVendor $appName $appPatchVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSP -Path "$appScriptDirectory\$appPatchVersion\$appPatchAntidote"
+        Execute-MSP -Path "$appScriptPath\$appPatchVersion\$appPatchAntidote"
     }
     Else
     {
@@ -325,18 +371,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Antidote French module setup
-    If ((Test-Path -Path $appScriptDirectory\$appSetupAntidoteF) -and (Test-Path -Path $appScriptDirectory\$appTransformAntidote))
+    If ((Test-Path -Path $appScriptPath\$appSetupAntidoteF) -and (Test-Path -Path $appScriptPath\$appTransformAntidote))
     {
         Write-Log -Message "Installing $appVendor $appName $appPatchVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         # Install latest Antidote French module version
-        Execute-MSI -Action Install -Path $appSetupAntidoteF -Parameters $appInstallParameters -Transform $appTransformAntidote -Patch "$appScriptDirectory\$appPatchVersion\$appPatchAntidoteF"
+        Execute-MSI -Action Install -Path $appSetupAntidoteF -Parameters $appInstallParameters -Transform $appTransformAntidote -Patch "$appScriptPath\$appPatchVersion\$appPatchAntidoteF"
     }
-    ElseIf (($isAppInstalled) -and (Test-Path -Path "$appScriptDirectory\$appPatchVersion\$appPatchAntidoteF"))
+    ElseIf (($isAppInstalled) -and (Test-Path -Path "$appScriptPath\$appPatchVersion\$appPatchAntidoteF"))
     {
         # Install latest Antidote French module patch
         Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
         Write-Log -Message "Installing  $appVendor $appName $appPatchVersion French module patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSP -Path "$appScriptDirectory\$appPatchVersion\$appPatchAntidoteF"
+        Execute-MSP -Path "$appScriptPath\$appPatchVersion\$appPatchAntidoteF"
     }
     Else
     {
@@ -345,18 +391,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Antidote English module setup
-    If ((Test-Path -Path $appScriptDirectory\$appSetupAntidoteE) -and (Test-Path -Path $appScriptDirectory\$appTransformAntidote))
+    If ((Test-Path -Path $appScriptPath\$appSetupAntidoteE) -and (Test-Path -Path $appScriptPath\$appTransformAntidote))
     {
         Write-Log -Message "Installing $appVendor $appName $appPatchVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         # Install latest Antidote English module version
-        Execute-MSI -Action Install -Path $appSetupAntidoteE -Parameters $appInstallParameters -Transform $appTransformAntidote -Patch "$appScriptDirectory\$appPatchVersion\$appPatchAntidoteE"
+        Execute-MSI -Action Install -Path $appSetupAntidoteE -Parameters $appInstallParameters -Transform $appTransformAntidote -Patch "$appScriptPath\$appPatchVersion\$appPatchAntidoteE"
     }
-    ElseIf (($isAppInstalled) -and (Test-Path -Path "$appScriptDirectory\$appPatchVersion\$appPatchAntidoteE"))
+    ElseIf (($isAppInstalled) -and (Test-Path -Path "$appScriptPath\$appPatchVersion\$appPatchAntidoteE"))
     {
         # Install latest Antidote English module patch
         Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
         Write-Log -Message "Installing  $appVendor $appName $appPatchVersion English module patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSP -Path "$appScriptDirectory\$appPatchVersion\$appPatchAntidoteE"
+        Execute-MSP -Path "$appScriptPath\$appPatchVersion\$appPatchAntidoteE"
     }
     Else
     {
@@ -365,18 +411,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Connectix setup
-    If ((Test-Path -Path $appScriptDirectory\$appSetupConnectix) -and (Test-Path -Path $appScriptDirectory\$appTransformConnectix))
+    If ((Test-Path -Path $appScriptPath\$appSetupConnectix) -and (Test-Path -Path $appScriptPath\$appTransformConnectix))
     {
         Write-Log -Message "Installing $appVendor $appName $appPatchVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         # Install latest Connectix version
-        Execute-MSI -Action Install -Path $appSetupConnectix -Parameters $appInstallParameters -Transform $appTransformConnectix -Patch "$appScriptDirectory\$appPatchVersion\$apspPatchConnectix"
+        Execute-MSI -Action Install -Path $appSetupConnectix -Parameters $appInstallParameters -Transform $appTransformConnectix -Patch "$appScriptPath\$appPatchVersion\$apspPatchConnectix"
     }
-    ElseIf (($isAppInstalled) -and (Test-Path -Path "$appScriptDirectory\$appPatchVersion\$apspPatchConnectix"))
+    ElseIf (($isAppInstalled) -and (Test-Path -Path "$appScriptPath\$appPatchVersion\$apspPatchConnectix"))
     {
         # Install latest Connectix patch
         Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
         Write-Log -Message "Installing  $appVendor $appName $appPatchVersion Connectix patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSP -Path "$appScriptDirectory\$appPatchVersion\$apspPatchConnectix"
+        Execute-MSP -Path "$appScriptPath\$appPatchVersion\$apspPatchConnectix"
     }
     Else
     {

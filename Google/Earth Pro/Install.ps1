@@ -1,14 +1,17 @@
-﻿# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
+﻿# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
+#region Initialisations
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
+# Unblock ps1 script
+Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
@@ -113,7 +116,7 @@ Function Initialize-Module
 
 
 # Get the current script directory
-$appScriptDirectory = Get-ScriptDirectory
+$appScriptPath = Get-ScriptDirectory
 
 # Install and import modules list
 Foreach ($Module in $Modules)
@@ -123,6 +126,7 @@ Foreach ($Module in $Modules)
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
+#region Functions
 Function Install-WinGet
 {
 	[CmdletBinding()]
@@ -171,6 +175,8 @@ Function Install-WinGet
     Write-Host -Object "WinGet was configured!" -ForegroundColor Green
 }
 
+#endregion
+
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 Install-WinGet
@@ -190,12 +196,12 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").Di
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
-	Set-Location -Path $appScriptDirectory
+	Set-Location -Path $appScriptPath
 	If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
 	Set-Location -Path $appVersion
 
     # Download latest setup file(s)
-	<#If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
+	<#If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
     {
 		Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
 		Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup

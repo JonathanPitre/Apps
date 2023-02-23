@@ -1,41 +1,83 @@
-# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
+#region Initialisations
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
+# Unblock ps1 script
+Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT", "Evergreen") # Modules list
 
-Function Get-ScriptDirectory
+Function Get-ScriptPath
 {
-    Remove-Variable appScriptDirectory
-    Try
+    <#
+    .SYNOPSIS
+        Get-ScriptPath returns the path of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+
+    Begin
     {
-        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
-        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+        Remove-Variable appScriptPath
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code
+        ElseIf ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") { Split-Path -Path $My$MyInvocation.MyCommand.Source } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Path } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { Split-Path -Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.PSScriptRoot) { $MyInvocation.PSScriptRoot } # Windows PowerShell 3.0+
+        ElseIf ($MyInvocation.MyCommand.Path) { Split-Path -Path $MyInvocation.MyCommand.Path -Parent } # Windows PowerShell
         Else
         {
-            Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
+            Write-Host -Object "Unable to resolve script's file path!" -ForegroundColor Red
             Exit 1
         }
     }
-    Catch
-    {
-        Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
-        Exit 2
-    }
 }
 
-Function Initialize-Module
+Function Get-ScriptName
+{
+    <#
+    .SYNOPSIS
+        Get-ScriptName returns the name of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+    Begin
+    {
+        Remove-Variable appScriptName
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path -Leaf } # Visual Studio Code Host
+        ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        Else
+        {
+            Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
+            Exit 1
+        }
+    }
+}
 {
     [CmdletBinding()]
     Param
@@ -53,7 +95,8 @@ Function Initialize-Module
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
+        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -111,16 +154,20 @@ Function Initialize-Module
     }
 }
 
-# Get the current script directory
-$appScriptDirectory = Get-ScriptDirectory
+[string]$appScriptPath = Get-ScriptPath # Get the current script path
+[string]$appScriptName = Get-ScriptName # Get the current script name
 
 # Install and import modules list
 Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+#endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
+
+#region Functions
+#endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -148,7 +195,7 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName \d Update \d{3}
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 {
-    Set-Location -Path $appScriptDirectory
+    Set-Location -Path $appScriptPath
     If (-Not(Test-Path -Path $appVersion))
     {
         New-Folder -Path $appVersion
@@ -164,7 +211,7 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName \d Update \d{3}
     }
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path "$appScriptDirectory\$appVersion\$appSetup"))
+    If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
     {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
@@ -192,18 +239,18 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName \d Update \d{3}
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Classes\MIME\Database\Content Type\application/x-java-jnlp-file" -Name "Extension" -Value ".jnlp" -Type String
 
     # Download required configuration files and copy to approprite location
-    If ((-Not(Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\$appDeploymentConfig")) -and (-Not(Test-Path -Path "$appScriptDirectory\$appDeploymentConfig")))
+    If ((-Not(Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\$appDeploymentConfig")) -and (-Not(Test-Path -Path "$appScriptPath\$appDeploymentConfig")))
     {
         Write-Log -Message "Downloading $appVendor $appName configuration files.." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLDeploymentConfig -OutFile "$appScriptDirectory\$appDeploymentConfig"
-        Invoke-WebRequest -UseBasicParsing -Uri $appURLDeploymentProperties -OutFile "$appScriptDirectory\$appDeploymentProperties"
-        Copy-File -Path "$appScriptDirectory\$appDeploymentConfig" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
-        Copy-File -Path "$appScriptDirectory\$appDeploymentProperties" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appURLDeploymentConfig -OutFile "$appScriptPath\$appDeploymentConfig"
+        Invoke-WebRequest -UseBasicParsing -Uri $appURLDeploymentProperties -OutFile "$appScriptPath\$appDeploymentProperties"
+        Copy-File -Path "$appScriptPath\$appDeploymentConfig" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+        Copy-File -Path "$appScriptPath\$appDeploymentProperties" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
     }
     # Update deployment.properties if already exist
-    ElseIf (Test-Path -Path "$appScriptDirectory\$appDeploymentProperties")
+    ElseIf (Test-Path -Path "$appScriptPath\$appDeploymentProperties")
     {
-        Copy-File -Path "$appScriptDirectory\$appDeploymentProperties" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+        Copy-File -Path "$appScriptPath\$appDeploymentProperties" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
     }
     Else
     {
@@ -211,22 +258,22 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName \d Update \d{3}
     }
 
     # Create exception.sites files if missing
-    If ((-Not (Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\$appExceptionSites")) -and (-Not(Test-Path -Path "$appScriptDirectory\$appExceptionSites")))
+    If ((-Not (Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\$appExceptionSites")) -and (-Not(Test-Path -Path "$appScriptPath\$appExceptionSites")))
     {
-        New-Item -Path "$appScriptDirectory\$appExceptionSites"
-        Set-Content "$appScriptDirectory\$appExceptionSites" 'http://example.com'
-        Copy-File -Path "$appScriptDirectory\$appExceptionSites" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+        New-Item -Path "$appScriptPath\$appExceptionSites"
+        Set-Content "$appScriptPath\$appExceptionSites" 'http://example.com'
+        Copy-File -Path "$appScriptPath\$appExceptionSites" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
     }
     # Update exception.sites if already exist
-    ElseIf (Test-Path -Path "$appScriptDirectory\$appExceptionSites")
+    ElseIf (Test-Path -Path "$appScriptPath\$appExceptionSites")
     {
-        Copy-File -Path "$appScriptDirectory\$appExceptionSites" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+        Copy-File -Path "$appScriptPath\$appExceptionSites" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
     }
 
     # Copy trusted certs to system wide location
-    If ((-Not (Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\trusted.certs")) -and (Test-Path -Path "$appScriptDirectory\trusted.certs"))
+    If ((-Not (Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\trusted.certs")) -and (Test-Path -Path "$appScriptPath\trusted.certs"))
     {
-        Copy-File -Path "$appScriptDirectory\trusted.certs" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
+        Copy-File -Path "$appScriptPath\trusted.certs" -Destination "$envSystemRoot\Sun\Java\Deployment" -ContinueFileCopyOnError $True
     }
     ElseIf ((-Not (Test-Path -Path "$envSystemRoot\Sun\Java\Deployment\trusted.certs")) -and (Test-Path -Path "$($envLocalAppData)Low\Sun\Java\Deployment\security\trusted.certs"))
     {

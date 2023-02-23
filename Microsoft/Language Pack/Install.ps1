@@ -1,41 +1,83 @@
-﻿# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
+﻿# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
+#region Initialisations
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
+# Unblock ps1 script
+Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT") # Modules list
 
-Function Get-ScriptDirectory
+Function Get-ScriptPath
 {
-    Remove-Variable appScriptDirectory
-    Try
+    <#
+    .SYNOPSIS
+        Get-ScriptPath returns the path of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+
+    Begin
     {
-        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
-        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+        Remove-Variable appScriptPath
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code
+        ElseIf ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") { Split-Path -Path $My$MyInvocation.MyCommand.Source } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Path } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { Split-Path -Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.PSScriptRoot) { $MyInvocation.PSScriptRoot } # Windows PowerShell 3.0+
+        ElseIf ($MyInvocation.MyCommand.Path) { Split-Path -Path $MyInvocation.MyCommand.Path -Parent } # Windows PowerShell
         Else
         {
-            Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
+            Write-Host -Object "Unable to resolve script's file path!" -ForegroundColor Red
             Exit 1
         }
     }
-    Catch
-    {
-        Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
-        Exit 2
-    }
 }
 
-Function Initialize-Module
+Function Get-ScriptName
+{
+    <#
+    .SYNOPSIS
+        Get-ScriptName returns the name of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+    Begin
+    {
+        Remove-Variable appScriptName
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path -Leaf } # Visual Studio Code Host
+        ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        Else
+        {
+            Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
+            Exit 1
+        }
+    }
+}
 {
     [CmdletBinding()]
     Param
@@ -53,7 +95,8 @@ Function Initialize-Module
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
+        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -111,16 +154,20 @@ Function Initialize-Module
     }
 }
 
-# Get the current script directory
-$appScriptDirectory = Get-ScriptDirectory
+[string]$appScriptPath = Get-ScriptPath # Get the current script path
+[string]$appScriptName = Get-ScriptName # Get the current script name
 
 # Install and import modules list
 Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+#endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
+
+#region Functions
+#endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -131,7 +178,7 @@ $Language = "fr-ca"
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-Set-Location -Path $appScriptDirectory
+Set-Location -Path $appScriptPath
 $WebResponse = (Invoke-WebRequest -Uri $URL -DisableKeepAlive -UseBasicParsing).RawContent
 
 # Language Pack ISO
@@ -160,7 +207,7 @@ $LXPiso = Split-Path -Path $LXPisoUrl -Leaf
 
 # Download ISOs
 # Download latest Language Pack ISO
-If (-Not(Test-Path -Path $appScriptDirectory\$langISO))
+If (-Not(Test-Path -Path $appScriptPath\$langISO))
 {
     Write-Log -Message "Downloading $appVendor Language Pack ISO..." -Severity 1 -LogType CMTrace -WriteHost $True
     Invoke-WebRequest -UseBasicParsing -Uri $langISOurl -OutFile $langISO
@@ -171,7 +218,7 @@ Else
 }
 
 # Download latest FOD Disk 1 ISO
-If (-Not(Test-Path -Path $appScriptDirectory\$FODiso))
+If (-Not(Test-Path -Path $appScriptPath\$FODiso))
 {
     Write-Log -Message "Downloading $appVendor FOD Disk 1 ISO..." -Severity 1 -LogType CMTrace -WriteHost $True
     Invoke-WebRequest -UseBasicParsing -Uri $FODisoUrl -OutFile $FODiso
@@ -182,7 +229,7 @@ Else
 }
 
 # Download latest Inbox Apps ISO
-If (-Not(Test-Path -Path $appScriptDirectory\$inboxAppsIso))
+If (-Not(Test-Path -Path $appScriptPath\$inboxAppsIso))
 {
     Write-Log -Message "Downloading $appVendor Inbox Apps ISO..." -Severity 1 -LogType CMTrace -WriteHost $True
     Invoke-WebRequest -UseBasicParsing -Uri $inboxAppsIsoUrl -OutFile $inboxAppsIso
@@ -193,7 +240,7 @@ Else
 }
 
 # Download latest Local Experience Pack (LXP) ISO
-If (-Not(Test-Path -Path $appScriptDirectory\$LXPiso))
+If (-Not(Test-Path -Path $appScriptPath\$LXPiso))
 {
     Write-Log -Message "Downloading $appVendor Local Experience Pack (LXP) ISO..." -Severity 1 -LogType CMTrace -WriteHost $True
     Invoke-WebRequest -UseBasicParsing -Uri $LXPisoUrl -OutFile $LXPiso
@@ -204,49 +251,49 @@ Else
 }
 
 # Copy Language Pack ISO files
-$mountResult = Mount-DiskImage -ImagePath "$appScriptDirectory\$langISO" -PassThru
+$mountResult = Mount-DiskImage -ImagePath "$appScriptPath\$langISO" -PassThru
 $driveLetter = ($mountResult | Get-Volume).DriveLetter
 Write-Log -Message "Copying Language Pack files..." -Severity 1 -LogType CMTrace -WriteHost $True
-Copy-File -Path "$($driveLetter):\LocalExperiencePack\$Language\*" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\x64\langpacks\Microsoft-Windows-Client-Language-Pack_x64_$($Language).cab" -Destination "$appScriptDirectory"
+Copy-File -Path "$($driveLetter):\LocalExperiencePack\$Language\*" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\x64\langpacks\Microsoft-Windows-Client-Language-Pack_x64_$($Language).cab" -Destination "$appScriptPath"
 Start-Sleep -Seconds 5
-Dismount-DiskImage -ImagePath "$appScriptDirectory\$langISO"
+Dismount-DiskImage -ImagePath "$appScriptPath\$langISO"
 
 # Copy Inbox Apps ISO files
-$mountResult = Mount-DiskImage -ImagePath "$appScriptDirectory\$FODiso" -PassThru
+$mountResult = Mount-DiskImage -ImagePath "$appScriptPath\$FODiso" -PassThru
 $driveLetter = ($mountResult | Get-Volume).DriveLetter
 Write-Log -Message "Copying Inbox Apps files..." -Severity 1 -LogType CMTrace -WriteHost $True
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-InternetExplorer-Optional-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-LanguageFeatures-Basic-$Language-Package~31bf3856ad364e35~amd64~~.cab" -Destination "$appScriptDirectory"
-#Copy-File -Path "$($driveLetter):\Microsoft-Windows-LanguageFeatures-Handwriting-$Language-Package~31bf3856ad364e35~amd64~~.cab" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-LanguageFeatures-OCR-$Language-Package~31bf3856ad364e35~amd64~~.cab" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-LanguageFeatures-Speech-$Language-Package~31bf3856ad364e35~amd64~~.cab" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-LanguageFeatures-TextToSpeech-$Language-Package~31bf3856ad364e35~amd64~~.cab" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-MSPaint-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-NetFx3-OnDemand-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-Notepad-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-PowerShell-ISE-FOD-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-Printing-WFS-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-StepsRecorder-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptDirectory"
-Copy-File -Path "$($driveLetter):\Microsoft-Windows-WordPad-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptDirectory"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-InternetExplorer-Optional-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-LanguageFeatures-Basic-$Language-Package~31bf3856ad364e35~amd64~~.cab" -Destination "$appScriptPath"
+#Copy-File -Path "$($driveLetter):\Microsoft-Windows-LanguageFeatures-Handwriting-$Language-Package~31bf3856ad364e35~amd64~~.cab" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-LanguageFeatures-OCR-$Language-Package~31bf3856ad364e35~amd64~~.cab" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-LanguageFeatures-Speech-$Language-Package~31bf3856ad364e35~amd64~~.cab" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-LanguageFeatures-TextToSpeech-$Language-Package~31bf3856ad364e35~amd64~~.cab" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-MSPaint-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-NetFx3-OnDemand-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-Notepad-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-PowerShell-ISE-FOD-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-Printing-WFS-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-StepsRecorder-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptPath"
+Copy-File -Path "$($driveLetter):\Microsoft-Windows-WordPad-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab" -Destination "$appScriptPath"
 Start-Sleep -Seconds 5
-Dismount-DiskImage -ImagePath "$appScriptDirectory\$FODiso"
+Dismount-DiskImage -ImagePath "$appScriptPath\$FODiso"
 
 # Copy FOD Disk 1 ISO files
-$mountResult = Mount-DiskImage -ImagePath "$appScriptDirectory\$inboxAppsIso" -PassThru
+$mountResult = Mount-DiskImage -ImagePath "$appScriptPath\$inboxAppsIso" -PassThru
 $driveLetter = ($mountResult | Get-Volume).DriveLetter
 Write-Log -Message "Copying FOD Disk 1 files..." -Severity 1 -LogType CMTrace -WriteHost $True
-Copy-File -Path "$($driveLetter):\amd64fre\*" -Destination "$appScriptDirectory"
+Copy-File -Path "$($driveLetter):\amd64fre\*" -Destination "$appScriptPath"
 Start-Sleep -Seconds 5
-Dismount-DiskImage -ImagePath "$appScriptDirectory\$inboxAppsIso"
+Dismount-DiskImage -ImagePath "$appScriptPath\$inboxAppsIso"
 
 # Copy Local Experience Pack (LXP) ISO files
-$mountResult = Mount-DiskImage -ImagePath "$appScriptDirectory\$LXPiso" -PassThru
+$mountResult = Mount-DiskImage -ImagePath "$appScriptPath\$LXPiso" -PassThru
 $driveLetter = ($mountResult | Get-Volume).DriveLetter
 Write-Log -Message "Copying Local Experience Pack (LXP) files..." -Severity 1 -LogType CMTrace -WriteHost $True
-Copy-File -Path "$($driveLetter):\LocalExperiencePack\$Language\*" -Destination "$appScriptDirectory"
+Copy-File -Path "$($driveLetter):\LocalExperiencePack\$Language\*" -Destination "$appScriptPath"
 Start-Sleep -Seconds 5
-Dismount-DiskImage -ImagePath "$appScriptDirectory\$LXPiso"
+Dismount-DiskImage -ImagePath "$appScriptPath\$LXPiso"
 
 ########################################################
 ## Add Languages to running Windows Image for Capture ##
@@ -257,21 +304,21 @@ Disable-ScheduledTask -TaskPath "\Microsoft\Windows\AppxDeploymentClient\" -Task
 
 # Add Language Files
 Write-Log -Message "Adding language files..." -Severity 1 -LogType CMTrace -WriteHost $True
-Add-AppProvisionedPackage -Online -PackagePath $appScriptDirectory\$Language\LanguageExperiencePack.$Language.Neutral.appx -LicensePath $appScriptDirectory\$Language\License.xml
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-Client-Language-Pack_x64_$Language.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-InternetExplorer-Optional-Package~31bf3856ad364e35~amd64~$Language~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-LanguageFeatures-Basic-$Language-Package~31bf3856ad364e35~amd64~~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-LanguageFeatures-Handwriting-$Language-Package~31bf3856ad364e35~amd64~~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-LanguageFeatures-OCR-$Language-Package~31bf3856ad364e35~amd64~~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-LanguageFeatures-Speech-$Language-Package~31bf3856ad364e35~amd64~~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-LanguageFeatures-TextToSpeech-$Language-Package~31bf3856ad364e35~amd64~~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-MSPaint-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-NetFx3-OnDemand-Package~31bf3856ad364e35~amd64~$Language~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-Notepad-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-PowerShell-ISE-FOD-Package~31bf3856ad364e35~amd64~$Language~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-Printing-WFS-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-StepsRecorder-Package~31bf3856ad364e35~amd64~$Language~.cab
-Add-WindowsPackage -Online -PackagePath $appScriptDirectory\Microsoft-Windows-WordPad-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab
+Add-AppProvisionedPackage -Online -PackagePath $appScriptPath\$Language\LanguageExperiencePack.$Language.Neutral.appx -LicensePath $appScriptPath\$Language\License.xml
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-Client-Language-Pack_x64_$Language.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-InternetExplorer-Optional-Package~31bf3856ad364e35~amd64~$Language~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-LanguageFeatures-Basic-$Language-Package~31bf3856ad364e35~amd64~~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-LanguageFeatures-Handwriting-$Language-Package~31bf3856ad364e35~amd64~~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-LanguageFeatures-OCR-$Language-Package~31bf3856ad364e35~amd64~~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-LanguageFeatures-Speech-$Language-Package~31bf3856ad364e35~amd64~~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-LanguageFeatures-TextToSpeech-$Language-Package~31bf3856ad364e35~amd64~~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-MSPaint-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-NetFx3-OnDemand-Package~31bf3856ad364e35~amd64~$Language~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-Notepad-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-PowerShell-ISE-FOD-Package~31bf3856ad364e35~amd64~$Language~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-Printing-WFS-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-StepsRecorder-Package~31bf3856ad364e35~amd64~$Language~.cab
+Add-WindowsPackage -Online -PackagePath $appScriptPath\Microsoft-Windows-WordPad-FoD-Package~31bf3856ad364e35~amd64~$Language~.cab
 
 $LanguageList = Get-WinUserLanguageList
 $LanguageList.Add("$Language")
@@ -286,7 +333,7 @@ Start-Sleep -Seconds 20
 Write-Log -Message "Updating Inbox Store App files..." -Severity 1 -LogType CMTrace -WriteHost $True
 foreach ($App in (Get-AppxProvisionedPackage -Online))
 {
-    $AppPath = $appScriptDirectory + $App.DisplayName + '_' + $App.PublisherId
+    $AppPath = $appScriptPath + $App.DisplayName + '_' + $App.PublisherId
     Write-Host "Handling $AppPath"
     $licFile = Get-Item $AppPath*.xml
     if ($licFile.Count)
@@ -316,4 +363,4 @@ foreach ($App in (Get-AppxProvisionedPackage -Online))
 Write-Log -Message "$Language Language Pack was sucesfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
 
 # Cleanup
-Remove-File -Path $appScriptDirectory\*.iso
+Remove-File -Path $appScriptPath\*.iso

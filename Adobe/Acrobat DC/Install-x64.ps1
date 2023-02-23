@@ -1,14 +1,17 @@
-﻿# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
+﻿# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
+#region Initialisations
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
+# Unblock ps1 script
+Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
@@ -16,111 +19,114 @@ $Modules = @("PSADT", "Evergreen") # Modules list
 
 Function Get-ScriptDirectory
 {
-	Remove-Variable appScriptDirectory
-	Try
+    Remove-Variable appScriptDirectory
+    Try
  {
-		If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
-		ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-		ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
-		Else
-		{
-			Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
-			Exit 1
-		}
-	}
-	Catch
+        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
+        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
+        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+        Else
+        {
+            Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
+            Exit 1
+        }
+    }
+    Catch
  {
-		Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
-		Exit 2
-	}
+        Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
+        Exit 2
+    }
 }
 
 Function Initialize-Module
 {
-	[CmdletBinding()]
-	Param
-	(
-		[Parameter(Mandatory = $true)]
-		[string]$Module
-	)
-	Write-Host -Object "Importing $Module module..." -ForegroundColor Green
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory = $true)]
+        [string]$Module
+    )
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
-	# If module is imported say that and do nothing
-	If (Get-Module | Where-Object { $_.Name -eq $Module })
+    # If module is imported say that and do nothing
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
  {
-		Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
-	}
-	Else
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
+    }
+    Else
  {
-		# If module is not imported, but available on disk then import
-		If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
-		{
-			$InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
-			$ModuleVersion = (Find-Module -Name $Module).Version
-			$ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
-			$ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
-			If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
-			{
-				Update-Module -Name $Module -Force
-				Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
-				Write-Host -Object "Module $Module was updated." -ForegroundColor Green
-			}
-			Import-Module -Name $Module -Force -Global -DisableNameChecking
-			Write-Host -Object "Module $Module was imported." -ForegroundColor Green
-		}
-		Else
-		{
-			# Install Nuget
-			If (-not(Get-PackageProvider -ListAvailable -Name NuGet))
-			{
-				Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
-				Write-Host -Object "Package provider NuGet was installed." -ForegroundColor Green
-			}
+        # If module is not imported, but available on disk then import
+        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
+        {
+            $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
+            $ModuleVersion = (Find-Module -Name $Module).Version
+            $ModulePath = (Get-InstalledModule -Name $Module).InstalledLocation
+            $ModulePath = (Get-Item -Path $ModulePath).Parent.FullName
+            If ([version]$ModuleVersion -gt [version]$InstalledModuleVersion)
+            {
+                Update-Module -Name $Module -Force
+                Remove-Item -Path $ModulePath\$InstalledModuleVersion -Force -Recurse
+                Write-Host -Object "Module $Module was updated." -ForegroundColor Green
+            }
+            Import-Module -Name $Module -Force -Global -DisableNameChecking
+            Write-Host -Object "Module $Module was imported." -ForegroundColor Green
+        }
+        Else
+        {
+            # Install Nuget
+            If (-not(Get-PackageProvider -ListAvailable -Name NuGet))
+            {
+                Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+                Write-Host -Object "Package provider NuGet was installed." -ForegroundColor Green
+            }
 
-			# Add the Powershell Gallery as trusted repository
-			If ((Get-PSRepository -Name "PSGallery").InstallationPolicy -eq "Untrusted")
-			{
-				Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
-				Write-Host -Object "PowerShell Gallery is now a trusted repository." -ForegroundColor Green
-			}
+            # Add the Powershell Gallery as trusted repository
+            If ((Get-PSRepository -Name "PSGallery").InstallationPolicy -eq "Untrusted")
+            {
+                Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
+                Write-Host -Object "PowerShell Gallery is now a trusted repository." -ForegroundColor Green
+            }
 
-			# Update PowerShellGet
-			$InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
-			$PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
-			If ($PSGetVersion -gt $InstalledPSGetVersion)
-			{
-				Install-PackageProvider -Name PowerShellGet -Force
-				Write-Host -Object "PowerShellGet Gallery was updated." -ForegroundColor Green
-			}
+            # Update PowerShellGet
+            $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
+            $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
+            If ($PSGetVersion -gt $InstalledPSGetVersion)
+            {
+                Install-PackageProvider -Name PowerShellGet -Force
+                Write-Host -Object "PowerShellGet Gallery was updated." -ForegroundColor Green
+            }
 
-			# If module is not imported, not available on disk, but is in online gallery then install and import
-			If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
-			{
-				# Install and import module
-				Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
-				Import-Module -Name $Module -Force -Global -DisableNameChecking
-				Write-Host -Object "Module $Module was installed and imported." -ForegroundColor Green
-			}
-			Else
-			{
-				# If the module is not imported, not available and not in the online gallery then abort
-				Write-Host -Object "Module $Module was not imported, not available and not in an online gallery, exiting." -ForegroundColor Red
-				EXIT 1
-			}
-		}
-	}
+            # If module is not imported, not available on disk, but is in online gallery then install and import
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
+            {
+                # Install and import module
+                Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
+                Import-Module -Name $Module -Force -Global -DisableNameChecking
+                Write-Host -Object "Module $Module was installed and imported." -ForegroundColor Green
+            }
+            Else
+            {
+                # If the module is not imported, not available and not in the online gallery then abort
+                Write-Host -Object "Module $Module was not imported, not available and not in an online gallery, exiting." -ForegroundColor Red
+                EXIT 1
+            }
+        }
+    }
 }
 
 # Get the current script directory
-$appScriptDirectory = Get-ScriptDirectory
+$appScriptPath = Get-ScriptDirectory
 
 # Install and import modules list
 Foreach ($Module in $Modules)
 {
-	Initialize-Module -Module $Module
+    Initialize-Module -Module $Module
 }
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
+
+#region Functions
+#endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -154,136 +160,136 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $app
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
-	Set-Location -Path $appScriptDirectory
+    Set-Location -Path $appScriptPath
 
-	# Download latest setup file(s)
-	If (-Not(Test-Path -Path $appScriptDirectory\$appMsiSetup))
+    # Download latest setup file(s)
+    If (-Not(Test-Path -Path $appScriptPath\$appMsiSetup))
  {
-		Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-		Invoke-WebRequest -UseBasicParsing -Uri $appSetupURL -OutFile $appSetup
-		Write-Log -Message "Extracting $appVendor $appName $appShortVersion $appArchitecture $appVersion ZIP..." -Severity 1 -LogType CMTrace -WriteHost $True
-		# Extract ZIP
-		Expand-Archive -Path $appScriptDirectory\$appSetup -DestinationPath $appScriptDirectory -Force
-		Copy-File -Path "$appScriptDirectory\$appVendor $appName\*" -Destination $appScriptDirectory -Recurse
-		Remove-Folder -Path "$appScriptDirectory\$appVendor $appName"
-		Remove-File -Path "$appScriptDirectory\$appSetup"
-	}
-	Else
+        Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appSetupURL -OutFile $appSetup
+        Write-Log -Message "Extracting $appVendor $appName $appShortVersion $appArchitecture $appVersion ZIP..." -Severity 1 -LogType CMTrace -WriteHost $True
+        # Extract ZIP
+        Expand-Archive -Path $appScriptPath\$appSetup -DestinationPath $appScriptPath -Force
+        Copy-File -Path "$appScriptPath\$appVendor $appName\*" -Destination $appScriptPath -Recurse
+        Remove-Folder -Path "$appScriptPath\$appVendor $appName"
+        Remove-File -Path "$appScriptPath\$appSetup"
+    }
+    Else
  {
-		Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-	}
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
 
-	# Download latest patch
-	If (-Not(Test-Path -Path $appScriptDirectory\$appPatch))
+    # Download latest patch
+    If (-Not(Test-Path -Path $appScriptPath\$appPatch))
  {
-		Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-		Invoke-WebRequest -UseBasicParsing -Uri $appPatchURL -OutFile $appPatch
-		# Modify setup.ini according to latest patch
-		If ((Test-Path -Path $appScriptDirectory\$appPatch) -and (Test-Path -Path $appScriptDirectory\$appPatch\setup.ini))
-		{
-			Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Startup" -Key "CmdLine" -Value "/sPB /rs /msi $appAddParameters"
-			Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Product" -Key "CmdLine" -Value "TRANSFORMS=`"$appTransform`""
-			Set-IniValue -FilePath $appScriptDirectory\setup.ini -Section "Product" -Key "PATCH" -Value $appPatch
-		}
-	}
-	Else
+        Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appPatchURL -OutFile $appPatch
+        # Modify setup.ini according to latest patch
+        If ((Test-Path -Path $appScriptPath\$appPatch) -and (Test-Path -Path $appScriptPath\$appPatch\setup.ini))
+        {
+            Set-IniValue -FilePath $appScriptPath\setup.ini -Section "Startup" -Key "CmdLine" -Value "/sPB /rs /msi $appAddParameters"
+            Set-IniValue -FilePath $appScriptPath\setup.ini -Section "Product" -Key "CmdLine" -Value "TRANSFORMS=`"$appTransform`""
+            Set-IniValue -FilePath $appScriptPath\setup.ini -Section "Product" -Key "PATCH" -Value $appPatch
+        }
+    }
+    Else
  {
-		Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-	}
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
 
-	# Download latest policy definitions
-	Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-	Invoke-WebRequest -UseBasicParsing -Uri $appADMXurl -OutFile $appADMX
-	New-Folder -Path "$appScriptDirectory\PolicyDefinitions"
-	Expand-Archive -Path $appADMX -DestinationPath "$appScriptDirectory\PolicyDefinitions" -Force
-	Remove-File -Path $appADMX, $appScriptDirectory\PolicyDefinitions\*.adm
+    # Download latest policy definitions
+    Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appADMXurl -OutFile $appADMX
+    New-Folder -Path "$appScriptPath\PolicyDefinitions"
+    Expand-Archive -Path $appADMX -DestinationPath "$appScriptPath\PolicyDefinitions" -Force
+    Remove-File -Path $appADMX, $appScriptPath\PolicyDefinitions\*.adm
 
-	# Download latest Adobe Acrobat Customization Wizard DC
-	If (-Not(Test-Path -Path $appScriptDirectory\$appCustWiz))
+    # Download latest Adobe Acrobat Customization Wizard DC
+    If (-Not(Test-Path -Path $appScriptPath\$appCustWiz))
  {
-		Write-Log -Message "Downloading $appVendor $appName Custimization Wizard $appShortVersion $appCustWizVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-		Invoke-WebRequest -UseBasicParsing -Uri $appCustWizURL -OutFile $appCustWiz
-	}
-	Else
+        Write-Log -Message "Downloading $appVendor $appName Custimization Wizard $appShortVersion $appCustWizVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appCustWizURL -OutFile $appCustWiz
+    }
+    Else
  {
-		Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-	}
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
 
 
-	# Uninstall previous versions
-	Get-Process -Name $appProcesses | Stop-Process -Force
-	If (($IsAppInstalled) -and (Test-Path -Path $appScriptDirectory\$appMsiSetup))
+    # Uninstall previous versions
+    Get-Process -Name $appProcesses | Stop-Process -Force
+    If (($IsAppInstalled) -and (Test-Path -Path $appScriptPath\$appMsiSetup))
  {
-		Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-		Remove-MSIApplications -Name "$appVendor $appName* $appShortVersion*" -WildCard -Exact
-	}
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Remove-MSIApplications -Name "$appVendor $appName* $appShortVersion*" -WildCard -Exact
+    }
 
-	If ((Test-Path -Path "$appScriptDirectory\$appMsiSetup") -and (Test-Path -Path $appScriptDirectory\$appPatch))
+    If ((Test-Path -Path "$appScriptPath\$appMsiSetup") -and (Test-Path -Path $appScriptPath\$appPatch))
  {
-		# Download required transform file
-		If (-Not(Test-Path -Path $appScriptDirectory\$appTransform))
-		{
-			Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture transform..." -Severity 1 -LogType CMTrace -WriteHost $True
-			Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptDirectory\$appTransform
-		}
-		Else
-		{
-			Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-		}
+        # Download required transform file
+        If (-Not(Test-Path -Path $appScriptPath\$appTransform))
+        {
+            Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture transform..." -Severity 1 -LogType CMTrace -WriteHost $True
+            Invoke-WebRequest -UseBasicParsing -Uri $appTransformURL -OutFile $appScriptPath\$appTransform
+        }
+        Else
+        {
+            Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        }
 
-		# Install latest version
-		Write-Log -Message "Installing $appVendor $appName $appShortVersion $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-		Execute-MSI -Action Install -Path $appMsiSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -Patch $appPatch -SkipMSIAlreadyInstalledCheck
-	}
-	ElseIf (($IsAppInstalled) -and (Test-Path -Path $appScriptDirectory\$appPatch))
+        # Install latest version
+        Write-Log -Message "Installing $appVendor $appName $appShortVersion $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-MSI -Action Install -Path $appMsiSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -Patch $appPatch -SkipMSIAlreadyInstalledCheck
+    }
+    ElseIf (($IsAppInstalled) -and (Test-Path -Path $appScriptPath\$appPatch))
  {
-		# Install latest patch
-		Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
-		Write-Log -Message "Installing $appVendor $appName $appShortVersion $appArchitecture $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-		Execute-MSP -Path $appPatch
-	}
-	Else
+        # Install latest patch
+        Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Installing $appVendor $appName $appShortVersion $appArchitecture $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-MSP -Path $appPatch
+    }
+    Else
  {
-		Write-Log -Message "Setup file(s) are missing." -Severity 3 -LogType CMTrace -WriteHost $True
-		Exit-Script
-	}
+        Write-Log -Message "Setup file(s) are missing." -Severity 3 -LogType CMTrace -WriteHost $True
+        Exit-Script
+    }
 
-	Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
-	# Stop and disable unneeded scheduled tasks
-	Get-ScheduledTask -TaskName "$appVendor $appName Update Task" | Stop-ScheduledTask
-	Get-ScheduledTask -TaskName "$appVendor $appName Update Task" | Disable-ScheduledTask
+    # Stop and disable unneeded scheduled tasks
+    Get-ScheduledTask -TaskName "$appVendor $appName Update Task" | Stop-ScheduledTask
+    Get-ScheduledTask -TaskName "$appVendor $appName Update Task" | Disable-ScheduledTask
 
-	# Stop and disable unneeded services
-	Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest -ContinueOnError $True
-	Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
+    # Stop and disable unneeded services
+    Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest -ContinueOnError $True
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
 
-	# Remove unneeded applications from running at start-up
-	Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "Acrobat Assistant 8.0" -ContinueOnError $True
-	Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeAAMUpdater-1.0" -ContinueOnError $True
-	#Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeGCInvoker-1.0" -ContinueOnError $True
+    # Remove unneeded applications from running at start-up
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "Acrobat Assistant 8.0" -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeAAMUpdater-1.0" -ContinueOnError $True
+    #Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "AdobeGCInvoker-1.0" -ContinueOnError $True
 
-	# Remove Active Setup
-	Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Active Setup\Installed Components\{AC76BA86-0000-0000-7760-7E8A45000000}" -Name "StubPath"
+    # Remove Active Setup
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Active Setup\Installed Components\{AC76BA86-0000-0000-7760-7E8A45000000}" -Name "StubPath"
 
-	# Fix for Z@xxx.tmp files left behind in Temp folder after printing
-	# https://pathandy.com/adobe-temp-files/
-	# https://community.adobe.com/t5/acrobat-discussions/what-is-meaning-of-the-setting-tttosysprintdisabled-1-amp-t1tottdisabled-1-when-printing-from/m-p/11670068
-	New-Item -Path "$envWinDir" -Name "acroct.ini" -Force
-	Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "TTToSysPrintDisabled" -Value "1"
-	Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "T1ToTTDisabled" -Value "1"
+    # Fix for Z@xxx.tmp files left behind in Temp folder after printing
+    # https://pathandy.com/adobe-temp-files/
+    # https://community.adobe.com/t5/acrobat-discussions/what-is-meaning-of-the-setting-tttosysprintdisabled-1-amp-t1tottdisabled-1-when-printing-from/m-p/11670068
+    New-Item -Path "$envWinDir" -Name "acroct.ini" -Force
+    Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "TTToSysPrintDisabled" -Value "1"
+    Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "T1ToTTDisabled" -Value "1"
 
-	If (-Not(Get-InstalledApplication -Name "Adobe Creative Cloud"))
+    If (-Not(Get-InstalledApplication -Name "Adobe Creative Cloud"))
  {
-		Write-Log -Message "Adobe Creative Cloud must be installed in order for $appVendor $appName $appShortVersion licensing to work!" -Severity 2 -LogType CMTrace -WriteHost $True
-	}
+        Write-Log -Message "Adobe Creative Cloud must be installed in order for $appVendor $appName $appShortVersion licensing to work!" -Severity 2 -LogType CMTrace -WriteHost $True
+    }
 
-	# Go back to the parent folder
-	Set-Location ..
+    # Go back to the parent folder
+    Set-Location ..
 
-	Write-Log -Message "$appVendor $appName $appShortVersion $appArchitecture $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appShortVersion $appArchitecture $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
 {
-	Write-Log -Message "$appVendor $appName $appShortVersion $appArchitecture $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appShortVersion $appArchitecture $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }

@@ -1,14 +1,17 @@
-# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
+#region Initialisations
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
+# Unblock ps1 script
+Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
@@ -112,7 +115,7 @@ Function Initialize-Module
 }
 
 # Get the current script directory
-$appScriptDirectory = Get-ScriptDirectory
+$appScriptPath = Get-ScriptDirectory
 
 # Install and import modules list
 Foreach ($Module in $Modules)
@@ -121,6 +124,9 @@ Foreach ($Module in $Modules)
 }
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
+
+#region Functions
+#endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
@@ -138,16 +144,16 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $app
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
-	Set-Location -Path $appScriptDirectory
+	Set-Location -Path $appScriptPath
 
 	# Uninstall previous versions
 	Remove-MSIApplications -Name "$appVendor $appName" -ContinueOnError $True
 
 	# Download latest setup file(s)
-	If (-Not(Test-Path -Path $appScriptDirectory\$appMajorVersion\x64\RTM\$appSetup))
+	If (-Not(Test-Path -Path $appScriptPath\$appMajorVersion\x64\RTM\$appSetup))
  {
 		Write-Log -Message "Downloading $appVendor $appName Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
-		Save-VcRedist -VcList $VcList -Path $appScriptDirectory
+		Save-VcRedist -VcList $VcList -Path $appScriptPath
 	}
 	Else
  {
@@ -156,7 +162,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
 	# Install latest version
 	Write-Log -Message "Installing $appVendor $appName Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
-	Install-VcRedist -Path $appScriptDirectory -VcList $VcList
+	Install-VcRedist -Path $appScriptPath -VcList $VcList
 
 	Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 

@@ -1,41 +1,83 @@
-# Standalone application install script for VDI environment - (C)2022 Jonathan Pitre, inspired by xenappblog.com
+# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
 
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
+#region Initialisations
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
+# Unblock ps1 script
+Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT", "Evergreen") # Modules list
 
-Function Get-ScriptDirectory
+Function Get-ScriptPath
 {
-    Remove-Variable appScriptDirectory
-    Try
+    <#
+    .SYNOPSIS
+        Get-ScriptPath returns the path of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+
+    Begin
     {
-        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
-        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+        Remove-Variable appScriptPath
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code
+        ElseIf ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") { Split-Path -Path $My$MyInvocation.MyCommand.Source } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Path } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { Split-Path -Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.PSScriptRoot) { $MyInvocation.PSScriptRoot } # Windows PowerShell 3.0+
+        ElseIf ($MyInvocation.MyCommand.Path) { Split-Path -Path $MyInvocation.MyCommand.Path -Parent } # Windows PowerShell
         Else
         {
-            Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
+            Write-Host -Object "Unable to resolve script's file path!" -ForegroundColor Red
             Exit 1
         }
     }
-    Catch
-    {
-        Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
-        Exit 2
-    }
 }
 
-Function Initialize-Module
+Function Get-ScriptName
+{
+    <#
+    .SYNOPSIS
+        Get-ScriptName returns the name of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+    Begin
+    {
+        Remove-Variable appScriptName
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path -Leaf } # Visual Studio Code Host
+        ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        Else
+        {
+            Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
+            Exit 1
+        }
+    }
+}
 {
     [CmdletBinding()]
     Param
@@ -53,7 +95,8 @@ Function Initialize-Module
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
+        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -111,17 +154,19 @@ Function Initialize-Module
     }
 }
 
-# Get the current script directory
-$appScriptDirectory = Get-ScriptDirectory
+[string]$appScriptPath = Get-ScriptPath # Get the current script path
+[string]$appScriptName = Get-ScriptName # Get the current script name
 
 # Install and import modules list
 Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+#endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
+#region Functions
 Function Get-AdobeCreativeCloud
 {
     [OutputType([System.Management.Automation.PSObject])]
@@ -197,6 +242,8 @@ Function Get-AdobeCreativeCloud
     }
 }
 
+#endregion
+
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Adobe"
@@ -208,7 +255,7 @@ $appInstallParameters = "--silent" #--INSTALLLANGUAGE=<ProductInstallLanguage>
 # How to use the Creative Cloud Cleaner tool - https://helpx.adobe.com/ca/creative-cloud/kb/cc-cleaner-tool-installation-problems.html
 $appURLCleanerTool = "https://swupmf.adobe.com/webfeed/CleanerTool/win/AdobeCreativeCloudCleanerTool.exe"
 $appCleanerTool = Split-Path -Path $appURLCleanerTool -Leaf
-$appCleanerToolParameters = "--cleanupXML=$appScriptDirectory\cleanup.xml"
+$appCleanerToolParameters = "--cleanupXML=$appScriptPath\cleanup.xml"
 $Nevergreen = Get-AdobeCreativeCloud | Where-Object { $_.Architecture -eq "x64" -and $_.Edition -eq 'Enterprise' -and $_.Type -eq 'Zip' }
 $appVersion = $Nevergreen.Version
 $appURL = $Nevergreen.URI
@@ -226,12 +273,12 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").Di
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
-    Set-Location -Path $appScriptDirectory
+    Set-Location -Path $appScriptPath
     If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
     # Download latest cleaner tool
-    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appCleanerTool))
+    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appCleanerTool))
     {
         Write-Log -Message "Downloading $appVendor $appName Cleaner Tool..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURLCleanerTool -OutFile $appCleanerTool
@@ -252,11 +299,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Download latest version
-    If (-Not(Test-Path -Path $appScriptDirectory\$appVersion\$appSetup))
+    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
     {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
-        Expand-Archive -Path $appZip -DestinationPath $appScriptDirectory\$appVersion
+        Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
         Remove-File -Path $appZip
     }
     Else
@@ -265,7 +312,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Install latest version
-    If (Test-Path -Path $appScriptDirectory\$appVersion\$appSetup)
+    If (Test-Path -Path $appScriptPath\$appVersion\$appSetup)
     {
         Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Copy-File -Path .\$appSetup -Destination $envSystemDrive\ -ContinueOnError $True
@@ -303,11 +350,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Configure application settings - https://techlabs.blog/categories/how-to-guides/install-adobe-creative-cloud-on-citrix-virtual-desktop
     # Download required config file
-    If (-Not(Test-Path -Path $appScriptDirectory\$appConfig) -or (-Not(Test-Path -Path $appScriptDirectory\$appConfig)))
+    If (-Not(Test-Path -Path $appScriptPath\$appConfig) -or (-Not(Test-Path -Path $appScriptPath\$appConfig)))
     {
         Write-Log -Message "Downloading $appVendor $appName config file..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptDirectory\$appConfig
-        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL2 -OutFile $appScriptDirectory\$appConfig2
+        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptPath\$appConfig
+        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL2 -OutFile $appScriptPath\$appConfig2
     }
     Else
     {
@@ -315,8 +362,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     New-Folder -Path "$envSystemDrive\Users\Default\AppData\Local\Adobe\OOBE"
-    Copy-File -Path "$appScriptDirectory\com.adobe.acc.container.default.prefs" -Destination "$envSystemDrive\Users\Default\AppData\Local\Adobe\OOBE\com.adobe.acc.container.default.prefs"
-    Copy-File -Path "$appScriptDirectory\com.adobe.acc.default.prefs" -Destination "$envSystemDrive\Users\Default\AppData\Local\Adobe\OOBE\com.adobe.acc.default.prefs"
+    Copy-File -Path "$appScriptPath\com.adobe.acc.container.default.prefs" -Destination "$envSystemDrive\Users\Default\AppData\Local\Adobe\OOBE\com.adobe.acc.container.default.prefs"
+    Copy-File -Path "$appScriptPath\com.adobe.acc.default.prefs" -Destination "$envSystemDrive\Users\Default\AppData\Local\Adobe\OOBE\com.adobe.acc.default.prefs"
 
     # Go back to the parent folder
     Set-Location ..
