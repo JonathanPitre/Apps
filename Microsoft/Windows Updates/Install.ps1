@@ -165,8 +165,6 @@ Get-WindowsUpdate -RootCategories "Upgrades" -NotTitle "Preview" -MicrosoftUpdat
 
 Get-WindowsUpdate -RootCategories "Critical Updates", "Definition Updates", "Feature Packs", "Security Updates", "Service Packs", "Tools", "Update Rollups", "Updates" -NotTitle "Preview" -MicrosoftUpdate -Install -AcceptAll -UpdateType Software -IgnoreReboot -IgnoreUserInput | Out-File $appLog -Append
 
-Write-Host "Script Name: $appScriptPath"
-
 # Windows 10 native way
 #Start-Process -NoNewWindow "c:\windows\system32\UsoClient.exe" -argument "ScanInstallWait" -Wait
 #Start-Process -NoNewWindow "c:\windows\system32\UsoClient.exe" -argument "StartInstall" -Wait
