@@ -249,7 +249,7 @@ Function Get-MicrosoftOfficeConfig
 
 $appVendor = "Microsoft"
 $appName = "365 Apps"
-$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/365%20Apps/OfficeEnterprise-VDI.xml"
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/365%20Apps/OfficeBusiness-VDI.xml"
 $appConfig = Split-Path -Path $appConfigURL -Leaf # Download required config file
 Get-MicrosoftOfficeConfig -ConfigURL $appConfigURL
 $appSetup = "setup.exe"

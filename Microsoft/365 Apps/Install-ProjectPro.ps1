@@ -248,12 +248,12 @@ Function Get-MicrosoftOfficeConfig
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Microsoft"
-$appName = "365 Apps"
-$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/365%20Apps/OfficeEnterprise-VDI.xml"
+$appName = "Project"
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/365%20Apps/ProjectPro-VDI.xml"
 $appConfig = Split-Path -Path $appConfigURL -Leaf # Download required config file
 Get-MicrosoftOfficeConfig -ConfigURL $appConfigURL
 $appSetup = "setup.exe"
-$appProcesses = @("OUTOOK", "EXCEL", "MSACCESS", "WINPROJ", "LYNC", "VISIO", "ONENOTE", "POWERPNT", "MSPUB")
+$appProcesses = @("WINPROJ")
 $appBitness = ([xml](Get-Content -Path $appScriptPath\$appConfig)).SelectNodes("//Add/@OfficeClientEdition").Value
 $appChannel = ([xml](Get-Content -Path $appScriptPath\$appConfig)).SelectNodes("//@Channel").Value
 $appDownloadParameters = "/download .\$appConfig"
@@ -286,7 +286,7 @@ If ([version]$appInstalledVersion -eq $null)
 
     # Download cleanup script
     Get-MicrosoftOfficeUninstaller
-    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true
+    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true -ProductsToRemove $appName
 
     # Download latest version
     If (-Not(Test-Path -Path .\$appVersion)) { New-Folder -Path $appVersion }

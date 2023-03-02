@@ -1,0 +1,56 @@
+<Configuration ID="fc53b730-0e59-45e2-8194-8db03ba97810">
+  <Info Description="Project 365 Optimized for VDI" />
+  <Add OfficeClientEdition="64" Channel="MonthlyEnterprise">
+    <Product ID="ProjectStdRetail">
+      <Language ID="en-us" />
+      <Language ID="fr-fr" />
+    </Product>
+  </Add>
+  <Property Name="SharedComputerLicensing" Value="1" />
+  <Property Name="PinIconsToTaskbar" Value="TRUE" />
+  <Property Name="SCLCacheOverride" Value="0" />
+  <Property Name="AUTOACTIVATE" Value="1" />
+  <Property Name="FORCEAPPSHUTDOWN" Value="TRUE" />
+  <Property Name="DeviceBasedLicensing" Value="0" />
+  <Updates Enabled="FALSE" />
+  <RemoveMSI>
+    <IgnoreProduct ID="InfoPath" />
+    <IgnoreProduct ID="InfoPathR" />
+    <IgnoreProduct ID="SharePointDesigner" />
+    <IgnoreProduct ID="VisPro" />
+    <IgnoreProduct ID="VisStd" />
+  </RemoveMSI>
+  <AppSettings>
+    <Setup Name="Company" Value="" />
+    <User Key="software\microsoft\office\16.0\common\sharepointintegration" Name="hidelearnmorelink" Value="1" Type="REG_DWORD" App="office16" Id="L_HideTheLearnMoreAboutSharePointHyperlink" />
+    <User Key="software\microsoft\office\16.0\common\toolbars" Name="animation" Value="2" Type="REG_DWORD" App="office16" Id="L_Menuanimations" />
+    <User Key="software\microsoft\office\16.0\common\toolbars" Name="customuiroaming" Value="1" Type="REG_DWORD" App="office16" Id="L_AllowRoamingQuickAccessToolBarRibbonCustomizations" />
+    <User Key="software\microsoft\office\16.0\common" Name="sendcustomerdata" Value="0" Type="REG_DWORD" App="office16" Id="L_Sendcustomerdata" />
+    <User Key="software\microsoft\shared tools\proofing tools\1.0\office" Name="ignoreuppercase" Value="1" Type="REG_DWORD" App="office16" Id="L_IgnorewordsinUPPERCASE" />
+    <User Key="software\microsoft\shared tools\proofing tools\1.0\office" Name="ignorewordswithnumbers" Value="1" Type="REG_DWORD" App="office16" Id="L_Ignorewordswithnumbers" />
+    <User Key="software\microsoft\shared tools\proofing tools\1.0\office" Name="ignoreinternetfileaddresses" Value="1" Type="REG_DWORD" App="office16" Id="L_IgnoreInternetandfileaddresses" />
+    <User Key="software\microsoft\shared tools\proofing tools\1.0\office" Name="enforceaccenteduppercase" Value="1" Type="REG_DWORD" App="office16" Id="L_AllowaccenteduppercaseinFrench" />
+    <User Key="software\microsoft\office\16.0\common\ptwatson" Name="ptwoptin" Value="0" Type="REG_DWORD" App="office16" Id="L_ImproveProofingTools" />
+    <User Key="software\microsoft\office\16.0\common\general" Name="shownfirstrunoptin" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableOptinWizard" />
+    <User Key="software\microsoft\office\16.0\common" Name="qmenable" Value="0" Type="REG_DWORD" App="office16" Id="L_EnableCustomerExperienceImprovementProgram" />
+    <User Key="software\microsoft\office\16.0\common" Name="updatereliabilitydata" Value="0" Type="REG_DWORD" App="office16" Id="L_UpdateReliabilityPolicy" />
+    <User Key="software\microsoft\office\16.0\common\languageresources" Name="helplanguage" Value="1036" Type="REG_DWORD" App="office16" Id="L_Displayhelpin" />
+    <User Key="software\microsoft\office\16.0\common\languageresources" Name="installlanguage" Value="3084" Type="REG_DWORD" App="office16" Id="L_PrimaryEditingLanguage" />
+    <User Key="software\microsoft\office\16.0\common\services\fax" Name="nofax" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableFaxOverInternetfeature" />
+    <User Key="software\microsoft\office\16.0\common" Name="disablemissingcomponenthyperlinks" Value="1" Type="REG_DWORD" App="office16" Id="L_Hidemissingcomponentdownloadhyperlinks" />
+    <User Key="software\microsoft\office\16.0\common\general" Name="optindisable" Value="1" Type="REG_DWORD" App="office16" Id="L_SuppressRecommendedSettingsDialog" />
+    <User Key="software\microsoft\office\16.0\common\graphics" Name="disablehardwareacceleration" Value="1" Type="REG_DWORD" App="office16" Id="L_DoNotUseHardwareAcceleration" />
+    <User Key="software\microsoft\office\16.0\osm" Name="enablelogging" Value="0" Type="REG_DWORD" App="office16" Id="L_EnableLogging" />
+    <User Key="software\microsoft\office\16.0\common\graphics" Name="disableanimations" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableAnimations" />
+    <User Key="software\microsoft\office\16.0\common\feedback" Name="enabled" Value="0" Type="REG_DWORD" App="office16" Id="L_SendFeedback" />
+    <User Key="software\microsoft\office\16.0\common\feedback" Name="includescreenshot" Value="0" Type="REG_DWORD" App="office16" Id="L_Screenshot" />
+    <User Key="software\microsoft\office\16.0\common\licensing" Name="hidemanageaccountlink" Value="1" Type="REG_DWORD" App="office16" Id="L_HideManageAccountLink" />
+    <User Key="software\microsoft\office\16.0\common\general" Name="disableboottoofficestart" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableOfficeStartGlobal" />
+    <User Key="software\microsoft\office\16.0\common" Name="autoorgidgetkey" Value="1" Type="REG_DWORD" App="office16" Id="L_AutoOrgIDGetKey" />
+    <User Key="software\microsoft\office\16.0\firstrun" Name="disablemovie" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableMovie" />
+    <User Key="software\microsoft\office\16.0\firstrun" Name="bootedrtm" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableOfficeFirstrun" />
+    <User Key="software\microsoft\office\16.0\common" Name="linkedin" Value="0" Type="REG_DWORD" App="office16" Id="L_AllowLinkedInFeatures" />
+    <User Key="software\microsoft\office\16.0\common\general" Name="disablecomingsoon" Value="1" Type="REG_DWORD" App="office16" Id="L_DisableComingSoon" />
+  </AppSettings>
+  <Display Level="Full" AcceptEULA="TRUE" />
+</Configuration>
