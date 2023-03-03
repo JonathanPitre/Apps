@@ -251,7 +251,6 @@ $appVendor = "Microsoft"
 $appName = "Office"
 $appName2 = "Visio"
 $appMajorVersion = "2019"
-$appName = "Visio"
 $appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Office%202019/Visio2019-x64-VDI.xml"
 $appConfig = Split-Path -Path $appConfigURL -Leaf # Download required config file
 Get-MicrosoftOfficeConfig -ConfigURL $appConfigURL
@@ -289,7 +288,7 @@ If ([version]$appInstalledVersion -eq $null)
 
     # Download cleanup script
     Get-MicrosoftOfficeUninstaller
-    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true -ProductsToRemove $appName
+    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true -ProductsToRemove $appName2
 
     # Download latest version
     If (-Not(Test-Path -Path .\$appVersion)) { New-Folder -Path $appVersion }
