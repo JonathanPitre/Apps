@@ -6,7 +6,6 @@
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
 #region Initialisations
-
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
@@ -79,33 +78,24 @@ Function Get-ScriptName
         }
     }
 }
-
-Function Initialize-Module
 {
-    <#
-    .SYNOPSIS
-        Initialize-Module install and import modules from PowerShell Galllery.
-    .OUTPUTS
-        System.String
-    #>
     [CmdletBinding()]
     Param
     (
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object { $_.Name -eq $Module })
+    If (Get-Module | Where-Object {$_.Name -eq $Module})
     {
-        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
-
+        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -146,7 +136,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
+            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -171,14 +161,7 @@ Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
-
 #endregion
-
-#-----------------------------------------------------------[Functions]------------------------------------------------------------
-
-#region Functions
-#endregion
-
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -188,7 +171,7 @@ Function Get-CitrixVDA
     [OutputType([System.Management.Automation.PSObject])]
     [CmdletBinding()]
     Param ()
-    $DownloadURL = "https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/whats-new.html"
+    $DownloadURL = "https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/2203-ltsr/whats-new.html"
 
     Try
     {
@@ -201,14 +184,14 @@ Function Get-CitrixVDA
     }
     Finally
     {
-        $RegEx = "(Citrix Virtual Apps and Desktops.+) (\d{4})"
+        $RegEx = "(Cumulative Update.+) (CU\d{1})"
         $Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[2].Value
 
         if ($Version)
         {
             [PSCustomObject]@{
                 Name    = 'Citrix Virtual Delivery Agent'
-                Version = $Version
+                Version = "2203 $Version"
             }
         }
     }
@@ -243,7 +226,7 @@ $appProcesses = @("BrokerAgent", "picaSessionAgent")
 $appServices = @("CitrixTelemetryService")
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enable_ss_ports /exclude "Citrix Personalization for App-V - VDA","Citrix VDA Upgrade Agent" /includeadditional "Citrix MCS IODriver","Citrix Profile Management","Citrix Profile Management WMI Plug-in","Citrix Rendezvous V2","Citrix Web Socket VDA Registration Tool","Machine Identity Service" /mastermcsimage /noreboot /noresume /quiet /remove_appdisk_ack /remove_pvd_ack'
+$appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enable_ss_ports /exclude "Citrix Personalization for App-V - VDA","Citrix Supportability Tools","Citrix WEM Agent","Citrix VDA Upgrade Agent","Citrix Rendezvous V2" /includeadditional "Machine Identity Service","Citrix Profile Management","Citrix Profile Management WMI Plug-in","Citrix MCS IODriver" /mastermcsimage /noreboot /noresume /quiet /remove_appdisk_ack /remove_pvd_ack'
 $appVersion = (Get-CitrixVDA).Version
 $appSetup = "VDAServerSetup_$appVersion.exe"
 $appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
@@ -263,7 +246,6 @@ If ($appVersion -gt $appInstalledVersion)
     If ($SessionName -like "*ica*")
     {
         Write-Log -Message "$appVendor $appName2 CANNOT BE INSTALLED from a Citrix session, please run install script from CONSOLE SESSION!" -Severity 3 -LogType CMTrace -WriteHost $True
-        Exit-Script
 
     }
 

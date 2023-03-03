@@ -6,6 +6,7 @@
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
 #region Initialisations
+
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
@@ -78,24 +79,33 @@ Function Get-ScriptName
         }
     }
 }
+
+Function Initialize-Module
 {
+    <#
+    .SYNOPSIS
+        Initialize-Module install and import modules from PowerShell Galllery.
+    .OUTPUTS
+        System.String
+    #>
     [CmdletBinding()]
     Param
     (
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -136,7 +146,7 @@ Function Get-ScriptName
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -161,6 +171,7 @@ Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+
 #endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------

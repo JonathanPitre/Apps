@@ -6,7 +6,8 @@
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
 #region Initialisations
-$ProgressPreference = "Continue"
+
+$ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
@@ -17,46 +18,94 @@ $env:SEE_MASK_NOZONECHECKS = 1
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT", "PSWindowsUpdate") # Modules list
 
-Function Get-ScriptDirectory
+Function Get-ScriptPath
 {
-    Remove-Variable appScriptDirectory
-    Try
+    <#
+    .SYNOPSIS
+        Get-ScriptPath returns the path of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+
+    Begin
     {
-        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
-        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-        ElseIf ([bool]$MyInvocation) { $MyInvocation.MyCommand.Path } # Windows PowerShell 3.0-5.1
+        Remove-Variable appScriptPath
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code
+        ElseIf ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") { Split-Path -Path $My$MyInvocation.MyCommand.Source } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Path } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { Split-Path -Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.PSScriptRoot) { $MyInvocation.PSScriptRoot } # Windows PowerShell 3.0+
+        ElseIf ($MyInvocation.MyCommand.Path) { Split-Path -Path $MyInvocation.MyCommand.Path -Parent } # Windows PowerShell
         Else
         {
-            Write-Host -Object "Cannot resolve script file's path!" -ForegroundColor Red
+            Write-Host -Object "Unable to resolve script's file path!" -ForegroundColor Red
             Exit 1
         }
     }
-    Catch
+}
+
+Function Get-ScriptName
+{
+    <#
+    .SYNOPSIS
+        Get-ScriptName returns the name of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+    Begin
     {
-        Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
-        Exit 2
+        Remove-Variable appScriptName
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path -Leaf } # Visual Studio Code Host
+        ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        Else
+        {
+            Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
+            Exit 1
+        }
     }
 }
 
 Function Initialize-Module
 {
+    <#
+    .SYNOPSIS
+        Initialize-Module install and import modules from PowerShell Galllery.
+    .OUTPUTS
+        System.String
+    #>
     [CmdletBinding()]
     Param
     (
         [Parameter(Mandatory = $true)]
         [string]$Module
     )
-    Write-Host -Object  "Importing $Module module..." -ForegroundColor Green
+    Write-Host -Object "Importing $Module module..." -ForegroundColor Green
 
     # If module is imported say that and do nothing
-    If (Get-Module | Where-Object {$_.Name -eq $Module})
+    If (Get-Module | Where-Object { $_.Name -eq $Module })
     {
-        Write-Host -Object  "Module $Module is already imported." -ForegroundColor Green
+        Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object {$_.Name -eq $Module})
+        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -97,7 +146,7 @@ Function Initialize-Module
             }
 
             # If module is not imported, not available on disk, but is in online gallery then install and import
-            If (Find-Module -Name $Module | Where-Object {$_.Name -eq $Module})
+            If (Find-Module -Name $Module | Where-Object { $_.Name -eq $Module })
             {
                 # Install and import module
                 Install-Module -Name $Module -AllowClobber -Force -Scope AllUsers
@@ -122,6 +171,7 @@ Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+
 #endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------

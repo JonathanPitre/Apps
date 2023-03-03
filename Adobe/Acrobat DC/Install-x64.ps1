@@ -6,6 +6,7 @@
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
 #region Initialisations
+
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
@@ -17,29 +18,76 @@ $env:SEE_MASK_NOZONECHECKS = 1
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
 $Modules = @("PSADT", "Evergreen") # Modules list
 
-Function Get-ScriptDirectory
+Function Get-ScriptPath
 {
-    Remove-Variable appScriptDirectory
-    Try
- {
-        If ($psEditor) { Split-Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code Host
-        ElseIf ($psISE) { Split-Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE Host
-        ElseIf ($PSScriptRoot) { $PSScriptRoot } # Windows PowerShell 3.0-5.1
+    <#
+    .SYNOPSIS
+        Get-ScriptPath returns the path of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+
+    Begin
+    {
+        Remove-Variable appScriptPath
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path } # Visual Studio Code
+        ElseIf ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") { Split-Path -Path $My$MyInvocation.MyCommand.Source } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Path } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { Split-Path -Path $psISE.CurrentFile.FullPath } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.PSScriptRoot) { $MyInvocation.PSScriptRoot } # Windows PowerShell 3.0+
+        ElseIf ($MyInvocation.MyCommand.Path) { Split-Path -Path $MyInvocation.MyCommand.Path -Parent } # Windows PowerShell
         Else
         {
-            Write-Host -Object "Cannot resolve script file's path" -ForegroundColor Red
+            Write-Host -Object "Unable to resolve script's file path!" -ForegroundColor Red
             Exit 1
         }
     }
-    Catch
- {
-        Write-Host -Object "Caught Exception: $($Error[0].Exception.Message)" -ForegroundColor Red
-        Exit 2
+}
+
+Function Get-ScriptName
+{
+    <#
+    .SYNOPSIS
+        Get-ScriptName returns the name of the current script.
+    .OUTPUTS
+        System.String
+    #>
+    [CmdletBinding()]
+    [OutputType([string])]
+    Param()
+    Begin
+    {
+        Remove-Variable appScriptName
+    }
+    Process
+    {
+        If ($psEditor) { Split-Path -Path $psEditor.GetEditorContext().CurrentFile.Path -Leaf } # Visual Studio Code Host
+        ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
+        ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
+        ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
+        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        Else
+        {
+            Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
+            Exit 1
+        }
     }
 }
 
 Function Initialize-Module
 {
+    <#
+    .SYNOPSIS
+        Initialize-Module install and import modules from PowerShell Galllery.
+    .OUTPUTS
+        System.String
+    #>
     [CmdletBinding()]
     Param
     (
@@ -50,13 +98,14 @@ Function Initialize-Module
 
     # If module is imported say that and do nothing
     If (Get-Module | Where-Object { $_.Name -eq $Module })
- {
+    {
         Write-Host -Object "Module $Module is already imported." -ForegroundColor Green
     }
     Else
- {
+    {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
+        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -114,14 +163,16 @@ Function Initialize-Module
     }
 }
 
-# Get the current script directory
-$appScriptPath = Get-ScriptDirectory
+[string]$appScriptPath = Get-ScriptPath # Get the current script path
+[string]$appScriptName = Get-ScriptName # Get the current script name
 
 # Install and import modules list
 Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+
+#endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
@@ -164,7 +215,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptPath\$appMsiSetup))
- {
+    {
         Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appSetupURL -OutFile $appSetup
         Write-Log -Message "Extracting $appVendor $appName $appShortVersion $appArchitecture $appVersion ZIP..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -175,13 +226,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Remove-File -Path "$appScriptPath\$appSetup"
     }
     Else
- {
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     # Download latest patch
     If (-Not(Test-Path -Path $appScriptPath\$appPatch))
- {
+    {
         Write-Log -Message "Downloading $appVendor $appName $appShortVersion $appArchitecture $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appPatchURL -OutFile $appPatch
         # Modify setup.ini according to latest patch
@@ -193,7 +244,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         }
     }
     Else
- {
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
@@ -206,12 +257,12 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Download latest Adobe Acrobat Customization Wizard DC
     If (-Not(Test-Path -Path $appScriptPath\$appCustWiz))
- {
+    {
         Write-Log -Message "Downloading $appVendor $appName Custimization Wizard $appShortVersion $appCustWizVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appCustWizURL -OutFile $appCustWiz
     }
     Else
- {
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
@@ -219,13 +270,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
     If (($IsAppInstalled) -and (Test-Path -Path $appScriptPath\$appMsiSetup))
- {
+    {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Remove-MSIApplications -Name "$appVendor $appName* $appShortVersion*" -WildCard -Exact
     }
 
     If ((Test-Path -Path "$appScriptPath\$appMsiSetup") -and (Test-Path -Path $appScriptPath\$appPatch))
- {
+    {
         # Download required transform file
         If (-Not(Test-Path -Path $appScriptPath\$appTransform))
         {
@@ -242,14 +293,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Execute-MSI -Action Install -Path $appMsiSetup -Transform $appTransform -Parameters $appInstallParameters -AddParameters $appAddParameters -Patch $appPatch -SkipMSIAlreadyInstalledCheck
     }
     ElseIf (($IsAppInstalled) -and (Test-Path -Path $appScriptPath\$appPatch))
- {
+    {
         # Install latest patch
         Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
         Write-Log -Message "Installing $appVendor $appName $appShortVersion $appArchitecture $appVersion patch..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-MSP -Path $appPatch
     }
     Else
- {
+    {
         Write-Log -Message "Setup file(s) are missing." -Severity 3 -LogType CMTrace -WriteHost $True
         Exit-Script
     }
@@ -280,7 +331,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-IniValue -FilePath $envWinDir\acroct.ini -Section "WinFntSvr" -Key "T1ToTTDisabled" -Value "1"
 
     If (-Not(Get-InstalledApplication -Name "Adobe Creative Cloud"))
- {
+    {
         Write-Log -Message "Adobe Creative Cloud must be installed in order for $appVendor $appName $appShortVersion licensing to work!" -Severity 2 -LogType CMTrace -WriteHost $True
     }
 

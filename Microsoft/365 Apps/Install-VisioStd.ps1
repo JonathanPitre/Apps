@@ -6,6 +6,7 @@
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
 #region Initialisations
+
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
@@ -78,7 +79,15 @@ Function Get-ScriptName
         }
     }
 }
+
+Function Initialize-Module
 {
+    <#
+    .SYNOPSIS
+        Initialize-Module install and import modules from PowerShell Galllery.
+    .OUTPUTS
+        System.String
+    #>
     [CmdletBinding()]
     Param
     (
@@ -95,7 +104,8 @@ Function Get-ScriptName
     Else
     {
         # If module is not imported, but available on disk then import
-        If (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module })
+        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -161,11 +171,13 @@ Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+
 #endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Function Get-MicrosoftOfficeUninstaller
 {
     <#

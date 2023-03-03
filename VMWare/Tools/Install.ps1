@@ -6,6 +6,7 @@
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
 #region Initialisations
+
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
@@ -78,7 +79,15 @@ Function Get-ScriptName
         }
     }
 }
+
+Function Initialize-Module
 {
+    <#
+    .SYNOPSIS
+        Initialize-Module install and import modules from PowerShell Galllery.
+    .OUTPUTS
+        System.String
+    #>
     [CmdletBinding()]
     Param
     (
@@ -162,6 +171,7 @@ Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+
 #endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------

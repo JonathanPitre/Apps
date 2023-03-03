@@ -6,6 +6,7 @@
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
 #region Initialisations
+
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
@@ -15,7 +16,7 @@ Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("Nevergreen") # Modules list
+$Modules = @("PSADT", "Nevergreen") # Modules list
 
 Function Get-ScriptPath
 {
@@ -78,7 +79,15 @@ Function Get-ScriptName
         }
     }
 }
+
+Function Initialize-Module
 {
+    <#
+    .SYNOPSIS
+        Initialize-Module install and import modules from PowerShell Galllery.
+    .OUTPUTS
+        System.String
+    #>
     [CmdletBinding()]
     Param
     (
@@ -96,6 +105,7 @@ Function Get-ScriptName
     {
         # If module is not imported, but available on disk then import
         If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
             $ModuleVersion = (Find-Module -Name $Module).Version
@@ -161,11 +171,13 @@ Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+
 #endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Filter Get-FileSize
 {
     "{0:N2} {1}" -f $(

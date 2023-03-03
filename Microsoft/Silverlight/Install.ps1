@@ -16,7 +16,7 @@ Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Evergreen") # Modules list
+$Modules = @("PSADT") # Modules list
 
 Function Get-ScriptPath
 {
@@ -182,29 +182,31 @@ Foreach ($Module in $Modules)
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Microsoft"
-$appName = "PowerShell"
-$appProcesses = @("pwsh", "mmc", "netprofm", "NlaSvc")
-$appInstallParameters = "/QB"
+$appName = "Silverlight"
 $appArchitecture = "x64"
-$appRelease = "Stable"
-$Evergreen = Get-EvergreenApp -Name MicrosoftPowerShell | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Type -eq "msi" -and $_.Release -eq $appRelease }
-$appVersion = $Evergreen.Version
-$appMajorVersion = $appVersion.Substring(0, 1)
+$appInstallParameters = " /q /doNotRequireDRMPrompt /ignorewarnings /noupdate"
+$Evergreen = Get-EvergreenApp -Name $appName2 | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Installer -eq $appInstaller -and $_.Channel -eq $appChannel }
+$appVersion = "5.1.50918"
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
-$appDestination = "$env:ProgramFiles\PowerShell\$appMajorVersion"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName $appMajorVersion-.*" -RegEx)
-$appInstalledVersion = (Get-InstalledApplication -Name "$appName $appMajorVersion-.*" -RegEx).DisplayVersion
-$appInstalledVersion = $appInstalledVersion.Substring(0, $appInstalledVersion.Length - 2)
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName - $appMajorVersion")
+$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName - $appMajorVersion").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
+    If (-Not(Test-Path -Path $appVersion))
+    {
+        New-Folder -Path $appVersion
+    }
     Set-Location -Path $appVersion
 
+    # Uninstall previous versions
+    Execute-Process -Path .\$appSetup -Parameters "/qu"
+
+    # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
     {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -215,13 +217,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcesses | Stop-Process -Force
-
+    # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
+    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+    REG ADD "HKLM\SOFTWARE\Microsoft\Silverlight" /v UpdateConsentMode /t REG_DWORD /d 0 /f
+    REG ADD "HKLM\SOFTWARE\Microsoft\Silverlight" /v UpdateMode /t REG_DWORD /d 2 /f
+    REG ADD "HKLM\SOFTWARE\Wow6432Node\Microsoft\Silverlight" /v UpdateConsentMode /t REG_DWORD /d 0 /f
+    REG ADD "HKLM\SOFTWARE\Wow6432Node\Microsoft\Silverlight" /v UpdateMode /t REG_DWORD /d 2 /f
 
     # Go back to the parent folder
     Set-Location ..

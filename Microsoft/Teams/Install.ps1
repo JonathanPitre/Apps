@@ -6,6 +6,7 @@
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
 #region Initialisations
+
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
@@ -78,7 +79,15 @@ Function Get-ScriptName
         }
     }
 }
+
+Function Initialize-Module
 {
+    <#
+    .SYNOPSIS
+        Initialize-Module install and import modules from PowerShell Galllery.
+    .OUTPUTS
+        System.String
+    #>
     [CmdletBinding()]
     Param
     (
@@ -162,11 +171,13 @@ Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+
 #endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Function Search-Registry
 {
     <#
@@ -421,7 +432,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Configure application shortcut
     Copy-File -Path "$envCommonStartMenuPrograms\$appVendor $appName.lnk" -Destination "$envCommonStartMenuPrograms\$appName.lnk" -ContinueFileCopyOnError $True
     Remove-File -Path "$envCommonStartMenuPrograms\$appVendor $appName.lnk" -ContinueOnError $True
-    Remove-File -Path "$envCommonStartMenuPrograms\$appVendor $appName (work or school).lnk" -ContinueOnError $True
+    Rename-Item -Path "$envCommonStartMenuPrograms\$appVendor $appName (work or school).lnk" -NewName "$envCommonStartMenuPrograms\$appName.lnk" -Force
     Remove-Folder -Path "$envCommonStartMenuPrograms\$appVendor Corporation" -ContinueOnError $True
 
     # Register Teams add-in for Outlook - https://microsoftteams.uservoice.com/forums/555103-public/suggestions/38846044-fix-the-teams-meeting-addin-for-outlook
