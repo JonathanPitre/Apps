@@ -1,4 +1,4 @@
-< Configuration ID="89bc54a1-4234-4a03-8869-7798857e04cf">
+<Configuration ID="89bc54a1-4234-4a03-8869-7798857e04cf">
   <Info Description="Visio Pro 2019 Optimized for VDI" />
   <Add OfficeClientEdition="64" Channel="PerpetualVL2019">
     <Product ID="VisioPro2019Volume" PIDKEY="9BGNQ-K37YR-RQHF2-38RQ3-7VCBB">
