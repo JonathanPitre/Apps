@@ -248,6 +248,9 @@ Function Get-MicrosoftOfficeConfig
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Microsoft"
+$appName = "Office"
+$appName2 = "Visio"
+$appMajorVersion = "2019"
 $appName = "Visio"
 $appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/365%20Apps/VisioPro-VDI.xml"
 $appConfig = Split-Path -Path $appConfigURL -Leaf # Download required config file
@@ -276,7 +279,7 @@ If ([version]$appInstalledVersion -eq $null)
     Set-Location -Path $appScriptPath
 
     # Download latest setup file(s)
-    Write-Log -Message "Downloading the latest version of $appVendor Office Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Downloading the latest version of $appVendor $appName Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
     Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     $appSetupVersion = (Get-Command .\$appSetup).FileVersionInfo.FileVersion
 
