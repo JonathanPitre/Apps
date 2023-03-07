@@ -251,6 +251,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     Write-Log -Message "Applying $appName settings to the Default User profile." -Severity 1 -LogType CMTrace -WriteHost $True
+
     # Copy config file to the default profile
     New-Item -Path "$appDestination" -Name "PersonalPath.cfg" -ItemType File -Value "%ApplicationData%\$appName" -Force
     New-Folder -Path "$envSystemDrive\Users\Default\AppData\Roaming\$appName"
