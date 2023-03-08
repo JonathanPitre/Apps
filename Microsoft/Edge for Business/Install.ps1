@@ -291,14 +291,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Stop and disable unneeded services
     Stop-ServiceAndDependencies -Name $appServices[0]
-    Stop-ServiceAndDependencies -Name $appServices[1]
-    Stop-ServiceAndDependencies -Name $appServices[2]
-    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled"
-    Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled"
-    Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled"
+    #Stop-ServiceAndDependencies -Name $appServices[1]
+    #Stop-ServiceAndDependencies -Name $appServices[2]
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Manual"
+    #Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled"
+    #Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled"
 
     # Remove Active Setup - https://virtualwarlock.net/microsoft-edge-in-citrix
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{9459C573-B17A-45AE-9F64-1857B5D58CEE}" -Name "StubPath"
+    # Disable autoupdate
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" -Name "Update{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" -Value "0" -Type DWord
+    # Disable per-user installation
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" -Name "Install{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" -Value "4" -Type DWord
 
     # Execute the Microsoft Edge browser replacement task to make sure that the legacy Microsoft Edge browser is tucked away
     # This is only needed on Windows 10 versions where Microsoft Edge is not included in the OS.
