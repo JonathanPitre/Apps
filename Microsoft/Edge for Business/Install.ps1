@@ -247,7 +247,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Remove previous registry entries
     Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Edge" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKCU:\Software\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{ 9459C573-B17A-45AE-9F64-1857B5D58CEE}" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{9459C573-B17A-45AE-9F64-1857B5D58CEE}" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Edge" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge Update" -Recurse -ContinueOnError $True
