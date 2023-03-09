@@ -289,14 +289,19 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Stop and disable unneeded services
     Stop-ServiceAndDependencies -Name $appServices[0]
-    Stop-ServiceAndDependencies -Name $appServices[1]
-    Stop-ServiceAndDependencies -Name $appServices[2]
+    #Stop-ServiceAndDependencies -Name $appServices[1]
+    #Stop-ServiceAndDependencies -Name $appServices[2]
     Set-ServiceStartMode -Name $appServices[0] -StartMode "Manual"
-    Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled"
-    Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled"
+    #Set-ServiceStartMode -Name $appServices[1] -StartMode "Disabled"
+    #Set-ServiceStartMode -Name $appServices[2] -StartMode "Disabled"
 
     # Remove Active Setup - https://dennisspan.com/google-chrome-on-citrix-deep-dive/#StubPath
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{8A69D345-D564-463c-AFF1-A69D9E530F96}" -Name "StubPath"
+    # Disable autoupdate
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Google\Update" -Name "Update{8A69D345-D564-463C-AFF1-A69D9E530F96}" -Value "0" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Google\Update" -Name "UpdateDefault" -Value "0" -Type DWord
+    # Disable per-user installation
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Google\Update" -Name "Install{8A69D345-D564-463C-AFF1-A69D9E530F96}" -Value "0" -Type DWord
 
     # Creates a pinned taskbar icons for all users
     New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
