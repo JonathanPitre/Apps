@@ -310,7 +310,7 @@ $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Teams/desktop-config.json"
 $appConfig = Split-Path -Path $appConfigURL -Leaf
 $appRegtlibURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/REGTLIB.EXE"
-$appRegtlib = Split-Path -Path $appConfigURL -Leaf
+$appRegtlib = Split-Path -Path $appRegtlibURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSERS=1 ALLUSER=1 OPTIONS='noAutoStart=true"
 $Evergreen = Get-EvergreenApp -Name $appVendor$appName | Where-Object { $_.Ring -eq $appRing -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi" }
