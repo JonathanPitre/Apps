@@ -309,6 +309,8 @@ $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/T
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Teams/desktop-config.json"
 $appConfig = Split-Path -Path $appConfigURL -Leaf
+$appRegtlibURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/REGTLIB.EXE"
+$appRegtlib = Split-Path -Path $appConfigURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSERS=1 ALLUSER=1 OPTIONS='noAutoStart=true"
 $Evergreen = Get-EvergreenApp -Name $appVendor$appName | Where-Object { $_.Ring -eq $appRing -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi" }
@@ -411,6 +413,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Download Regtlib.exe
+    If (-Not(Test-Path -Path $appScriptPath\$appRegtlib))
+    {
+        Write-Log -Message "Downloading $appRegtlib.." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appRegtlibURL -OutFile $appScriptPath\$appRegtlib
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     # Required if not using the custom MST
@@ -434,6 +447,28 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-File -Path "$envCommonStartMenuPrograms\$appVendor $appName.lnk" -ContinueOnError $True
     Rename-Item -Path "$envCommonStartMenuPrograms\$appVendor $appName (work or school).lnk" -NewName "$envCommonStartMenuPrograms\$appName.lnk" -Force
     Remove-Folder -Path "$envCommonStartMenuPrograms\$appVendor Corporation" -ContinueOnError $True
+
+    # Fix Microsoft Outlook's Teams Presence issue
+    If (Test-Path -Path "$envProgramFiles\Microsoft Office\root\Office16\OUTLOOK.EXE")
+    {
+        Copy-File -Path "$envProgramFilesX86\Microsoft\TeamsPresenceAddin\Uc.tlb" -Destination "$envProgramFiles\Microsoft Office\root\Office16"
+        Copy-File -Path "$envProgramFilesX86\Microsoft\TeamsPresenceAddin\Uc.win32.tlb" -Destination "$envProgramFiles\Microsoft Office\root\Office16"
+        Execute-Process -Path "$appScriptPath\REGTLIB.EXE" -Parameters '"C:\Program Files\Microsoft Office\root\Office16\Uc.tlb"'
+        Execute-Process -Path "$appScriptPath\REGTLIB.EXE" -Parameters '"C:\Program Files\Microsoft Office\root\Office16\Uc.win32.tlb"'
+        Write-Log -Message "Microsoft Outlook's Teams Presence issue was fixed!" -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+    ElseIf (Test-Path -Path "$envProgramFilesX86\Microsoft Office\root\Office16\OUTLOOK.EXE")
+    {
+        Copy-File -Path "$envProgramFilesX86\Microsoft\TeamsPresenceAddin\Uc.tlb" -Destination "$envProgramFilesX86\Microsoft Office\root\Office16"
+        Copy-File -Path "$envProgramFilesX86\Microsoft\TeamsPresenceAddin\Uc.win32.tlb" -Destination "$envProgramFilesX86\Microsoft Office\root\Office16"
+        Execute-Process -Path "$appScriptPath\REGTLIB.EXE" -Parameters '"C:\Program Files (x86)\Microsoft Office\root\Office16\Uc.tlb"'
+        Execute-Process -Path "$appScriptPath\REGTLIB.EXE" -Parameters '"C:\Program Files (x86)\Microsoft Office\root\Office16\Uc.win32.tlb"'
+        Write-Log -Message "Microsoft Outlook's Teams Presence issue was fixed!" -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+    Else
+    {
+        Write-Log -Message "Microsoft Outlook is NOT installed!" -Severity 2 -LogType CMTrace -WriteHost $True
+    }
 
     # Register Teams add-in for Outlook - https://microsoftteams.uservoice.com/forums/555103-public/suggestions/38846044-fix-the-teams-meeting-addin-for-outlook
     $appDLLs = (Get-ChildItem -Path "$envProgramFilesX86\Microsoft\TeamsMeetingAddin" -Include "Microsoft.Teams.AddinLoader.dll" -Recurse).FullName
