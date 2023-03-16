@@ -193,6 +193,7 @@ $Evergreen = Get-EvergreenApp -Name GoogleChrome | Where-Object { $_.Architectur
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Google/Chrome%20Enterprise/master_preferences"
 $appConfig = Split-Path -Path $appConfigURL -Leaf
 $appDestination = "$env:ProgramFiles\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
@@ -253,10 +254,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-Folder -Path "$envProgramFiles\$appVendor\CrashReports" -ContinueOnError $True
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
+    If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
     {
         Write-Log -Message "Downloading $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
+        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile "$appScriptPath\$appVersion\$appSetup"
     }
     Else
     {
@@ -264,10 +265,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Download required config file
-    If (-Not(Test-Path -Path $appScriptPath\$appConfig))
+    If (-Not(Test-Path -Path "$appScriptPath\$appConfig"))
     {
         Write-Log -Message "Downloading $appVendor $appName Config.." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptPath\$appConfig
+        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile "$appScriptPath\$appConfig"
     }
     Else
     {
