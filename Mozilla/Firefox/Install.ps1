@@ -187,16 +187,13 @@ $appProcesses = @("firefox", "maintenanceservice")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
 $appChannel = "LATEST"
-$appAddParameters = "TASKBAR_SHORTCUT=true DESKTOP_SHORTCUT=true START_MENU_SHORTCUT=true INSTALL_MAINTENANCE_SERVICE=false PREVENT_REBOOT_REQUIRED=true REGISTER_DEFAULT_AGENT=false"
+$appAddParameters = "TASKBAR_SHORTCUT=false DESKTOP_SHORTCUT=false START_MENU_SHORTCUT=true INSTALL_MAINTENANCE_SERVICE=false PREVENT_REBOOT_REQUIRED=true REGISTER_DEFAULT_AGENT=false"
 [string]$currentUILanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2)
-If ($currentUILanguage -eq "EN") { $appLanguage = "en-US" } Else { $appLanguage = $currentUILanguage} #EN is not a valid language
+#If ($currentUILanguage -eq "EN") { $appLanguage = "en-US" } Else { $appLanguage = $currentUILanguage} #EN is not a valid language
+$appLanguage = "FR"
 $Evergreen = Get-EvergreenApp -Name MozillaFirefox -AppParams @{Language=$appLanguage} | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Channel -match $appChannel -and $_.Language -eq "$appLanguage" -and $_.Type -eq "msi"}
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appRepo = "https://api.github.com/repos/mozilla/policy-templates/releases/latest"
-$EvergreenADMX = Get-EvergreenApp -Name "GitHubRelease" -AppParams @{ Uri=$appRepo }
-$appURLADMX = $EvergreenADMX.URI
-$appADMX = Split-Path -Path $appURLADMX -Leaf
 $appSetup = (Split-Path -Path $appURL -Leaf).Replace("%20"," ")
 $appDestination = "$env:ProgramFiles\Mozilla Firefox"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
@@ -226,23 +223,12 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    # Download latest policy definitions
-    Write-Log -Message "Downloading $appVendor $appName $appVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Invoke-WebRequest -UseBasicParsing -Uri $appURLADMX -OutFile $appADMX
-    New-Folder -Path "$appScriptPath\PolicyDefinitions"
-    If (Get-ChildItem -Path $appScriptPath\*.zip) {
-        Expand-Archive -Path $appScriptPath\*.zip -DestinationPath $appScriptPath\PolicyDefinitions -Force
-        Remove-File -Path $appScriptPath\*.zip -ContinueOnError $True
-    }
-    Move-Item -Path $appScriptPath\PolicyDefinitions\windows\* -Destination $appScriptPath\PolicyDefinitions -Force
-    Remove-Item -Path $appScriptPath\PolicyDefinitions -Include "mac", "windows", "LICENSE", "README.md" -Force -Recurse
-
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
     # Creates a pinned taskbar icons for all users
-    New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appName" -WorkingDirectory "$appDestination"
+    #New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appName" -WorkingDirectory "$appDestination"
 
     # Go back to the parent folder
     Set-Location ..
