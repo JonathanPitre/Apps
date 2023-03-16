@@ -253,6 +253,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-Folder -Path "$envProgramFiles\$appVendor\Temp" -ContinueOnError $True
     Remove-Folder -Path "$envProgramFiles\$appVendor\CrashReports" -ContinueOnError $True
 
+    # Remove previous registry entries
+    Remove-RegistryKey -Key "HKCU:\Software\Google\Chrome" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKCU:\Software\Google\Update" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Google\Chrome" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Google\Update" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Google\Update" -Recurse -ContinueOnError $True
+
     # Download latest setup file(s)
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
     {
@@ -299,10 +306,12 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Remove Active Setup - https://dennisspan.com/google-chrome-on-citrix-deep-dive/#StubPath
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{8A69D345-D564-463c-AFF1-A69D9E530F96}" -Name "StubPath"
     # Disable autoupdate
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Google\Update" -Name "Update{8A69D345-D564-463C-AFF1-A69D9E530F96}" -Value "0" -Type DWord
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Google\Update" -Name "UpdateDefault" -Value "0" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Google\Update" -Name "Update{8A69D345-D564-463C-AFF1-A69D9E530F96}" -Value "0" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Google\Update" -Name "UpdateDefault" -Value "0" -Type DWord
     # Disable per-user installation
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Google\Update" -Name "Install{8A69D345-D564-463C-AFF1-A69D9E530F96}" -Value "0" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Google\Update" -Name "Install{8A69D345-D564-463C-AFF1-A69D9E530F96}" -Value "0" -Type DWord
+    # Disable default browser check
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Google\Update" -Name "DefaultBrowserSettingEnabled" -Value "0" -Type DWord
 
     # Creates a pinned taskbar icons for all users
     New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
