@@ -190,7 +190,7 @@ $appChannel = "LATEST"
 $appAddParameters = "TASKBAR_SHORTCUT=false DESKTOP_SHORTCUT=false START_MENU_SHORTCUT=true INSTALL_MAINTENANCE_SERVICE=false PREVENT_REBOOT_REQUIRED=true REGISTER_DEFAULT_AGENT=false"
 [string]$currentUILanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2)
 #If ($currentUILanguage -eq "EN") { $appLanguage = "en-US" } Else { $appLanguage = $currentUILanguage} #EN is not a valid language
-$appLanguage = "FR"
+$appLanguage.ToLower() = "fr"
 $Evergreen = Get-EvergreenApp -Name MozillaFirefox -AppParams @{Language=$appLanguage} | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Channel -match $appChannel -and $_.Language -eq "$appLanguage" -and $_.Type -eq "msi"}
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
