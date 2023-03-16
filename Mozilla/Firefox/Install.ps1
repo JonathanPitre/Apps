@@ -206,6 +206,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion
 
+    # Delete machine policies to prevent issue during installation
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Recurse -ContinueOnError $True
+
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled) {
@@ -226,6 +230,27 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
+
+    # Disable autoupdate
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "BackgroundAppUpdate" -Value "0" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "DisableAppUpdate" -Value "1" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "AppAutoUpdate" -Value "0" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "BackgroundAppUpdate" -Value "0" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "DisableAppUpdate" -Value "1" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "AppAutoUpdate" -Value "0" -Type DWord
+    # Disable default browser check
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "DontCheckDefaultBrowser" -Value "1" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "DisableDefaultBrowserAgent" -Value "1" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "DontCheckDefaultBrowser" -Value "1" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "DisableDefaultBrowserAgent" -Value "1" -Type DWord
+    # Disable Telemetry
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "DisableTelemetry" -Value "1" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "DisableTelemetry" -Value "1" -Type DWord
+    # Disable first run page
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "OverrideFirstRunPage" -Value "" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "OverrideFirstRunPage" -Value "" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "OverridePostUpdatePag" -Value "" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "OverridePostUpdatePag" -Value "" -Type String
 
     # Creates a pinned taskbar icons for all users
     #New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appName" -WorkingDirectory "$appDestination"
