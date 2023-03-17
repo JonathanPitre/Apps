@@ -198,8 +198,6 @@ $appSetup = Split-Path -Path $appSetupURL -Leaf
 $appMsiSetup = "AcroPro.msi"
 $appPatchURL = $Evergreen.URI
 $appPatch = Split-Path -Path $appPatchURL -Leaf
-$appADMXurl = "https://ardownload2.adobe.com/pub/adobe/acrobat/win/AcrobatDC/misc/AcrobatADMTemplate.zip"
-$appADMX = Split-Path -Path $appADMXurl -Leaf
 $appCustWizURL = "https://ardownload2.adobe.com/pub/adobe/acrobat/win/AcrobatDC/misc/CustWiz2100720091_en_US_DC.exe"
 $appCustWiz = Split-Path -Path $appCustWizURL -Leaf
 $appCustWizVersion = $appCustWiz.Trim("CustWiz").Trim("_en_US_DC.exe")
@@ -247,13 +245,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
-
-    # Download latest policy definitions
-    Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Invoke-WebRequest -UseBasicParsing -Uri $appADMXurl -OutFile $appADMX
-    New-Folder -Path "$appScriptPath\PolicyDefinitions"
-    Expand-Archive -Path $appADMX -DestinationPath "$appScriptPath\PolicyDefinitions" -Force
-    Remove-File -Path $appADMX, $appScriptPath\PolicyDefinitions\*.adm
 
     # Download latest Adobe Acrobat Customization Wizard DC
     If (-Not(Test-Path -Path $appScriptPath\$appCustWiz))

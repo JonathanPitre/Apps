@@ -206,8 +206,6 @@ $appFontURL = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc
 $appFont = Split-Path -Path $appFontURL -Leaf
 $appDicURL = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/AcroRdrSD1900820071_all_DC.msi"
 $appDic = Split-Path -Path $appDicURL -Leaf
-$appADMXurl = "https://ardownload2.adobe.com/pub/adobe/reader/win/AcrobatDC/misc/ReaderADMTemplate.zip"
-$appADMX = Split-Path -Path $appADMXurl -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\$appName2"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.* $appShortVersion .*" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion MUI" -Exact).DisplayVersion
@@ -253,13 +251,6 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
-
-    # Download latest policy definitions
-    Write-Log -Message "Downloading $appVendor $appName $appShortVersion ADMX templates..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Invoke-WebRequest -UseBasicParsing -Uri $appADMXurl -OutFile $appADMX
-    New-Folder -Path "$appScriptPath\PolicyDefinitions"
-    Expand-Archive -Path $appADMX -DestinationPath "$appScriptPath\PolicyDefinitions" -Force
-    Remove-File -Path $appADMX, $appScriptPath\PolicyDefinitions\*.adm
 
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
