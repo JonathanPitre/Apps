@@ -7,7 +7,7 @@
 
 #region Initialisations
 
-$ProgressPreference = "SilentlyContinue"
+$ProgressPreference = "Continue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
 Try { Set-ExecutionPolicy -ExecutionPolicy 'ByPass' -Scope 'Process' -Force } Catch {}
@@ -208,20 +208,40 @@ Set-ServiceStartMode -Name $appService -StartMode "Automatic"
 Start-ServiceAndDependencies -Name $appService
 
 Write-Log -Message "Gettings available $appVendor $appName..." -Severity 1 -LogType CMTrace -WriteHost $True
-Get-WindowsUpdate -RootCategories "Critical Updates", "Definition Updates", "Feature Packs", "Security Updates", "Service Packs", "Tools", "Update Rollups", "Updates" -NotTitle "Preview" -MicrosoftUpdate | Out-File $appLog -Append
+$WinUpdates = Get-WindowsUpdate -NotCategory "Drivers", "Upgrade" -NotTitle "Preview" -MicrosoftUpdate
+$WinUpdates = $WinUpdates | Select-Object KB, Size, Title
 
-Write-Log -Message "Installing available $appVendor $appName..." -Severity 1 -LogType CMTrace -WriteHost $True
-Get-WindowsUpdate -RootCategories "Upgrades" -NotTitle "Preview" -MicrosoftUpdate -Install -AcceptAll -UpdateType Software -IgnoreReboot -IgnoreUserInput | Out-File $appLog -Append
 
-Get-WindowsUpdate -RootCategories "Critical Updates", "Definition Updates", "Feature Packs", "Security Updates", "Service Packs", "Tools", "Update Rollups", "Updates" -NotTitle "Preview" -MicrosoftUpdate -Install -AcceptAll -UpdateType Software -IgnoreReboot -IgnoreUserInput | Out-File $appLog -Append
+If ($null -ne $WinUpdates)
+{
+    Write-Log -Message "Installing $appVendor $appName...`n $($WinUpdates | Out-String)" -Severity 1 -LogType CMTrace -WriteHost $True
+    Get-WindowsUpdate -NotCategory "Drivers", "Upgrade" -NotTitle "Preview" -MicrosoftUpdate -Install -AcceptAll -UpdateType Software -IgnoreReboot -IgnoreUserInput | Out-File $appLog -Append
+}
+ElseIf (-Not[bool](Get-InstalledModule -Name PSWindowsUpdate))
+{
+    Write-Log -Message "PSWindowsUpdate module could not be installed, reverting to Microsoft native method." -Severity 2 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing $appVendor $appName..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Windows 10/Server 2016 native method
+    Start-Process -NoNewWindow "$env:windir\System32\UsoClient.exe" -argument "ScanInstallWait" -Wait
+    Start-Process -NoNewWindow "$env:windir\System32\UsoClient.exe" -argument "StartInstall" -Wait
+}
+Else
+{
+    Write-Log -Message "No $appVendor $appName are available." -Severity 1 -LogType CMTrace -WriteHost $True
+}
 
-# Windows 10 native way
-#Start-Process -NoNewWindow "c:\windows\system32\UsoClient.exe" -argument "ScanInstallWait" -Wait
-#Start-Process -NoNewWindow "c:\windows\system32\UsoClient.exe" -argument "StartInstall" -Wait
-
-# Only reboot if needed
+# Check for pending restart
 [bool]$WURebootStatus = Get-WURebootStatus -Silent
-if ($WURebootStatus) {
+[bool]$isRebootPending = (Get-PendingReboot).IsSystemRebootPending
+If ($WURebootStatus)
+{
     Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
-    Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
+    Write-Log -Message "A computer restart is required." -Severity 2 -LogType CMTrace -WriteHost $True
+    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
+}
+ElseIf ($isRebootPending)
+{
+    Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "A computer restart is required." -Severity 2 -LogType CMTrace -WriteHost $True
+    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
 }
