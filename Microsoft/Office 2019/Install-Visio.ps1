@@ -173,9 +173,11 @@ Foreach ($Module in $Modules)
 }
 
 #endregion
+
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Function Get-MicrosoftOfficeUninstaller
 {
     <#
@@ -240,7 +242,7 @@ Function Get-MicrosoftOfficeConfig
         If (-Not(Test-Path -Path $appScriptPath\$appConfig))
         {
             Write-Log -Message "Downloading $appVendor $appName Config.." -Severity 1 -LogType CMTrace -WriteHost $True
-            Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile $appScriptPath\$appConfig
+            Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile "$appScriptPath\$appConfig"
         }
         Else
         {
@@ -265,17 +267,17 @@ $appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Mic
 $appConfig = Split-Path -Path $appConfigURL -Leaf # Download required config file
 Get-MicrosoftOfficeConfig -ConfigURL $appConfigURL
 $appSetup = "setup.exe"
-$appProcesses = @("VISIO")
+$appProcesses = @("VISIO", "OfficeC2RClient", "OfficeClickToRun")
 $appBitness = ([xml](Get-Content -Path $appScriptPath\$appConfig)).SelectNodes("//Add/@OfficeClientEdition").Value
 $appChannel = ([xml](Get-Content -Path $appScriptPath\$appConfig)).SelectNodes("//@Channel").Value
 $appDownloadParameters = "/download .\$appConfig"
 $appInstallParameters = "/configure .\$appConfig"
-$appUpdateParameters = "/update user displaylevel=true forceappshutdown=true" #/changesetting Channel=$appChannel
+$appUpdateParameters = "/update user displaylevel=true forceappshutdown=true"
 $Evergreen = Get-EvergreenApp -Name Microsoft365Apps | Where-Object { $_.Channel -eq $appChannel }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appUninstallerDir = "$appScriptPath\Remove-PreviousOfficeInstalls"
-$appUpdateTool = "$env:CommonProgramFiles\microsoft shared\ClickToRun\OfficeC2RClient.exe"
+$appUpdateTool = "$env:CommonProgramW6432\microsoft shared\ClickToRun\OfficeC2RClient.exe"
 If ($appBitness -eq "64") { $appDestination = "$env:ProgramFiles\Microsoft Office\root\Office16" }
 If ($appBitness -eq "86") { $appDestination = "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16" }
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName2 .+$appMajorVersion" -RegEx)
@@ -283,13 +285,13 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName2 .*$
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
+Set-Location -Path $appScriptPath
+
 If ([version]$appInstalledVersion -eq $null)
 {
-    Set-Location -Path $appScriptPath
-
     # Download latest setup file(s)
-    Write-Log -Message "Downloading the latest version of $appVendor $appName Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
+    Write-Log -Message "Downloading the latest version of $appVendor Office Deployment Tool (ODT)..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile "$appScriptPath\$appSetup"
     $appSetupVersion = (Get-Command .\$appSetup).FileVersionInfo.FileVersion
 
     # Uninstall previous version(s)
@@ -302,7 +304,7 @@ If ([version]$appInstalledVersion -eq $null)
 
     # Download latest version
     If (-Not(Test-Path -Path .\$appVersion)) { New-Folder -Path $appVersion }
-    Copy-File $appConfig, $appSetup -Destination $appVersion -ContinueFileCopyOnError $True
+    Copy-File $appConfig, $appSetup -Destination "$appScriptPath\$appVersion" -ContinueFileCopyOnError $True
     Set-Location -Path .\$appVersion
 
     If (-Not(Test-Path -Path .\Office\Data\v$appBitness.cab))
@@ -336,17 +338,20 @@ If ([version]$appInstalledVersion -eq $null)
     # Configure application shortcut
     Rename-Item -Path "$envCommonStartMenuPrograms\OneNote 2016.lnk" -NewName "$envCommonStartMenuPrograms\OneNote.lnk"
 
-    # Disabled schedule tasks
+    # Stop and disable unneeded scheduled tasks
     Get-ScheduledTask -TaskName "Office*" | Stop-ScheduledTask
     Get-ScheduledTask -TaskName "Office*" | Disable-ScheduledTask
 
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appVendor $appName2 $appMajorVersion $appBitness was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName2 $appMajorVersion x$appBitness was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 ElseIf (([version]$appVersion -gt [version]$appInstalledVersion) -and (Test-Path -Path $appUpdateTool))
 {
+    # Uninstall previous version(s)
+    Write-Log -Message "Stop problematic processes..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     # Configure settings
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\16.0\common\OfficeUpdate" -Name "UpdateBranch"
@@ -360,8 +365,9 @@ ElseIf (([version]$appVersion -gt [version]$appInstalledVersion) -and (Test-Path
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\ClickToRun\Configuration" -Name "UpdatesEnabled " -Value "True" -Type String
 
     # Install latest version
-    Write-Log -Message "Installing $appVendor $appVendor $appName2 $appMajorVersion $appBitness..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-Process -Path $appUpdateTool -Parameters $appUpdateParameters -WaitForMsiExec
+    Write-Log -Message "Installing $appVendor $appVendor $appName2 $appMajorVersion x$appBitness..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Execute-Process -Path $appUpdateTool -Parameters $appUpdateParameters
+    Wait-Process -Name OfficeClickToRun
 
     #Get-Process -Name OfficeC2RClient | Stop-Process -Force
 
@@ -374,16 +380,16 @@ ElseIf (([version]$appVersion -gt [version]$appInstalledVersion) -and (Test-Path
     # Configure application shortcut
     Rename-Item -Path "$envCommonStartMenuPrograms\OneNote 2016.lnk" -NewName "$envCommonStartMenuPrograms\OneNote.lnk"
 
-    # Disabled schedule tasks
+    # Stop and disable unneeded scheduled tasks
     Get-ScheduledTask -TaskName "Office*" | Stop-ScheduledTask
     Get-ScheduledTask -TaskName "Office*" | Disable-ScheduledTask
 
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appVendor $appName2 $appMajorVersion $appBitness was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName2 $appMajorVersion x$appBitness was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
 {
-    Write-Log -Message "$appVendor $appName2 $appMajorVersion $appBitness is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName2 $appMajorVersion x$appBitness is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
