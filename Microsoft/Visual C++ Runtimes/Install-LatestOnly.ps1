@@ -187,7 +187,6 @@ $appMajorVersion = ( Get-VcList | Select-Object -Last 1).Release
 $VcList = Get-VcList | Where-Object {$_.Release -eq $appMajorVersion}
 $VcListVersion = ($VcList | Where-Object {$_.Release -eq $appMajorVersion -and $_.Architecture -eq "x64" }).Version
 $appVersion = $VcListVersion.Substring(0, $VcListVersion.Length - 2)
-$appSetup = Split-Path -Path ($VcList).Download -Leaf
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion").DisplayVersion | Select-Object -First 1
 
@@ -203,15 +202,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-MSIApplications -Name "$appVendor $appName 2015-2019" -ContinueOnError $True
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptPath\$appMajorVersion\x64\RTM\$appSetup))
-    {
-        Write-Log -Message "Downloading $appVendor $appName $appMajorVersion $appVersion Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Save-VcRedist -VcList $VcList -Path $appScriptPath
-    }
-    Else
-    {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
-    }
+    Write-Log -Message "Downloading $appVendor $appName Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Save-VcRedist -VcList $VcList -Path $appScriptPath
 
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appMajorVersion $appVersion Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
