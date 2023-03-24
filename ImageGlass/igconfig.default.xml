@@ -52,6 +52,7 @@
       <Item key="IsContinueRunningBackground" value="False" />
       <Item key="IsStartWithOs" value="False" />
       <Item key="AutoDisplayNewImageInFolder" value="False" />
+      <Item key="AutoFocusToolbarOnHover" value="False" />
       <Item key="FirstLaunchVersion" value="5" />
       <Item key="SlideShowInterval" value="5" />
       <Item key="SlideShowIntervalTo" value="5" />
@@ -79,7 +80,8 @@
       <Item key="AfterEditingAction" value="Nothing" />
       <Item key="ColorProfile" value="CurrentMonitorProfile" />
       <Item key="ToolbarButtons" value="btnBack;btnNext;Separator;btnRotateLeft;btnRotateRight;btnFlipHorz;btnFlipVert;btnCrop;Separator;btnAutoZoom;btnZoomLock;btnScaletoWidth;btnScaletoHeight;btnScaleToFit;btnScaleToFill;Separator;btnOpen;btnRefresh;Separator;btnWindowFit;btnFullScreen;btnSlideShow;Separator;btnThumb;btnCheckedBackground;btnDelete;" />
-      <Item key="ExifToolExePath" value="" />
+      <Item key="LastSeenImagePath" value="C:\Program Files\ImageGlass\default.jpg" />
+      <Item key="ExifToolExePath" value="exiftool" />
       <Item key="ExifToolCommandArgs" value="" />
       <Item key="ZoomLevels" value="5;10;15;20;30;40;50;60;70;80;90;100;125;150;175;200;250;300;350;400;500;600;700;800;1000;1200;1500;1800;2100;2500;3000;3500" />
       <Item key="SinglePageFormats" value="*.heic;*.heif;*.psd;" />
