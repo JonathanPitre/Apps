@@ -193,21 +193,23 @@ $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\ICA Client"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx)
-$appInstalled = Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx
-$appInstalledVersion = ($appInstalled).DisplayVersion
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx).DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion)
+{
     Set-Location -Path $appScriptPath
     If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
     Set-Location -Path $appVersion
 
-    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup)) {
+    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
+    {
         Write-Log -Message "Downloading $appVendor $appName $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
@@ -248,7 +250,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     #>
 
     # HDX Audio Real-time Transport UDP rule required with VDA 2112
-    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Audio Real-time Transport")) {
+    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Audio Real-time Transport"))
+    {
         New-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Audio Real-time Transport" -Direction Inbound -Protocol UDP -LocalPort 16500-16509 -Profile 'Domain, Private, Public' -Program "$appDestination\wfica32.exe" -Description "$appVendor $appName $appName2 HDX Audio Real-time Transport"
     }
 
@@ -271,6 +274,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "$appVendor $appName $appName2 $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
-Else {
+Else
+{
     Write-Log -Message "$appVendor $appName $appName2 $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }

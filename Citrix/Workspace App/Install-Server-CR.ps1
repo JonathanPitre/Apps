@@ -193,21 +193,23 @@ $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\ICA Client"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx)
-$appInstalled = Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx
-$appInstalledVersion = ($appInstalled).DisplayVersion
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx).DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion)
+{
     Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
-    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup)) {
+    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
+    {
         Write-Log -Message "Downloading $appVendor $appName $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
@@ -220,7 +222,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Disable automatic updates service
-    If (Test-ServiceExists -Name CWAUpdaterService) {
+    If (Test-ServiceExists -Name CWAUpdaterService)
+    {
         Stop-ServiceAndDependencies -Name CWAUpdaterService
         Set-ServiceStartMode -Name CWAUpdaterService -StartMode "Disabled"
     }
@@ -237,13 +240,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Add Windows Firewall rules
     # HDX Teams rule - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/multimedia/opt-ms-teams.html
-    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Teams")) {
-        New-NetFirewallRule -Displayname "$appVendor $appName $appName2 HDX Teams" -Direction Inbound -Profile 'Domain, Private, Public' -Program "$appDestination\HdxRtcEngine.exe" -Protocol TCP
-        New-NetFirewallRule -Displayname "$appVendor $appName $appName2 HDX Teams" -Direction Inbound -Profile 'Domain, Private, Public' -Program "$appDestination\HdxRtcEngine.exe" -Protocol UDP
+    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Teams"))
+    {
+        New-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Teams" -Direction Inbound -Profile 'Domain, Private, Public' -Program "$appDestination\HdxRtcEngine.exe" -Protocol TCP
+        New-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Teams" -Direction Inbound -Profile 'Domain, Private, Public' -Program "$appDestination\HdxRtcEngine.exe" -Protocol UDP
     }
 
     # HDX Audio Real-time Transport UDP rule required with VDA 2112
-    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Audio Real-time Transport")) {
+    If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Audio Real-time Transport"))
+    {
         New-NetFirewallRule -DisplayName "$appVendor $appName $appName2 HDX Audio Real-time Transport" -Direction Inbound -Protocol UDP -LocalPort 16500-16501 -Profile 'Domain, Private, Public' -Program "$appDestination\wfica32.exe"
     }
 
@@ -266,6 +271,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "$appVendor $appName $appName2 $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
-Else {
+Else
+{
     Write-Log -Message "$appVendor $appName $appName2 $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
