@@ -184,7 +184,8 @@ Foreach ($Module in $Modules)
 $appName = "VisualCppRedistAIO"
 $appName2 = "Microsoft Visual Basic/C++ Runtime (x86)"
 $appVersion = "1.1.0"
-$Evergreen = Get-EvergreenApp -Name $appName
+$appArchitecture = "x64"
+$Evergreen = Get-EvergreenApp -Name $appName | Where-Object { $_.Architecture -eq $appArchitecture }
 $appSetupVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf

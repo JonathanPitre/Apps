@@ -209,7 +209,8 @@ $appName = "VisualCppRedistAIO"
 $appName2 = "Visual C++ 2022"
 $appVersion = Get-MicrosoftVisualCPlusPlusVersion
 $appVersion = $appVersion.Substring(0, $appVersion.Length - 2)
-$Evergreen = Get-EvergreenApp -Name $appName
+$appArchitecture = "x64"
+$Evergreen = Get-EvergreenApp -Name $appName | Where-Object { $_.Architecture -eq $appArchitecture }
 $appSetupVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf
@@ -223,7 +224,7 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName2").D
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appSetupVersion)) {New-Folder -Path $appSetupVersion}
+    If (-Not(Test-Path -Path $appSetupVersion)) { New-Folder -Path $appSetupVersion }
     Set-Location -Path $appSetupVersion
 
     If (-Not(Test-Path -Path $appScriptPath\$appSetupVersion\$appSetup))
