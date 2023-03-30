@@ -225,12 +225,11 @@ If (Test-Path -Path "$appScriptPath\$appShortVersion")
     $appVersion = Get-FileVersion -ProductVersion "$appScriptPath\$appShortVersion\$appSetup"
     Set-Location ..
     Rename-Item -Path "$appScriptPath\$appShortVersion" -NewName "$appScriptPath\$appVersion" -Force
-    $appVersion = (Get-ChildItem $appScriptPath | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
+    $appVersion = (Get-ChildItem $appScriptPath | Where-Object { $_.Parent } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 }
 Else
 {
-    $appVersion = (Get-ChildItem $appScriptPath | Where-Object { $_.PSIsContainer } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
-
+    $appVersion = (Get-ChildItem $appScriptPath | Where-Object { $_.Parent } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 }
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
