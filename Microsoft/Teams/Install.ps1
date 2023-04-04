@@ -302,7 +302,7 @@ https://github.com/asheroto/Search-Registry
 $appVendor = "Microsoft"
 $appName = "Teams"
 $appProcesses = @("Teams", "Update", "Squirrel", "Outlook")
-$appRing = "Preview"
+$appRing = "General"
 $appArchitecture = "x64"
 $appLanguage = "fr-CA"
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Teams/Teams.mst"
