@@ -16,7 +16,7 @@ Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Evergreen") # Modules list
+[array]$Modules = @("PSADT", "Autologon", "BetterCredentials") # Modules list
 
 Function Get-ScriptPath
 {
@@ -24,7 +24,7 @@ Function Get-ScriptPath
     .SYNOPSIS
         Get-ScriptPath returns the path of the current script.
     .OUTPUTS
-        System.String
+        System.string
     #>
     [CmdletBinding()]
     [OutputType([string])]
@@ -56,7 +56,7 @@ Function Get-ScriptName
     .SYNOPSIS
         Get-ScriptName returns the name of the current script.
     .OUTPUTS
-        System.String
+        System.string
     #>
     [CmdletBinding()]
     [OutputType([string])]
@@ -86,7 +86,7 @@ Function Initialize-Module
     .SYNOPSIS
         Initialize-Module install and import modules from PowerShell Galllery.
     .OUTPUTS
-        System.String
+        System.string
     #>
     [CmdletBinding()]
     Param
@@ -104,7 +104,7 @@ Function Initialize-Module
     Else
     {
         # If module is not imported, but available on disk then import
-        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+        If ( [bool](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
 
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
@@ -157,7 +157,7 @@ Function Initialize-Module
             {
                 # If the module is not imported, not available and not in the online gallery then abort
                 Write-Host -Object "Module $Module was not imported, not available and not in an online gallery, exiting." -ForegroundColor Red
-                EXIT 1
+                Exit 1
             }
         }
     }
@@ -177,123 +177,139 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
-#endregion
 
-
-#-----------------------------------------------------------[Functions]------------------------------------------------------------
-
-#region Functions
-Function Get-CitrixDownload
+Function Get-CitrixVDA
 {
-    <#
-.SYNOPSIS
-  Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
-.DESCRIPTION
-  Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
-  Ryan Butler 2/6/2020 https://github.com/ryancbutler/Citrix/tree/master/XenDesktop/AutoDownload
-.PARAMETER dlNumber
-  Number assigned to binary download
-.PARAMETER dlEXE
-  File to be downloaded
-.PARAMETER dlPath
-  Path to store downloaded file. Must contain following slash (C:\Temp\)
-.PARAMETER CitrixUserName
-  Citrix.com username
-.PARAMETER CitrixPassword
-  Citrix.com password
-.EXAMPLE
-  Get-CitrixDownload -dlNumber "16834" -dlEXE "Citrix_Virtual_Apps_and_Desktops_7_1912.iso" -CitrixUserName "MyCitrixUsername" -CitrixPassword "MyCitrixPassword" -dlPath "C:\Temp\"
-#>
-    Param(
-        [Parameter(Mandatory = $true)]$dlNumber,
-        [Parameter(Mandatory = $true)]$dlEXE,
-        [Parameter(Mandatory = $true)]$dlPath,
-        [Parameter(Mandatory = $true)]$CitrixUserName,
-        [Parameter(Mandatory = $true)]$CitrixPassword
-    )
-    #Initialize Session
-    Invoke-WebRequest "https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response" -SessionVariable websession -UseBasicParsing | Out-Null
+    [OutputType([System.Management.Automation.PSObject])]
+    [CmdletBinding()]
+    Param ()
+    $DownloadURL = "https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/whats-new.html"
 
-    #Set Form
-    $Form = @{
-        "persistent" = "on"
-        "userName"   = $CitrixUserName
-        "password"   = $CitrixPassword
-    }
-
-    #Authenticate
     Try
     {
-        Invoke-WebRequest -Uri ("https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response") -WebSession $websession -Method POST -Body $form -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -ErrorAction Stop | Out-Null
+        $DownloadText = (Invoke-WebRequest -Uri $DownloadURL -DisableKeepAlive -UseBasicParsing).RawContent
     }
     Catch
     {
-        If ($_.Exception.Response.StatusCode.Value__ -eq 500)
+        Throw "Failed to connect to URL: $DownloadURL with error $_."
+        Break
+    }
+    Finally
+    {
+        $RegEx = "(Citrix Virtual Apps and Desktops.+) (\d{4})"
+        $Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[2].Value
+
+        if ($Version)
         {
-            Write-Verbose "500 returned on auth. Ignoring"
-            Write-Verbose $_.Exception.Response
-            Write-Verbose $_.Exception.Message
-        }
-        Else
-        {
-            Throw $_
+            [PSCustomObject]
+            @{
+                Name    = 'Citrix Virtual Delivery Agent'
+                Version = $Version
+            }
         }
     }
 
-    $dlURL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=${dlNumber}&URL=https://downloads.citrix.com/${dlNumber}/${dlEXE}"
-    $Download = Invoke-WebRequest -Uri $dlURL -WebSession $WebSession -UseBasicParsing -Method GET
-    $Webform = @{
-        "chkAccept"            = "on"
-        "clbAccept"            = "Accept"
-        "__VIEWSTATEGENERATOR" = ($Download.InputFields | Where-Object { $_.id -eq "__VIEWSTATEGENERATOR" }).value
-        "__VIEWSTATE"          = ($Download.InputFields | Where-Object { $_.id -eq "__VIEWSTATE" }).value
-        "__EVENTVALIDATION"    = ($Download.InputFields | Where-Object { $_.id -eq "__EVENTVALIDATION" }).value
-    }
+}
 
-    $OutFile = ($dlPath + $dlEXE)
-    #Download
-    Invoke-WebRequest -Uri $dlURL -WebSession $WebSession -Method POST -Body $Webform -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -OutFile $OutFile
-    return $OutFile
+Function Get-SessionName
+{
+    [OutputType([System.Management.Automation.PSObject])]
+    [CmdletBinding()]
+    Param ()
+    $SessionInfo = qwinsta $env:USERNAME
+    If ($SessionInfo)
+    {
+        ForEach ($line in $SessionInfo[1..$SessionInfo.Count])
+        {
+            $tmp = $line.split(" ") | Where-Object { $_.Length -gt 0 }
+            $SessionName = $tmp[0].Trim(">")
+            Return $SessionName
+        }
+    }
 }
 
 #endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
-$appVendor = "Citrix"
-$appName = "Virtual Apps and Desktops"
-$appName2 = "Virtual Delivery Agent"
-$appProcesses = @("BrokerAgent", "picaSessionAgent")
-$appServices = @("CitrixTelemetryService")
-# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
+#region Declarations
+
+[string]$appVendor = "Citrix"
+[string]$appName = "Virtual Delivery Agent"
+# Installation parameters available here - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/noreboot /quiet /enable_remote_assistance /disableexperiencemetrics /remove_appdisk_ack /remove_pvd_ack /virtualmachine /noresume /enable_real_time_transport /enable_hdx_ports /enable_hdx_udp_ports /components vda /mastermcsimage /includeadditional "Machine Identity Service","Citrix Profile Management","Citrix Profile Management WMI Plugin","Citrix MCS IODriver" /exclude "Citrix WEM Agent","User Personalization layer","Citrix Files for Outlook","Citrix Files for Windows","Citrix Supportability Tools","Citrix Personalization for App-V - VDA" /enablerestore'
-$Evergreen = Get-EvergreenApp -Name CitrixVirtualAppsDesktopsFeed | Where-Object {$_.Title -like "Citrix Virtual Apps and Desktops 7 21*, All Editions"} | Sort-Object Version -Descending | Select-Object -First 1
-$appVersion = $Evergreen.Version
-$appSetup = "VDAWorkstationSetup_$appVersion.exe"
-$appDlNumber = "20430"
-$appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
-$appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
+[int]$appVersion = (Get-CitrixVDA).Version
+[string]$appInstall = "VDAWorkstationSetup_$appVersion.exe"
+[string]$appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enable_ss_ports /exclude "Citrix Personalization for App-V - VDA","Citrix VDA Upgrade Agent" /includeadditional "Citrix Profile Management","Citrix Profile Management WMI Plug-in","Citrix MCS IODriver","Citrix Rendezvous V2","Citrix Web Socket VDA Registration Tool" /mastermcsimage /noreboot /noresume /quiet /remove_appdisk_ack /remove_pvd_ack'
+[array]$appProcesses = @("BrokerAgent", "picaSessionAgent")
+[array]$appServices = @("CitrixTelemetryService")
+[string]$appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
+[string]$sessionName = Get-SessionName
+[bool]$isAppInstalled = [bool](Get-InstalledApplication -Name "$appVendor .*$appName.*" -RegEx)
+[int]$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor .*$appName.*" -RegEx).DisplayVersion).Substring(0, 4)
+[string]$appCleanupTool = "VDACleanupUtility.exe"
+[string]$appCleanupToolParameters = "/unattended /noreboot"
+[string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor .*$appName.*" -RegEx).UninstallString
+[string]$appUninstall = ($appUninstallString).Split("/")[0].Trim().Trim("""")
+[string]$appUninstallParameters = "/removeall /quiet /noreboot"
+[string]$keyPath = "$env:USERPROFILE\Documents\Credentials" # Stored password file path
+
+#endregion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ($appVersion -gt $appInstalledVersion)
-{
-    Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
-    Set-Location -Path $appVersion
+#region Execution
 
-    # Install Windows Media Player feature if missing
-    If ($envOSName -Like "*Windows 10*")
+# Get current account credentials
+[bool]$isLocalCredentialStored = [bool](Find-Credential -Filter "*$envUserName")
+If ($isLocalCredentialStored)
+{
+    Write-Host -Object "Stored credentials found for current account." -ForegroundColor Green
+    $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Inline -Store)
+    $localCredentialsPassword = $localCredentials.Password
+}
+Else
+{
+    Write-Host -Object "Please enter your current account credentials." -ForegroundColor Green
+    $null = BetterCredentials\Get-Credential -UserName $env:USERNAME -Inline -Store
+    $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Inline -Store)
+    $localCredentialsPassword = $localCredentials.Password
+}
+
+# Detect if running from a Citrix session
+If ($sessionName -like "*ica*")
+{
+    Write-Log -Message "$appVendor $appName CANNOT BE INSTALLED from a Citrix session, please run the installation from a CONSOLE SESSION!" -Severity 3 -LogType CMTrace -WriteHost $True
+    Exit-Script
+}
+
+Set-Location -Path $appScriptPath
+If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
+Set-Location -Path $appVersion
+
+If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersion\$appInstall") -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
+{
+    # Install prerequisites
+    If (-Not($envOSName -like "*Windows Server*"))
     {
+        # Enable Microsoft Remote Assistance
+        Write-Log -Message "Enabling Microsoft Remote Assistance..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" -Name "fAllowToGetHelp" -Value "1" -Type DWord
+
+        # Install Windows Media Player
         If ((Get-WindowsOptionalFeature -FeatureName "WindowsMediaPlayer" -Online).State -ne "Enabled")
         {
+            Write-Log -Message "Installing Microsoft Windows Media Player..." -Severity 1 -LogType CMTrace -WriteHost $True
             Enable-WindowsOptionalFeature -FeatureName "WindowsMediaPlayer" -All -Online
         }
     }
+    Else
+    {
+        Write-Log -Message "$appVendor $appName CANNOT be installed on Windows Server!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Exit-Script
+    }
 
-    # Fix VDA install error - https://www.thewindowsclub.com/computer-missing-media-features-icloud-windows-error
+    # Prevent installation error - https://www.thewindowsclub.com/computer-missing-media-features-icloud-windows-error
     If (Test-Path -Path "$envProgramFiles\Windows Media Player\wmplayer.exe")
     {
         $WindowsMediaPlayerVersion = (Get-FileVersion -File "$envProgramFiles\Windows Media Player\setup_wm.exe" -ProductVersion)
@@ -304,39 +320,21 @@ If ($appVersion -gt $appInstalledVersion)
         }
     }
 
-    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup) -or (Get-ChildItem).Length -lt 1024kb)
+    # Fix an issue with Citrix Connection Quality Indicator
+    If ([bool](Get-InstalledApplication -Name "Citrix Connection Quality Indicator" -Exact))
     {
-        Write-Log -Message "Citrix credentials for downloading the $appVendor $appName2" -Severity 1 -LogType CMTrace -WriteHost $True
-        $CitrixUserName = Read-Host -Prompt "Please supply your Citrix.com username"
-        $CitrixPassword1 = Read-Host -Prompt "Please supply your Citrix.com password" -AsSecureString
-        $CitrixPassword2 = Read-Host -Prompt "Please supply your Citrix.com password once more" -AsSecureString
-        $CitrixPassword1Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword1))
-        $CitrixPassword2Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword2))
-
-        If ($CitrixPassword1Temp -ne $CitrixPassword2Temp)
-        {
-            Write-Log -Message "The supplied Citrix passwords missmatch!" -Severity 3 -LogType CMTrace -WriteHost $True
-            Exit-Script -ExitCode 1
-        }
-
-        Remove-Variable -Name CitrixPassword1Temp, CitrixPassword2Temp
-        $CitrixCredentials = New-Object System.Management.Automation.PSCredential ($CitrixUserName, $CitrixPassword1)
-
-        # Verify Citrix credentials
-        $CitrixUserName = $CitrixCredentials.UserName
-        $CitrixPassword = $CitrixCredentials.GetNetworkCredential().Password
-
-        # Download latest version
-        Write-Log -Message "Downloading $appVendor $appName2 $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appSetup -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
-    }
-    Else
-    {
-        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Citrix Connection Quality Indicator must be uninstalled before the Virtual Delivery Agent installation, don't forget to REINSTALL it!" -Severity 2 -LogType CMTrace -WriteHost $True
+        Get-Process -Name "CQISvc", "Citrix.CQI" | Stop-Process -Force
+        Write-Log -Message "Uninstalling Citrix Connection Quality Indicator..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Remove-MSIApplications -Name "Citrix Connection Quality Indicator" -Exact
     }
 
-    # Copy $appSetup to $envTemp\Install to avoid install issue
-    Copy-File -Path ".\$appSetup" -Destination "$envTemp\Install" -Recurse
+    # Run Citrix VDA CleanUp Utility
+    Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
+
+    # Copy $appInstall to $envTemp\Install to avoid install issue
+    Copy-File -Path ".\$appInstall" -Destination "$envTemp\Install" -Recurse
     Set-Location -Path "$envTemp\Install"
 
     # Uninstall previous versions
@@ -345,13 +343,13 @@ If ($appVersion -gt $appInstalledVersion)
 
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
+    Execute-Process -Path .\$appInstall -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Stop and disable unneeded services
-    Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest
-    Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
+    Get-Service -Name $appServices[0] | Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest
+    Get-Service -Name $appServices[0] | Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
 
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\User Profile Manager\UserProfileManager.exe" -Force
@@ -363,24 +361,72 @@ If ($appVersion -gt $appInstalledVersion)
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\HDX\bin\WebSocketService.exe" -Force
     Add-MpPreference -ExclusionPath "%SystemRoot%\System32\drivers\CtxUvi.sys" -Force
 
-    # Setting powercfg over-rides to get around screen lock issues - https://forums.ivanti.com/s/article/Screensaver-doesn-t-become-active-on-a-Citrix-Virtual-Desktop-Agent
+    # Set powercfg over-rides to get around screen lock issues - https://forums.ivanti.com/s/article/Screensaver-doesn-t-become-active-on-a-Citrix-Virtual-Desktop-Agent
     Execute-Process -Path "$envSystem32Directory\powercfg.exe" -Parameters "/requestsoverride PROCESS picaSessionAgent.exe DISPLAY"
     Execute-Process -Path "$envSystem32Directory\powercfg.exe" -Parameters "/requestsoverride PROCESS GFXMGR.exe DISPLAY"
 
     # Registry optimizations
-    # Enable EDT MTU Discovery on the VDA - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/technical-overview/hdx/adaptive-transport.html
-    Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "MtuDiscovery" -Type "DWord" -Value "1"
+    # Enable EDT MTU Discovery - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/technical-overview/hdx/adaptive-transport.html
+    # Now enabled by default
+    #Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "MtuDiscovery" -Type "DWord" -Value "1"
+
+    # Enable Rendezvous v2 - https://docs.citrix.com/en-us/citrix-daas/hdx/rendezvous-protocol/rendezvous-v2.html
+    If ((Get-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\XenDesktopSetup" -Value "Rendezvous V2 Component") -eq "1")
+    {
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\VirtualDesktopAgent" -Name "GctRegistration" -Type "DWord" -Value "1"
+    }
 
     # Go back to the parent folder
     Set-Location ..
-    Remove-Folder -Path "$envTemp\Install\"
+    Remove-Folder -Path "$envTemp\Install"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
+    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
+}
+ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
+{
+    # Fix an issue with Citrix Connection Quality Indicator
+    If ([bool](Get-InstalledApplication -Name "Citrix Connection Quality Indicator" -Exact))
+    {
+        Write-Log -Message "Citrix Connection Quality Indicator must be uninstalled before the Virtual Delivery Agent installation, don't forget to REINSTALL it!" -Severity 2 -LogType CMTrace -WriteHost $True
+        Get-Process -Name "CQISvc", "Citrix.CQI" | Stop-Process -Force
+        Write-Log -Message "Uninstalling Citrix Connection Quality Indicator..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Remove-MSIApplications -Name "Citrix Connection Quality Indicator" -Exact
+    }
 
-    Write-Log -Message "$appVendor $appName2" -Text "A reboot required after $appVendor $appName2 $appVersion installation. The computer $envComputerName will reboot in 30 seconds!" -Severity 2 -LogType CMTrace -WriteHost $True
-    Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
+    # Copy $appInstall to $envTemp\Install to avoid install issue
+    Copy-File -Path ".\$appInstall" -Destination "$envTemp\Install" -Recurse
+    Set-Location -Path "$envTemp\Install"
+
+    # Uninstall previous versions
+    Write-Log -Message "$appVendor $appName $appInstalledVersion must be uninstalled first." -Severity 2 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Get-Process -Name $appProcesses | Stop-Process -Force
+    Execute-Process -Path $appUninstall -Parameters $appUninstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
+
+    # Run Citrix VDA CleanUp Utility
+    Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
+    Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Reboot and relaunch script
+    Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -ExecutionPolicy ByPass -NoLogo -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`""
+    Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
+    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
+}
+ElseIf ($appVersion -eq $appInstalledVersion)
+{
+    Disable-AutoLogon
+    Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
 {
-    Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appVersion EXE file and $appCleanupTool MUST BE DOWNLOADED MANUALLY FIRST!" -Severity 3 -LogType CMTrace -WriteHost $True
+    Start-Process -FilePath "https://www.citrix.com/downloads/citrix-virtual-apps-and-desktops"
+    Start-Sleep -Seconds 2
+    Start-Process -FilePath "https://support.citrix.com/article/CTX209255/vda-cleanup-utility"
+    Exit-Script
 }
+
+#endregion
