@@ -177,6 +177,7 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Function Get-CitrixWEMAgent
 {
     [OutputType([System.Management.Automation.PSObject])]
@@ -213,47 +214,53 @@ Function Get-CitrixWEMAgent
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
-$appVendor = "Citrix"
-$appName = "Workspace Environment Management Agent"
+[string]$appVendor = "Citrix"
+[string]$appName = "Workspace Environment Management Agent"
 $appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
 $appInstallParameters = "/quiet Cloud=0" # OnPrem 0 Cloud 1
 $Evergreen = Get-CitrixWEMAgent
-$appShortVersion = $Evergreen.Version
-$appSetup = "Citrix Workspace Environment Management Agent.exe"
-If (Test-Path -Path "$appScriptPath\$appShortVersion")
+[string]$appShortVersion = $Evergreen.Version
+[string]$appSetup = "Citrix Workspace Environment Management Agent.exe"
+If (Test-Path -Path "$appScriptPath\$appShortVersion\$appSetup")
 {
     $appVersion = Get-FileVersion -ProductVersion "$appScriptPath\$appShortVersion\$appSetup"
     Set-Location ..
     Rename-Item -Path "$appScriptPath\$appShortVersion" -NewName "$appScriptPath\$appVersion" -Force
-    $appVersion = (Get-ChildItem $appScriptPath | Where-Object { $_.Parent } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
+    $appVersion = (Get-ChildItem -Path $appScriptPath -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 }
 Else
 {
-    $appVersion = (Get-ChildItem $appScriptPath | Where-Object { $_.Parent } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
+    $appVersion = (Get-ChildItem -Path $appScriptPath -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 }
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
+[boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
+[string]$appInstalledFile = (Test-Path -Path "$appDestination\Citrix.Wem.Agent.Service.exe")
+[string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor $appName").UninstallString
+[string]$appUninstall = ($appUninstallString).Split("/")[0].Trim().Trim("""")
+[string]$appUninstallParameters = "/uninstall /quiet /noreboot"
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ([version]$appVersion -gt [version]$appInstalledVersion)
+Set-Location -Path $appScriptPath
+Set-Location -Path $appVersion
 
+If (($isAppInstalled -eq $false) -or ([version]$appVersion -gt [version]$appInstalledVersion))
 {
-    Set-Location -Path $appScriptPath
-    Set-Location -Path $appVersion
-
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
     {
         Write-Log -Message "$appVendor $appName $appShortVersion MUST BE DOWNLOADED MANUALLY FIRST!" -Severity 3 -LogType CMTrace -WriteHost $True
-        Start-Sleep -Seconds 5
+        Start-Process -FilePath "https://www.citrix.com/downloads/citrix-virtual-apps-and-desktops"
         Exit-Script
     }
     Else
     {
         # Move the policy definitions files
-        Copy-File -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptPath\PolicyDefinitions" -Recurse
-        Copy-File -Path "$appScriptPath\$appVersion\Configuration Templates" -Destination "$appScriptPath" -Recurse
+        If (Test-Path -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX")
+        {
+            Copy-File -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptPath\PolicyDefinitions" -Recurse
+            Copy-File -Path "$appScriptPath\$appVersion\Configuration Templates" -Destination "$appScriptPath" -Recurse
+        }
 
         # Cleanup
         Remove-Folder -Path "$appScriptPath\$appVersion\Agent Group Policies"
@@ -264,9 +271,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         # Get real file version
         $appVersion = Get-FileVersion -File "$appScriptPath\$appVersion\$appSetup"
 
-        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-Process -Name $appProcesses | Stop-Process -Force
+        # Uninstall previous versions
+        If ($appInstalledFile)
+        {
+            Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+            Get-Process -Name $appProcesses | Stop-Process -Force
+            Execute-Process -Path $appUninstall -Parameters $appUninstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
+        }
 
+        # Install latest version
         Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters
 
@@ -290,9 +303,70 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
         Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     }
-
 }
-Else
+ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInstalledFile -eq $false))
+{
+    Write-Log -Message "$appVendor $appName $appInstalledVersion installation is broken. It will now be reinstalled!" -Severity 2 -LogType CMTrace -WriteHost $True
+
+    # Detect if setup file is present
+    If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
+    {
+        Write-Log -Message "$appVendor $appName $appShortVersion MUST BE DOWNLOADED MANUALLY FIRST!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Start-Process -FilePath "https://www.citrix.com/downloads/citrix-virtual-apps-and-desktops"
+        Exit-Script
+    }
+    Else
+    {
+        # Move the policy definitions files
+        If (Test-Path -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX")
+        {
+            Copy-File -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptPath\PolicyDefinitions" -Recurse
+            Copy-File -Path "$appScriptPath\$appVersion\Configuration Templates" -Destination "$appScriptPath" -Recurse
+        }
+
+        # Cleanup
+        Remove-Folder -Path "$appScriptPath\$appVersion\Agent Group Policies"
+        Remove-Folder -Path "$appScriptPath\$appVersion\Configuration Templates"
+        Remove-File -Path "$appScriptPath\$appVersion\Citrix Workspace Environment Management Console.exe"
+        Remove-File -Path "$appScriptPath\$appVersion\Citrix Workspace Environment Management Infrastructure Services.exe"
+
+        # Get real file version
+        $appVersion = Get-FileVersion -File "$appScriptPath\$appVersion\$appSetup"
+
+        # Uninstall previous versions
+        If ($appInstalledFile)
+        {
+            Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+            Get-Process -Name $appProcesses | Stop-Process -Force
+            Execute-Process -Path $appUninstall -Parameters $appUninstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
+        }
+
+        # Install latest version
+        Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters
+
+        Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+        # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
+        Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\AgentGroupPolicyUtility.exe.exe" -Force
+        Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\Citrix.Wem.Agent.LogonService.exe" -Force
+        Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\Citrix.Wem.Agent.Service.exe" -Force
+        Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMCmdAgent.exe" -Force
+        Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMUIAgent.exe" -Force
+
+        # Configure application shortcut
+        New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Agent Log Parser.lnk" -TargetPath "$appDestination\Agent Log Parser.exe"
+        New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Resultant Actions Viewer.lnk" -TargetPath "$appDestination\VUEMRSAV.exe"
+        New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Application Info Viewer.lnk" -TargetPath "$appDestination\AppInfoViewer.exe"
+        New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Manage Applications.lnk" -TargetPath "$appDestination\AppsMgmtUtil.exe"
+        New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Manage Printers.lnk" -TargetPath "$appDestination\PrnsMgmtUtil.exe"
+        Remove-File -Path "$envCommonStartMenuPrograms\$appVendor\WEM Enrollment Registration Utility.lnk" -ContinueOnError $True
+        New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Enrollment Registration Utility.lnk" -TargetPath "$appDestination\Citrix.Wem.Agent.Enrollment.RegUtility.exe"
+
+        Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+}
+ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInstalledFile -eq $true))
 {
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
