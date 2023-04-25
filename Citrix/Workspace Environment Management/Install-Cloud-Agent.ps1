@@ -16,7 +16,7 @@ Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Evergreen") # Modules list
+[array]$Modules = @("PSADT", "BetterCredentials") # Modules list
 
 Function Get-ScriptPath
 {
@@ -301,6 +301,7 @@ $appSetup = "Citrix Workspace Environment Management Agent.exe"
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
+$citrixAccount = "myCitrixAccount"
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
@@ -312,29 +313,30 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
     {
-        Write-Log -Message "Citrix credentials for downloading the $appVendor $appName" -Severity 1 -LogType CMTrace -WriteHost $True
-        $CitrixUserName = Read-Host -Prompt "Please supply your Citrix.com username"
-        $CitrixPassword1 = Read-Host -Prompt "Please supply your Citrix.com password" -AsSecureString
-        $CitrixPassword2 = Read-Host -Prompt "Please supply your Citrix.com password once more" -AsSecureString
-        $CitrixPassword1Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword1))
-        $CitrixPassword2Temp = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixPassword2))
-
-        If ($CitrixPassword1Temp -ne $CitrixPassword2Temp)
+        # Get Citrix account credentials
+        [bool]$isCitrixCredentialsStored = [bool](Find-Credential -Filter "*$citrixAccount")
+        If ($isCitrixCredentialsStored)
         {
-            Write-Log -Message "The supplied Citrix passwords missmatch!" -Severity 3 -LogType CMTrace -WriteHost $True
-            Exit-Script -ExitCode 1
+            Write-Host -Object "Stored credentials found for Citrix Account." -ForegroundColor Green
+            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixAccount -Store)
+            $CitrixCredentialsUserName = $CitrixCredentials.UserName
+            $CitrixCredentialsPassword = $CitrixCredentials.Password
+        }
+        Else
+        {
+            Write-Host -Object "Please enter your Citrix credentials" -ForegroundColor Green
+            $null = BetterCredentials\Get-Credential -UserName $citrixAccount -Store
+            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixAccount -Store)
+            $CitrixCredentialsUserName = $CitrixCredentials.UserName
+            $CitrixCredentialsPassword = $CitrixCredentials.Password
         }
 
-        Remove-Variable -Name CitrixPassword1Temp, CitrixPassword2Temp
-        $CitrixCredentials = New-Object System.Management.Automation.PSCredential ($CitrixUserName, $CitrixPassword1)
-
-        # Verify Citrix credentials
-        $CitrixUserName = $CitrixCredentials.UserName
-        $CitrixPassword = $CitrixCredentials.GetNetworkCredential().Password
+        # Decrypt Citrix account password
+        $CitrixPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsPassword))
 
         # Download latest version
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
+        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixCredentialsUserName -CitrixPassword $CitrixPassword -dlPath .\
         Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
         # Move the policy definitions files
         Copy-File -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptPath\PolicyDefinitions" -Recurse
@@ -375,8 +377,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Enrollment Registration Utility.lnk" -TargetPath "$appDestination\Citrix.Wem.Agent.Enrollment.RegUtility.exe"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
+    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
 }
-
 Else
 {
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
