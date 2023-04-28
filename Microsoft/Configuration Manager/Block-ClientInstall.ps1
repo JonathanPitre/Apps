@@ -183,11 +183,67 @@ Foreach ($Module in $Modules)
 
 $appVendor = "Microsoft"
 $appName = "Configuration Manager Client"
+$appProcesses = @("CcmExec", "CmRcService", "SCClient", "ScNotification.exe")
+
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 # Prevent Configuration Manager Client software installation
 # https://infrastructureland.wordpress.com/2015/02/04/how-to-prevent-the-configuration-manager-client-software-from-being-installed-on-specific-computers
+
+# If Configuration Manager Client, uninstall it
+If (Test-Path -Path "$envWinDir\ccmsetup\ccmsetup.exe")
+{
+    Write-Log -Message "$appVendor $appName is currently installed!" -Severity 2 -LogType CMTrace -WriteHost $True
+
+    # Stop required processes
+    Get-Process -Name $appProcesses | Stop-Process -Force
+
+    Execute-Process -Path "$envWinDir\ccmsetup\ccmsetup.exe" -Parameters "/uninstall"
+
+    # Delete the folder of the SCCM Client installation: "C:\Windows\CCM"
+    Remove-Item -Path "$envWinDir\CCM" -Force -Recurse -Confirm:$false -Verbose
+
+    # Delete the folder of the SCCM Client Cache of all the packages and Applications that were downloaded and installed on the Computer: "C:\Windows\ccmcache"
+    Remove-Item -Path "$envWinDir\CCMSetup" -Force -Recurse -Confirm:$false -Verbose
+
+    # Delete the folder of the SCCM Client Setup files that were used to install the client: "C:\Windows\ccmsetup"
+    Remove-Item -Path "$envWinDir\CCMCache" -Force -Recurse -Confirm:$false -Verbose
+
+    # Delete the file with the certificate GUID and SMS GUID that current Client was registered with
+    Remove-Item -Path "$envWinDir\smscfg.ini" -Force -Confirm:$false -Verbose
+
+    # Delete the certificate itself
+    Remove-Item -Path 'HKLM:\Software\Microsoft\SystemCertificates\SMS\Certificates\*' -Force -Confirm:$false -Verbose
+
+    # Remove all the registry keys associated with the SCCM Client that might not be removed by ccmsetup.exe
+    Remove-Item -Path 'HKLM:\SOFTWARE\Microsoft\CCM' -Force -Recurse -Verbose
+    Remove-Item -Path 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\CCM' -Force -Recurse -Confirm:$false -Verbose
+    Remove-Item -Path 'HKLM:\SOFTWARE\Microsoft\SMS' -Force -Recurse -Confirm:$false -Verbose
+    Remove-Item -Path 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\SMS' -Force -Recurse -Confirm:$false -Verbose
+    Remove-Item -Path 'HKLM:\Software\Microsoft\CCMSetup' -Force -Recurse -Confirm:$false -Verbose
+    Remove-Item -Path 'HKLM:\Software\Wow6432Node\Microsoft\CCMSetup' -Force -Confirm:$false -Recurse -Verbose
+
+    # Remove the service from "Services"
+    Remove-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\CcmExec' -Force -Recurse -Confirm:$false -Verbose
+    Remove-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\ccmsetup' -Force -Recurse -Confirm:$false -Verbose
+
+    # Remove the Namespaces from the WMI repository
+    Get-CimInstance -Query "Select * From __Namespace Where Name='CCM'" -Namespace "root" | Remove-CimInstance -Verbose -Confirm:$false
+    Get-CimInstance -Query "Select * From __Namespace Where Name='CCMVDI'" -Namespace "root" | Remove-CimInstance -Verbose -Confirm:$false
+    Get-CimInstance -Query "Select * From __Namespace Where Name='SmsDm'" -Namespace "root" | Remove-CimInstance -Verbose -Confirm:$false
+    Get-CimInstance -Query "Select * From __Namespace Where Name='sms'" -Namespace "root\cimv2" | Remove-CimInstance -Verbose -Confirm:$false
+
+    # Alternative command for WMI Removal in case of something goes wrong with the above.
+    # Get-WmiObject -query "Select * From __Namespace Where Name='CCM'" -Namespace "root" | Remove-WmiObject -Verbose | Out-Host
+    # Get-WmiObject -query "Select * From __Namespace Where Name='CCMVDI'" -Namespace "root" | Remove-WmiObject -Verbose | Out-Host
+    # Get-WmiObject -query "Select * From __Namespace Where Name='SmsDm'" -Namespace "root" | Remove-WmiObject -Verbose | Out-Host
+    # Get-WmiObject -query "Select * From __Namespace Where Name='sms'" -Namespace "root\cimv2" | Remove-WmiObject -Verbose | Out-Host
+
+    Write-Log -Message "$appVendor $appName was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+}
+
+# Create fake ccmsetup & ccm files to prevent automatic installation
 New-Item -Path $envWinDir -Name "ccmsetup" -Force -ItemType File
 New-Item -Path $envWinDir -Name "ccm" -Force -ItemType File
 
