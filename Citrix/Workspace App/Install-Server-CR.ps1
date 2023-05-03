@@ -230,13 +230,19 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Get-Process -Name $appProcesses | Stop-Process -Force
 
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
-    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\AuthManager\AuthManSvr.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\CDViewer.exe" -Force
-    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\HdxRtcEngine.exe" -Force
-    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\SelfServicePlugin\SelfService.exe" -Force
-    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\SelfServicePlugin\SelfServicePlugin.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\concentr.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\wfica32.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\bgblursvc.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\AuthManager\AuthManSvr.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\SelfServicePlugin\SelfService.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\SelfServicePlugin\SelfServicePlugin.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\ICA Client\HdxRtcEngine.exe" -Force
+    # App Protection
+    Add-MpPreference -ExclusionPath "%ProgramFiles(x86)%\Citrix\ICA Client\epclient32.dll" -Force
+    Add-MpPreference -ExclusionPath "%ProgramFiles(x86)%\Citrix\ICA Client\epclient64.dll" -Force
+    Add-MpPreference -ExclusionPath "%ProgramFiles(x86)%\Citrix\ICA Client\epinject.sys" -Force
+    Add-MpPreference -ExclusionPath "%ProgramFiles(x86)%\Citrix\ICA Client\EntryProtect.dll" -Force
 
     # Add Windows Firewall rules
     # HDX Teams rule - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/multimedia/opt-ms-teams.html
