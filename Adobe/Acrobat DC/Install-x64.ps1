@@ -202,8 +202,8 @@ $appCustWizURL = "https://ardownload2.adobe.com/pub/adobe/acrobat/win/AcrobatDC/
 $appCustWiz = Split-Path -Path $appCustWizURL -Leaf
 $appCustWizVersion = $appCustWiz.Trim("CustWiz").Trim("_en_US_DC.exe")
 $appDestination = "$env:ProgramFiles\$appVendor\$appName $appShortVersion\$appName"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.* $appShortVersion .*" -RegEx)
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appShortVersion (64-bit)" -Exact).DisplayVersion
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.*" -RegEx)
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName (64-bit)" -Exact).DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
