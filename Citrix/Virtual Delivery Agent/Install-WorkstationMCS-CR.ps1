@@ -24,7 +24,7 @@ Function Get-ScriptPath
     .SYNOPSIS
         Get-ScriptPath returns the path of the current script.
     .OUTPUTS
-        System.string
+        System.String
     #>
     [CmdletBinding()]
     [OutputType([string])]
@@ -56,7 +56,7 @@ Function Get-ScriptName
     .SYNOPSIS
         Get-ScriptName returns the name of the current script.
     .OUTPUTS
-        System.string
+        System.String
     #>
     [CmdletBinding()]
     [OutputType([string])]
@@ -86,7 +86,7 @@ Function Initialize-Module
     .SYNOPSIS
         Initialize-Module install and import modules from PowerShell Galllery.
     .OUTPUTS
-        System.string
+        System.String
     #>
     [CmdletBinding()]
     Param
@@ -252,7 +252,6 @@ Function Get-SessionName
 [string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor .*$appName.*" -RegEx).UninstallString
 [string]$appUninstall = ($appUninstallString).Split("/")[0].Trim().Trim("""")
 [string]$appUninstallParameters = "/removeall /quiet /noreboot"
-[string]$keyPath = "$env:USERPROFILE\Documents\Credentials" # Stored password file path
 
 #endregion
 
@@ -265,14 +264,14 @@ Function Get-SessionName
 If ($isLocalCredentialStored)
 {
     Write-Host -Object "Stored credentials found for current account." -ForegroundColor Green
-    $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Inline -Store)
+    $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Store)
     $localCredentialsPassword = $localCredentials.Password
 }
 Else
 {
     Write-Host -Object "Please enter your current account credentials." -ForegroundColor Green
-    $null = BetterCredentials\Get-Credential -UserName $env:USERNAME -Inline -Store
-    $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Inline -Store)
+    $null = BetterCredentials\Get-Credential -UserName $env:USERNAME -Store
+    $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Store)
     $localCredentialsPassword = $localCredentials.Password
 }
 
@@ -352,33 +351,40 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Get-Service -Name $appServices[0] | Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
 
     # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
+    Add-MpPreference -ExclusionPath "%SystemRoot%\System32\drivers\CtxUvi.sys" -Force
+    Add-MpPreference -ExclusionPath "%ProgramFiles%\Citrix\HDX\bin\CitrixLogonCsp.dll" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\User Profile Manager\UserProfileManager.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\Virtual Desktop Agent\BrokerAgent.exe" -Force
-    Add-MpPreference -ExclusionProcess "%SystemRoot%\System32\spoolsv.exe" -Force
-    Add-MpPreference -ExclusionProcess "%SystemRoot%\System32\winlogon.exe" -Force
-    Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\ICAService\picaSvc2.exe" -Force
-    Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\ICAService\CpSvc.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\HDX\bin\CtxSvcHost.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\HDX\bin\ctxgfx.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\HDX\bin\picaSvc2.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\HDX\bin\CpSvc.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\HDX\bin\WebSocketService.exe" -Force
-    Add-MpPreference -ExclusionPath "%SystemRoot%\System32\drivers\CtxUvi.sys" -Force
 
     # Set powercfg over-rides to get around screen lock issues - https://forums.ivanti.com/s/article/Screensaver-doesn-t-become-active-on-a-Citrix-Virtual-Desktop-Agent
     Execute-Process -Path "$envSystem32Directory\powercfg.exe" -Parameters "/requestsoverride PROCESS picaSessionAgent.exe DISPLAY"
     Execute-Process -Path "$envSystem32Directory\powercfg.exe" -Parameters "/requestsoverride PROCESS GFXMGR.exe DISPLAY"
 
     # Registry optimizations
-    # Enable EDT MTU Discovery - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/technical-overview/hdx/adaptive-transport.html
-    # Now enabled by default
-    #Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "MtuDiscovery" -Type "DWord" -Value "1"
 
     # Enable Rendezvous v2 - https://docs.citrix.com/en-us/citrix-daas/hdx/rendezvous-protocol/rendezvous-v2.html
     If ((Get-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\XenDesktopSetup" -Value "Rendezvous V2 Component") -eq "1")
     {
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\VirtualDesktopAgent" -Name "GctRegistration" -Type "DWord" -Value "1"
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\VirtualDesktopAgent" -Name "GctRegistration" -Value "1" -Type "DWord"
     }
+
+    # Reduce HDX bandwidth usage by up to 15% -https://www.citrix.com/blogs/2023/04/06/reduce-your-hdx-bandwidth-usage
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\GroupPolicy\Defaults\WDSettings" -Name "ReducerOverrideMask" -Value "23" -Type "DWord"
+
+    # Enable new EDT congestion control - https://www.citrix.com/blogs/2023/04/25/turbo-charging-edt-for-unparalleled-experience-in-a-hybrid-world
+    #Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd\Tds\udp\UDPStackParameters" -Name "edtBBR" -Value "1" -Type "DWord"
 
     # Go back to the parent folder
     Set-Location ..
     Remove-Folder -Path "$envTemp\Install"
+
+    # Reboot and relaunch script
+    Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
@@ -411,12 +417,13 @@ ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScript
     Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Reboot and relaunch script
-    Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -ExecutionPolicy ByPass -NoLogo -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`""
+    Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
 }
 ElseIf ($appVersion -eq $appInstalledVersion)
 {
+    # Disable autologon
     Disable-AutoLogon
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
@@ -426,6 +433,9 @@ Else
     Start-Process -FilePath "https://www.citrix.com/downloads/citrix-virtual-apps-and-desktops"
     Start-Sleep -Seconds 2
     Start-Process -FilePath "https://support.citrix.com/article/CTX209255/vda-cleanup-utility"
+
+    # Disable autologon
+    Disable-AutoLogon
     Exit-Script
 }
 
