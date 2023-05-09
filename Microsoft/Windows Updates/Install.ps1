@@ -195,13 +195,13 @@ New-Folder -Path "$env:ProgramData\Logs\Software"
 Stop-ServiceAndDependencies -Name $appService
 
 # Clear Windows Update policies
-Remove-RegistryKey -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Recurse -ContinueOnError $True
+Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Recurse -ContinueOnError $True
 
 # Get updates for other Microsoft products
 $null = Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d -Confirm:$False
 
 # Pause and give the service time to update
-Start-Sleep 30
+Start-Sleep -Seconds 30
 
 # Start Windows Update service
 Set-ServiceStartMode -Name $appService -StartMode "Automatic"
