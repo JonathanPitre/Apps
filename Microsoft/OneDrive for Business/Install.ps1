@@ -203,6 +203,9 @@ $appDestination = "${env:ProgramFiles}\Microsoft OneDrive"
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
 $appUninstallString = ((Get-InstalledApplication -Name "$appVendor $appName").UninstallString).Split("/")[0]
 $appUninstallParameters = ((Get-InstalledApplication -Name "$appVendor $appName").UninstallString).TrimStart($appUninstallString)
+[boolean]$IsAppInstalledU = [boolean](Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like "*$appName*" })
+$appUninstallStringU = ((Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like "*$appName*" }).UninstallString).Split("/")[0]
+$appUninstallParametersU = ((Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like "*$appName*" }).UninstallString).TrimStart($appUninstallStringU)
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
@@ -226,7 +229,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    # Uninstall previous versions
+    # Uninstall machine installation
     Get-Process -Name $appProcesses | Stop-Process -Force
     If ($IsAppInstalled)
     {
@@ -234,14 +237,20 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Execute-Process -Path $appUninstallString -Parameters $appUninstallParameters
     }
 
+    # Uninstall user installation
+    If ($IsAppInstalledU)
+    {
+        Write-Log -Message "Uninstalling $appVendor $appName..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Execute-Process -Path $appUninstallStringU -Parameters $appUninstallParametersU
+    }
+
     # Uninstall built-in OneDrive
     If (Test-Path "$envWinDir\System32\OneDriveSetup.exe")`
 
     {
-        Execute-Process -Path "$envWinDir\System32\OneDriveSetup.exe" -Parameters "/uninstall"
+        Execute-Process -Path "$envWinDir\System32\OneDriveSetup.exe" -Parameters "/uninstall" -UseShellExecute -IgnoreExitCodes "-2147219813"
     }
-    If (Test-Path "$envWinDir\SysWOW64\OneDriveSetup.exe")`
-
+    ElseIf (Test-Path "$envWinDir\SysWOW64\OneDriveSetup.exe")`
     {
         Execute-Process -Path "$envWinDir\SysWOW64\OneDriveSetup.exe" -Parameters "/uninstall" -UseShellExecute -IgnoreExitCodes "-2147219813"
 
@@ -272,7 +281,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Remove-File -Path "$envWinDir\SysWOW64\OneDriveSetup.exe"
         Remove-File -Path "$envWinDir\SysWOW64\OneDrive.ico"
     }
+
+    # Remove OneDrive policies
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Policies\Microsoft\Windows\OneDrive"
+
+    # Removing OneDrive from the File Explorer side panel
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Classes\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Classes\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse
 
     # Remove left over files
     Remove-File -Path "$envWinDir\ServiceProfiles\LocalService\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\OneDrive.lnk" -ContinueOnError $True
@@ -280,7 +295,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-Folder -Path "$envProgramData\Microsoft\OneDrive" -ContinueOnError $True
     Remove-Folder -Path "$envSystemDrive\OneDriveTemp" -ContinueOnError $True
 
-    # Remove user install
+    # Remove left over files from local profiles
     $OneDriveUsers = Get-ChildItem -Path "$($envSystemDrive)\Users"
     $OneDriveUsers | ForEach-Object {
         Try
@@ -298,17 +313,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         }
     }
 
-    # Remove remaining OneDrive entries WinSxS folders
-    #ForEach ($Item in Get-ChildItem -Path "$envWinDir\WinSxS\*onedrive*")
-    #{
-    #    Execute-Process -Path "$envWinDir\System32\takeown.exe" -Parameters "/F $Item.FullName /R /A"
-    #    [void](Grant-FolderOwnership -Path $Item.FullName)
-    #    Remove-Folder -Path $Item.FullName -ContinueOnError $True
-    #}
+    <# Remove remaining OneDrive entries WinSxS folders
+    ForEach ($Item in Get-ChildItem -Path "$envWinDir\WinSxS\*onedrive*")
+    {
+        Execute-Process -Path "$envWinDir\System32\takeown.exe" -Parameters "/F $Item.FullName /R /A"
+        [void](Grant-FolderOwnership -Path $Item.FullName)
+        Remove-Folder -Path $Item.FullName -ContinueOnError $True
+    }
+    #>
 
-    # Removes OneDrive from File Explorer
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Classes\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Classes\CLSID\{018D5C66-4533-4307-9B53-224DE2ED1FE6}" -Recurse
+    # Winget uninstall command
+    winget uninstall OneDrive --accept-source-agreements
 
     Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
