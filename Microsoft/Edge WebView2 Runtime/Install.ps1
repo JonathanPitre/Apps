@@ -205,6 +205,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Delete machine policies to prevent issue during installation
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Edge\WebView2" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
 
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
@@ -212,7 +214,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-Process -Path $appUninstaller -Parameters $appUninstallParameters -IgnoreExitCodes 19, 60002
-
     }
 
     # Remove previous install folders
@@ -234,6 +235,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Disable autoupdate
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\EdgeUpdate" -Name "Install{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" -Value "0" -Type DWord
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\EdgeUpdate" -Name "Update{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" -Value "0" -Type DWord
 
     # Go back to the parent folder
     Set-Location ..
