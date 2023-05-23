@@ -16,7 +16,7 @@ Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT") # Modules list
+[array]$Modules = @("PSADT", "Autologon", "BetterCredentials") # Modules list
 
 Function Get-ScriptPath
 {
@@ -104,7 +104,7 @@ Function Initialize-Module
     Else
     {
         # If module is not imported, but available on disk then import
-        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+        If ( [bool](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
 
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
@@ -157,7 +157,7 @@ Function Initialize-Module
             {
                 # If the module is not imported, not available and not in the online gallery then abort
                 Write-Host -Object "Module $Module was not imported, not available and not in an online gallery, exiting." -ForegroundColor Red
-                EXIT 1
+                Exit 1
             }
         }
     }
@@ -177,12 +177,7 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
-#endregion
 
-
-#-----------------------------------------------------------[Functions]------------------------------------------------------------
-
-#region Functions
 Function Get-CitrixVDA
 {
     [OutputType([System.Management.Automation.PSObject])]
@@ -206,7 +201,8 @@ Function Get-CitrixVDA
 
         if ($Version)
         {
-            [PSCustomObject]@{
+            [PSCustomObject]
+            @{
                 Name    = 'Citrix Virtual Delivery Agent'
                 Version = $Version
             }
@@ -221,53 +217,79 @@ Function Get-SessionName
     [CmdletBinding()]
     Param ()
     $SessionInfo = qwinsta $env:USERNAME
-     If($SessionInfo)
-     {
-        ForEach($line in $SessionInfo[1..$SessionInfo.Count])
+    If ($SessionInfo)
+    {
+        ForEach ($line in $SessionInfo[1..$SessionInfo.Count])
         {
-            $tmp = $line.split(" ") | ?{$_.Length -gt 0}
+            $tmp = $line.split(" ") | Where-Object { $_.Length -gt 0 }
             $SessionName = $tmp[0].Trim(">")
             Return $SessionName
         }
-     }
+    }
 }
 
 #endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
-$appVendor = "Citrix"
-$appName = "Virtual Apps and Desktops"
-$appName2 = "Virtual Delivery Agent"
-$appProcesses = @("BrokerAgent", "picaSessionAgent")
-$appServices = @("CitrixTelemetryService")
-# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
+#region Declarations
+
+[string]$appVendor = "Citrix"
+[string]$appName = "Virtual Delivery Agent"
+# Installation parameters available here - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
 # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
-$appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enable_ss_ports /exclude "Citrix Personalization for App-V - VDA","Citrix VDA Upgrade Agent" /includeadditional "Citrix MCS IODriver","Citrix Profile Management","Citrix Profile Management WMI Plug-in","Citrix Rendezvous V2","Citrix Web Socket VDA Registration Tool","Machine Identity Service" /mastermcsimage /noreboot /noresume /quiet /remove_appdisk_ack /remove_pvd_ack'
-$appVersion = (Get-CitrixVDA).Version
-$appSetup = "VDAServerSetup_$appVersion.exe"
-$appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
-$sessionName = Get-SessionName
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx)
-$appInstalledVersion = (((Get-InstalledApplication -Name "$appVendor .*$appName2.*" -RegEx).DisplayVersion)).Substring(0, 4)
+[int]$appVersion = (Get-CitrixVDA).Version
+[string]$appInstall = "VDAServerSetup_$appVersion.exe"
+[string]$appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enable_ss_ports /exclude "Citrix Personalization for App-V - VDA","Citrix VDA Upgrade Agent" /includeadditional "Citrix MCS IODriver","Citrix Profile Management","Citrix Profile Management WMI Plug-in","Citrix Rendezvous V2","Citrix Web Socket VDA Registration Tool","Machine Identity Service" /mastermcsimage /noreboot /noresume /quiet /remove_appdisk_ack /remove_pvd_ack'
+[array]$appProcesses = @("BrokerAgent", "picaSessionAgent")
+[array]$appServices = @("CitrixTelemetryService")
+[string]$appDestination = "$env:ProgramFiles\$appVendor\Virtual Delivery Agent"
+[string]$sessionName = Get-SessionName
+[bool]$isAppInstalled = [bool](Get-InstalledApplication -Name "$appVendor .*$appName.*" -RegEx)
+[int]$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor .*$appName.*" -RegEx).DisplayVersion).Substring(0, 4)
+[string]$appCleanupTool = "VDACleanupUtility.exe"
+[string]$appCleanupToolParameters = "/unattended /noreboot"
+[string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor .*$appName.*" -RegEx).UninstallString
+[string]$appUninstall = ($appUninstallString).Split("/")[0].Trim().Trim("""")
+[string]$appUninstallParameters = "/removeall /quiet /noreboot"
+
+#endregion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ($appVersion -gt $appInstalledVersion)
+#region Execution
+
+# Get current account credentials
+[bool]$isLocalCredentialStored = [bool](Find-Credential -Filter "*$envUserName")
+If ($isLocalCredentialStored)
 {
-    Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
-    Set-Location -Path $appVersion
+    Write-Host -Object "Stored credentials found for current account." -ForegroundColor Green
+    $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Store)
+    $localCredentialsPassword = $localCredentials.Password
+}
+Else
+{
+    Write-Host -Object "Please enter your current account credentials." -ForegroundColor Green
+    $null = BetterCredentials\Get-Credential -UserName $env:USERNAME -Store
+    $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Store)
+    $localCredentialsPassword = $localCredentials.Password
+}
 
-    # Detect if running from a Citrix session
-    If ($SessionName -like "*ica*")
-    {
-        Write-Log -Message "$appVendor $appName2 CANNOT BE INSTALLED from a Citrix session, please run install script from CONSOLE SESSION!" -Severity 3 -LogType CMTrace -WriteHost $True
-        Exit-Script
+# Detect if running from a Citrix session
+If ($sessionName -like "*ica*")
+{
+    Write-Log -Message "$appVendor $appName CANNOT BE INSTALLED from a Citrix session, please run the installation from a CONSOLE SESSION!" -Severity 3 -LogType CMTrace -WriteHost $True
+    Exit-Script
+}
 
-    }
+Set-Location -Path $appScriptPath
+If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
+Set-Location -Path $appVersion
 
-    # Installing Microsoft Windows prerequisites
+If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersion\$appInstall") -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
+{
+
+    # Install prerequisites
     If ($envOSName -like "*Windows Server 2008*" -or $envOSName -like "*Windows Server 2012*")
     {
         # Install Windows Server Desktop Experience
@@ -296,9 +318,10 @@ If ($appVersion -gt $appInstalledVersion)
 
         # Install Microsoft Remote Assistance
         Write-Log -Message "Installing Microsoft Remote Assistance..." -Severity 1 -LogType CMTrace -WriteHost $True
-        If (-Not(Get-WindowsFeature -Name RDS-RD-Server))
+        If (-Not(Get-WindowsFeature -Name Remote-Assistance))
         {
             Install-WindowsFeature -Name Remote-Assistance
+	        Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" -Name "fAllowToGetHelp" -Value "1" -Type DWord
         }
         Else
         {
@@ -306,14 +329,14 @@ If ($appVersion -gt $appInstalledVersion)
         }
 
         # Install Windows Server Media Foundation
-        Write-Log -Message "Installing Windows Search Service..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Installing Windows Search service..." -Severity 1 -LogType CMTrace -WriteHost $True
         If (-Not(Get-WindowsFeature -Name Server-Media-Foundation))
         {
             Install-WindowsFeature -Name Server-Media-Foundation
         }
         Else
         {
-            Write-Log -Message "Windows Search Service is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+            Write-Log -Message "Windows Search service is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
         }
 
         # Install Microsoft Remote Desktop Session Host
@@ -322,13 +345,19 @@ If ($appVersion -gt $appInstalledVersion)
         {
             Install-WindowsFeature -Name RDS-RD-Server -IncludeManagementTools
         }
-        Else
-        {
-            Write-Log -Message "Microsoft Remote Desktop Session Host is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
-        }
+    }
+    ElseIf ($envOSName -like "*multi-session*" -or $envOSName -like "*Virtual Desktops*")
+    {
+        # Enable Remote Assistance
+        Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" -Name "fAllowToGetHelp" -Value "1" -Type DWord
+    }
+    Else
+    {
+        Write-Log -Message "$appVendor $appName CANNOT be installed on Windows Client!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Exit-Script
     }
 
-    # Fix VDA install error - https://www.thewindowsclub.com/computer-missing-media-features-icloud-windows-error
+    # Prevent installation error - https://www.thewindowsclub.com/computer-missing-media-features-icloud-windows-error
     If (Test-Path -Path "$envProgramFiles\Windows Media Player\wmplayer.exe")
     {
         $WindowsMediaPlayerVersion = (Get-FileVersion -File "$envProgramFiles\Windows Media Player\setup_wm.exe" -ProductVersion)
@@ -340,70 +369,123 @@ If ($appVersion -gt $appInstalledVersion)
     }
 
     # Fix an issue with Citrix Connection Quality Indicator
-    If ([boolean](Get-InstalledApplication -Name "Citrix Connection Quality Indicator" -Exact))
+    If ([bool](Get-InstalledApplication -Name "Citrix Connection Quality Indicator" -Exact))
     {
         Write-Log -Message "Citrix Connection Quality Indicator must be uninstalled before the Virtual Delivery Agent installation, don't forget to REINSTALL it!" -Severity 2 -LogType CMTrace -WriteHost $True
-        Get-Process -Name "CQISvc","Citrix.CQI.exe" | Stop-Process -Force
-        Remove-MSIApplications -Name "Citrix Connection Quality Indicator" -Exact -Parameters "/QB"
+        Get-Process -Name "CQISvc", "Citrix.CQI" | Stop-Process -Force
+        Write-Log -Message "Uninstalling Citrix Connection Quality Indicator..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Remove-MSIApplications -Name "Citrix Connection Quality Indicator" -Exact
     }
 
-    If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
+    # Run Citrix VDA CleanUp Utility
+    Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
+
+    # Copy $appInstall to $envTemp\Install to avoid install issue
+    Copy-File -Path ".\$appInstall" -Destination "$envTemp\Install" -Recurse
+    Set-Location -Path "$envTemp\Install"
+
+    # Uninstall previous versions
+    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Get-Process -Name $appProcesses | Stop-Process -Force
+
+    # Install latest version
+    Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Execute-Process -Path .\$appInstall -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
+
+    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Stop and disable unneeded services
+    Get-Service -Name $appServices[0] | Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest
+    Get-Service -Name $appServices[0] | Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
+
+    # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
+    Add-MpPreference -ExclusionPath "%SystemRoot%\System32\drivers\CtxUvi.sys" -Force
+    Add-MpPreference -ExclusionPath "%ProgramFiles%\Citrix\HDX\bin\CitrixLogonCsp.dll" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\User Profile Manager\UserProfileManager.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\Virtual Desktop Agent\BrokerAgent.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\HDX\bin\CtxSvcHost.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\HDX\bin\ctxgfx.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\HDX\bin\WebSocketService.exe" -Force
+    # Custom additions for Citrix Machine Creation Services
+    Add-MpPreference -ExclusionPath "mcsdif.vhdx" -Force
+    Add-MpPreference -ExclusionPath "%SystemRoot%\System32\drivers\CVhdFilter.sys" -Force
+
+    # Registry optimizations
+
+    # Enable Rendezvous v2 - https://docs.citrix.com/en-us/citrix-daas/hdx/rendezvous-protocol/rendezvous-v2.html
+    If ((Get-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\XenDesktopSetup" -Value "Rendezvous V2 Component") -eq "1")
     {
-        Write-Log -Message "$appVendor $appName2 $appVersion MUST BE DOWNLOADED MANUALLY FIRST!" -Severity 3 -LogType CMTrace -WriteHost $True
-        Start-Sleep -Seconds 5
-        Exit-Script
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\VirtualDesktopAgent" -Name "GctRegistration" -Value "1" -Type "DWord"
     }
-    Else
+
+        # Reduce HDX bandwidth usage by up to 15% -https://www.citrix.com/blogs/2023/04/06/reduce-your-hdx-bandwidth-usage
+        Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "ReducerOverrideMask" -Value "23" -Type "DWord"
+
+    # Enable new EDT congestion control - https://www.citrix.com/blogs/2023/04/25/turbo-charging-edt-for-unparalleled-experience-in-a-hybrid-world
+    Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd\Tds\udp\UDPStackParameters" -Name "edtBBR" -Value "1" -Type "DWord"
+
+    # CVAD 2303 Users stuck on welcome screen when reconnecting to a disconnected session - https://support.citrix.com/article/CTX547782/cvad-2303-users-stuck-on-welcome-screen-when-reconnecting-to-a-disconnected-session
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Graphics" -Name "PermitRunAsLocalSystem" -Value "1" -Type "DWord"
+
+    # Go back to the parent folder
+    Set-Location ..
+    Remove-Folder -Path "$envTemp\Install"
+
+    # Reboot and relaunch script
+    Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
+
+    Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
+    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
+}
+ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
+{
+    # Fix an issue with Citrix Connection Quality Indicator
+    If ([bool](Get-InstalledApplication -Name "Citrix Connection Quality Indicator" -Exact))
     {
-        # Copy $appSetup to $envTemp\Install to avoid install issue
-        Copy-File -Path ".\$appSetup" -Destination "$envTemp\Install" -Recurse
-        Set-Location -Path "$envTemp\Install"
-
-        # Uninstall previous versions
-        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-Process -Name $appProcesses | Stop-Process -Force
-
-        # Install latest version
-        Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
-
-        Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
-
-        # Stop and disable unneeded services
-        Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest
-        Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
-
-        # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
-        Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\User Profile Manager\UserProfileManager.exe" -Force
-        Add-MpPreference -ExclusionProcess "%ProgramFiles%\Citrix\Virtual Desktop Agent\BrokerAgent.exe" -Force
-        Add-MpPreference -ExclusionProcess "%SystemRoot%\System32\spoolsv.exe" -Force
-        Add-MpPreference -ExclusionProcess "%SystemRoot%\System32\winlogon.exe" -Force
-        Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\HDX\bin\WebSocketService.exe" -Force
-        Add-MpPreference -ExclusionPath "%SystemRoot%\System32\drivers\CtxUvi.sys" -Force
-
-        # Registry optimizations
-        # Enable EDT MTU Discovery on the VDA - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/technical-overview/hdx/adaptive-transport.html
-        # Now enabled by default
-        #Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "MtuDiscovery" -Type "DWord" -Value "1"
-
-        # Enable Rendezvous - https://docs.citrix.com/en-us/citrix-daas/hdx/rendezvous-protocol/rendezvous-v2.html
-        If ((Get-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\XenDesktopSetup" -Value "Rendezvous V2 Component") -eq "1")
-        {
-            Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\VirtualDesktopAgent" -Name "GctRegistration" -Type "DWord" -Value "1"
-        }
-
-        # Go back to the parent folder
-        Set-Location ..
-        Remove-Folder -Path "$envTemp\Install"
-
-        Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
-
-        Write-Log -Message "$appVendor $appName2" -Text "A reboot required after $appVendor $appName2 $appVersion installation. The computer $envComputerName will reboot in 30 seconds!" -Severity 2 -LogType CMTrace -WriteHost $True
-        Show-InstallationRestartPrompt -Countdownseconds 30 -CountdownNoHideSeconds 30
+        Write-Log -Message "Citrix Connection Quality Indicator must be uninstalled before the Virtual Delivery Agent installation, don't forget to REINSTALL it!" -Severity 2 -LogType CMTrace -WriteHost $True
+        Get-Process -Name "CQISvc", "Citrix.CQI" | Stop-Process -Force
+        Write-Log -Message "Uninstalling Citrix Connection Quality Indicator..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Remove-MSIApplications -Name "Citrix Connection Quality Indicator" -Exact
     }
 
+    # Copy $appInstall to $envTemp\Install to avoid install issue
+    Copy-File -Path ".\$appInstall" -Destination "$envTemp\Install" -Recurse
+    Set-Location -Path "$envTemp\Install"
+
+    # Uninstall previous versions
+    Write-Log -Message "$appVendor $appName $appInstalledVersion must be uninstalled first." -Severity 2 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Get-Process -Name $appProcesses | Stop-Process -Force
+    Execute-Process -Path $appUninstall -Parameters $appUninstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
+
+    # Run Citrix VDA CleanUp Utility
+    Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
+    Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Reboot and relaunch script
+    Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
+    Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
+    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
+}
+ElseIf ($appVersion -eq $appInstalledVersion)
+{
+    # Disable autologon
+    Disable-AutoLogon
+    Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
 {
-    Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName $appVersion EXE file and $appCleanupTool MUST BE DOWNLOADED MANUALLY FIRST!" -Severity 3 -LogType CMTrace -WriteHost $True
+    Start-Process -FilePath "https://www.citrix.com/downloads/citrix-virtual-apps-and-desktops"
+    Start-Sleep -Seconds 2
+    Start-Process -FilePath "https://support.citrix.com/article/CTX209255/vda-cleanup-utility"
+
+    # Disable autologon
+    Disable-AutoLogon
+    Exit-Script
 }
+
+#endregion
