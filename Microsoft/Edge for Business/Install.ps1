@@ -216,43 +216,39 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
 
     # Uninstall previous versions
+    # Edge cannot be uninstall anymore - https://answers.microsoft.com/en-us/microsoftedge/forum/all/getting-there-is-a-problem-with-this-windows/c5fb02db-6b40-4cd7-b74a-88470c71d730
     Get-Process -Name $appProcesses | Stop-Process -Force
-    If ($IsAppInstalled)
+    [string]$appUninstaller = (Get-ChildItem -Path $appDestination -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty FullName) + "\Installer\setup.exe"
+    If (Test-Path -Path $appUninstaller)
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Remove-MSIApplications -Name "$appVendor $appName" -Parameters $appInstallParameters
-    }
-
-    # Uninstall Microsoft Edge Update
-    If (Test-Path -Path "$envLocalAppData\$appVendor\$($appName)Update\$appVendor$($appName)Update.exe")
-    {
-        Write-Log -Message "Removing previous $appVendor $appName $appLongName folder to fix issues with new installation." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-Process -Path "$envLocalAppData\$appVendor\$($appName)Update\$appVendor$($appName)Update.exe" -Parameters "-uninstall" -IgnoreExitCodes 1606220281 -ContinueOnError $True
-    }
-    If (Test-Path -Path "$envProgramFilesX86\$appVendor\$($appName)Update\$appVendor$($appName)Update.exe")
-    {
-        Write-Log -Message "Removing previous $appVendor $appName $appLongName folder to fix issues with new installation." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-Process -Path "$envProgramFilesX86\$appVendor\$($appName)Update\$appVendor$($appName)Update.exe" -Parameters "-uninstall" -IgnoreExitCodes 1606220281 -ContinueOnError $True
+        Get-AppxProvisionedPackage -Online | Where-Object { $_.PackageName -like "*$appName*" } | Remove-AppxProvisionedPackage -Online
+        Get-AppxPackage -Name "*$appName*" -AllUsers | Remove-AppxPackage -AllUsers
+        Get-AppxPackage -Name "*$appName*" | Remove-AppxPackage
+        Execute-Process -Path $appUninstaller -Parameters "–-uninstall –-system-level -–force-uninstall" -IgnoreExitCodes * -ContinueOnError $True
+        #Set-Location -Path $appUninstallerDestination
+        #cmd.exe /c ".\setup.exe -–uninstall –-system-level -–force-uninstall"
+        Get-Process -Name $appProcesses | Stop-Process -Force
     }
 
     # Remove previous install folders
     Remove-Folder -Path "$envLocalAppData\Microsoft\Edge" -ContinueOnError $True
     Remove-Folder -Path "$envLocalAppData\Microsoft\EdgeUpdate" -ContinueOnError $True
     Remove-Folder -Path "$envLocalAppData\Microsoft\Temp" -ContinueOnError $True
-    Remove-Folder -Path "$envProgramFilesX86\Microsoft\$appName" -ContinueOnError $True
-    Remove-Folder -Path "$envProgramFilesX86\Microsoft\EdgeCore" -ContinueOnError $True
-    Remove-Folder -Path "$envProgramFilesX86\Microsoft\EdgeUpdate" -ContinueOnError $True
+    #Remove-Folder -Path "$envProgramFilesX86\Microsoft\$appName" -ContinueOnError $True
+    #Remove-Folder -Path "$envProgramFilesX86\Microsoft\EdgeCore" -ContinueOnError $True
+    #Remove-Folder -Path "$envProgramFilesX86\Microsoft\EdgeUpdate" -ContinueOnError $True
     Remove-Folder -Path "$envProgramFilesX86\Microsoft\Temp" -ContinueOnError $True
 
     # Remove previous registry entries
     Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Edge" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKCU:\Software\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{9459C573-B17A-45AE-9F64-1857B5D58CEE}" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Edge" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge Update" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge" -Recurse -ContinueOnError $True
+    #Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Edge" -Recurse -ContinueOnError $True
+    #Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
+    #Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
+    #Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge Update" -Recurse -ContinueOnError $True
+    #Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge" -Recurse -ContinueOnError $True
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
@@ -307,9 +303,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Do not allow delivery of Microsoft Edge through Automatic Updates
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\EdgeUpdate" -Name "DoNotUpdateToEdgeWithChromium" -Value "1" -Type DWord
 
-    # Execute the Microsoft Edge browser replacement task to make sure that the legacy Microsoft Edge browser is tucked away
-    # This is only needed on Windows 10 versions where Microsoft Edge is not included in the OS.
-    Execute-Process -Path "$envProgramFilesX86\$appVendor\$($appName)Update\MicrosoftEdgeUpdate.exe" -Parameters "/browserreplacement"
+    # Execute the Microsoft Edge browser replacement task to make sure that the legacy Microsoft Edge browser is tucked away.
+    # Only needed on Windows 10 versions where Microsoft Edge is not included in the OS.
+    #Delete Browser replacement scheduled task!
+    If ($envOSName -like "*Windows 10*" )
+    {
+        Execute-Process -Path "$envProgramFilesX86\$appVendor\$($appName)Update\MicrosoftEdgeUpdate.exe" -Parameters "/browserreplacement"
+    }
 
     # Creates a pinned taskbar icons for all users
     New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appVendor $appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appVendor $appName" -WorkingDirectory "$appDestination"
