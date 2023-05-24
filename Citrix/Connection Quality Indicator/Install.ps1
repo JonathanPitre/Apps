@@ -16,7 +16,7 @@ Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Evergreen") # Modules list
+$Modules = @("PSADT") # Modules list
 
 Function Get-ScriptPath
 {
@@ -265,7 +265,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     }
 
-    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
+    If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup" -PathType Leaf))
     {
         # Download latest version
         Write-Log -Message "$appVendor $appName $appVersion MUST BE DOWNLOADED MANUALLY FIRST!" -Severity 3 -LogType CMTrace -WriteHost $True
