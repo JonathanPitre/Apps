@@ -221,7 +221,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Configure application shortcut
-    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appName.lnk" -TargetPath "$appDestination\$appSetup" -IconLocation "$appDestination\$appSetup" -Description "$appName" -WorkingDirectory "$appDestination"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\$appName.lnk" -TargetPath "$appDestination\$appSetup" -IconLocation "$appDestination\$appSetup" -Description "$appName" -WorkingDirectory "$appDestination"
 
     # Go back to the parent folder
     Set-Location ..
