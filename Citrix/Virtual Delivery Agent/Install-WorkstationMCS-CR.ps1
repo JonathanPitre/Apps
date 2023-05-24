@@ -320,7 +320,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     }
 
     # Fix an issue with Citrix Connection Quality Indicator
-    If ([bool](Get-InstalledApplication -Name "Citrix Connection Quality Indicator" -Exact))
+    If (Test-Path -Path "${env:ProgramFiles(x86)}\Citrix\HDX\bin\Connection Quality Indicator\Citrix.CQI.exe")
     {
         Write-Log -Message "Citrix Connection Quality Indicator must be uninstalled before the Virtual Delivery Agent installation, don't forget to REINSTALL it!" -Severity 2 -LogType CMTrace -WriteHost $True
         Get-Process -Name "CQISvc", "Citrix.CQI" | Stop-Process -Force
@@ -400,7 +400,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
 ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
 {
     # Fix an issue with Citrix Connection Quality Indicator
-    If ([bool](Get-InstalledApplication -Name "Citrix Connection Quality Indicator" -Exact))
+    If (Test-Path -Path "${env:ProgramFiles(x86)}\Citrix\HDX\bin\Connection Quality Indicator\Citrix.CQI.exe")
     {
         Write-Log -Message "Citrix Connection Quality Indicator must be uninstalled before the Virtual Delivery Agent installation, don't forget to REINSTALL it!" -Severity 2 -LogType CMTrace -WriteHost $True
         Get-Process -Name "CQISvc", "Citrix.CQI" | Stop-Process -Force

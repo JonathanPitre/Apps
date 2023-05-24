@@ -321,7 +321,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
         If (-Not(Get-WindowsFeature -Name Remote-Assistance))
         {
             Install-WindowsFeature -Name Remote-Assistance
-	        Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" -Name "fAllowToGetHelp" -Value "1" -Type DWord
+            Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" -Name "fAllowToGetHelp" -Value "1" -Type DWord
         }
         Else
         {
@@ -369,7 +369,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     }
 
     # Fix an issue with Citrix Connection Quality Indicator
-    If ([bool](Get-InstalledApplication -Name "Citrix Connection Quality Indicator" -Exact))
+    If (Test-Path -Path "${env:ProgramFiles(x86)}\Citrix\HDX\bin\Connection Quality Indicator\Citrix.CQI.exe")
     {
         Write-Log -Message "Citrix Connection Quality Indicator must be uninstalled before the Virtual Delivery Agent installation, don't forget to REINSTALL it!" -Severity 2 -LogType CMTrace -WriteHost $True
         Get-Process -Name "CQISvc", "Citrix.CQI" | Stop-Process -Force
@@ -419,8 +419,8 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\VirtualDesktopAgent" -Name "GctRegistration" -Value "1" -Type "DWord"
     }
 
-        # Reduce HDX bandwidth usage by up to 15% -https://www.citrix.com/blogs/2023/04/06/reduce-your-hdx-bandwidth-usage
-        Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "ReducerOverrideMask" -Value "23" -Type "DWord"
+    # Reduce HDX bandwidth usage by up to 15% -https://www.citrix.com/blogs/2023/04/06/reduce-your-hdx-bandwidth-usage
+    Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd" -Name "ReducerOverrideMask" -Value "23" -Type "DWord"
 
     # Enable new EDT congestion control - https://www.citrix.com/blogs/2023/04/25/turbo-charging-edt-for-unparalleled-experience-in-a-hybrid-world
     Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd\Tds\udp\UDPStackParameters" -Name "edtBBR" -Value "1" -Type "DWord"
@@ -442,7 +442,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
 ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
 {
     # Fix an issue with Citrix Connection Quality Indicator
-    If ([bool](Get-InstalledApplication -Name "Citrix Connection Quality Indicator" -Exact))
+    If (Test-Path -Path "${env:ProgramFiles(x86)}\Citrix\HDX\bin\Connection Quality Indicator\Citrix.CQI.exe")
     {
         Write-Log -Message "Citrix Connection Quality Indicator must be uninstalled before the Virtual Delivery Agent installation, don't forget to REINSTALL it!" -Severity 2 -LogType CMTrace -WriteHost $True
         Get-Process -Name "CQISvc", "Citrix.CQI" | Stop-Process -Force
