@@ -250,10 +250,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Download icon
-    If (-Not(Test-Path -Path $appScriptPath\$appIcon))
+    If (-Not(Test-Path -Path "$appScriptPath\$appIcon"))
     {
         Write-Log -Message "Downloading $appName icon..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appIconURL -OutFile $appIcon
+        Invoke-WebRequest -UseBasicParsing -Uri $appIconURL -OutFile "$appScriptPath\$appIcon"
     }
     Else
     {
@@ -262,8 +262,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Install latest version
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Copy-File -Path .\$appSetup -Destination $appDestination
-    Copy-File -Path $appScriptPath\$appIcon -Destination $appDestination
+    Copy-File -Path "$appScriptPath\$appVersion\$appSetup" -Destination $appDestination
+    Copy-File -Path "$appScriptPath\$appIcon" -Destination $appDestination
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
@@ -271,19 +271,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Try
         {
-            Write-Log -Message "Customizig script for $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-            #((Get-Content "$appDestination\$appSetup" -Raw) -replace "[String]$DomainUser,", "[String]$DomainUser = #<$env:USERDNSDOMAIN>\<$env:USERNAME>,") | Set-Content -Path "$appDestination\$appSetup"
-
+            Write-Log -Message "Customizing script for $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
             ((Get-Content "$appDestination\$appSetup" -Raw) -replace "@guyrleech", "@guyrleech Version: $appVersion") | Set-Content -Path "$appDestination\$appSetup"
         }
         Catch
         {
-            Write-Log -Message "Error when customizing scripts" -Severity 2 -LogType CMTrace -WriteHost $True
+            Write-Log -Message "Error when customizing script" -Severity 2 -LogType CMTrace -WriteHost $True
         }
     }
 
     # Configure application shortcut
-    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appName.lnk" -TargetPath "powershell.exe" -Arguments "-Ex ByPass -NoExit -File `"$appDestination\$appSetup`"" -IconLocation "$appDestination\$appIcon" -Description "$appName" -WorkingDirectory "$appDestination"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\$appName.lnk" -TargetPath "powershell.exe" -Arguments "-Ex ByPass -NoExit -File `"$appDestination\$appSetup`"" -IconLocation "$appDestination\$appIcon" -Description "$appName" -WorkingDirectory "$appDestination"
 
     # Go back to the parent folder
     Set-Location ..
