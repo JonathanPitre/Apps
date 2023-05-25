@@ -426,7 +426,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd\Tds\udp\UDPStackParameters" -Name "edtBBR" -Value "1" -Type "DWord"
 
     # CVAD 2303 Users stuck on welcome screen when reconnecting to a disconnected session - https://support.citrix.com/article/CTX547782/cvad-2303-users-stuck-on-welcome-screen-when-reconnecting-to-a-disconnected-session
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Graphics" -Name "PermitRunAsLocalSystem" -Value "1" -Type "DWord"
+    #Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Graphics" -Name "PermitRunAsLocalSystem" -Value "1" -Type "DWord"
 
     # Go back to the parent folder
     Set-Location ..
