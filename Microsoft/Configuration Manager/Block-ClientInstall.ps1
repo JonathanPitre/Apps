@@ -188,8 +188,8 @@ $appProcesses = @("CcmExec", "CmRcService", "SCClient", "ScNotification.exe")
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-# Prevent Configuration Manager Client software installation
-# https://infrastructureland.wordpress.com/2015/02/04/how-to-prevent-the-configuration-manager-client-software-from-being-installed-on-specific-computers
+# Prevent Configuration Manager Client SOFTWARE installation
+# https://infrastructureland.wordpress.com/2015/02/04/how-to-prevent-the-configuration-manager-client-SOFTWARE-from-being-installed-on-specific-computers
 
 # If Configuration Manager Client, uninstall it
 If (Test-Path -Path "$envWinDir\ccmsetup\ccmsetup.exe")
@@ -214,15 +214,15 @@ If (Test-Path -Path "$envWinDir\ccmsetup\ccmsetup.exe")
     Remove-Item -Path "$envWinDir\smscfg.ini" -Force -Confirm:$false -Verbose
 
     # Delete the certificate itself
-    Remove-Item -Path 'HKLM:\Software\Microsoft\SystemCertificates\SMS\Certificates\*' -Force -Confirm:$false -Verbose
+    Remove-Item -Path 'HKLM:\SOFTWARE\Microsoft\SystemCertificates\SMS\Certificates\*' -Force -Confirm:$false -Verbose
 
     # Remove all the registry keys associated with the SCCM Client that might not be removed by ccmsetup.exe
     Remove-Item -Path 'HKLM:\SOFTWARE\Microsoft\CCM' -Force -Recurse -Verbose
     Remove-Item -Path 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\CCM' -Force -Recurse -Confirm:$false -Verbose
     Remove-Item -Path 'HKLM:\SOFTWARE\Microsoft\SMS' -Force -Recurse -Confirm:$false -Verbose
     Remove-Item -Path 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\SMS' -Force -Recurse -Confirm:$false -Verbose
-    Remove-Item -Path 'HKLM:\Software\Microsoft\CCMSetup' -Force -Recurse -Confirm:$false -Verbose
-    Remove-Item -Path 'HKLM:\Software\Wow6432Node\Microsoft\CCMSetup' -Force -Confirm:$false -Recurse -Verbose
+    Remove-Item -Path 'HKLM:\SOFTWARE\Microsoft\CCMSetup' -Force -Recurse -Confirm:$false -Verbose
+    Remove-Item -Path 'HKLM:\SOFTWARE\Wow6432Node\Microsoft\CCMSetup' -Force -Confirm:$false -Recurse -Verbose
 
     # Remove the service from "Services"
     Remove-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\CcmExec' -Force -Recurse -Confirm:$false -Verbose
@@ -240,6 +240,11 @@ If (Test-Path -Path "$envWinDir\ccmsetup\ccmsetup.exe")
     # Get-WmiObject -query "Select * From __Namespace Where Name='SmsDm'" -Namespace "root" | Remove-WmiObject -Verbose | Out-Host
     # Get-WmiObject -query "Select * From __Namespace Where Name='sms'" -Namespace "root\cimv2" | Remove-WmiObject -Verbose | Out-Host
 
+    # Remove Start Menu shortcut
+    Remove-Item -Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Microsoft Endpoint Manager" -Force -Confirm:$false -Recurse -Verbose
+
+    # Remove scheduled task folder
+
     Write-Log -Message "$appVendor $appName was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 
@@ -247,4 +252,4 @@ If (Test-Path -Path "$envWinDir\ccmsetup\ccmsetup.exe")
 New-Item -Path $envWinDir -Name "ccmsetup" -Force -ItemType File
 New-Item -Path $envWinDir -Name "ccm" -Force -ItemType File
 
-Write-Log -Message "$appVendor $appName installation are now blocked!" -Severity 1 -LogType CMTrace -WriteHost $True
+Write-Log -Message "$appVendor $appName installation is now blocked!" -Severity 1 -LogType CMTrace -WriteHost $True
