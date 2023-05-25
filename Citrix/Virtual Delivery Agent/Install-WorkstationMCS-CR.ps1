@@ -364,10 +364,12 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Add-MpPreference -ExclusionPath "mcsdif.vhdx" -Force
     Add-MpPreference -ExclusionPath "%SystemRoot%\System32\drivers\CVhdFilter.sys" -Force
 
-
     # Set powercfg over-rides to get around screen lock issues - https://forums.ivanti.com/s/article/Screensaver-doesn-t-become-active-on-a-Citrix-Virtual-Desktop-Agent
     Execute-Process -Path "$envSystem32Directory\powercfg.exe" -Parameters "/requestsoverride PROCESS picaSessionAgent.exe DISPLAY"
     Execute-Process -Path "$envSystem32Directory\powercfg.exe" -Parameters "/requestsoverride PROCESS GFXMGR.exe DISPLAY"
+
+    # Fix Screensaver not working - https://support.citrix.com/article/CTX205214/screensaver-not-working-in-xendesktop
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Graphics" -Name "SetDisplayRequiredMode" -Value "0" -Type "DWord"
 
     # Registry optimizations
 
@@ -384,7 +386,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd\Tds\udp\UDPStackParameters" -Name "edtBBR" -Value "1" -Type "DWord"
 
     # CVAD 2303 Users stuck on welcome screen when reconnecting to a disconnected session - https://support.citrix.com/article/CTX547782/cvad-2303-users-stuck-on-welcome-screen-when-reconnecting-to-a-disconnected-session
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Graphics" -Name "PermitRunAsLocalSystem" -Value "1" -Type "DWord"
+    #Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Graphics" -Name "PermitRunAsLocalSystem" -Value "1" -Type "DWord"
 
     # Go back to the parent folder
     Set-Location ..
