@@ -244,7 +244,6 @@ $appVersion = $Evergreen.Version
 $appURL = $Evergreen.Uri
 $appZip = Split-Path -Path $appURL -Leaf
 $appSetup = "CitrixCQI.msi"
-$appDestination = "${env:ProgramFiles(x86)}\Citrix\Connection Quality Indicator"
 $sessionName = Get-SessionName
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion)
@@ -254,7 +253,7 @@ $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").D
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
+    If (-Not(Test-Path -Path "$appScriptPath\$appVersion")) { New-Folder -Path "$appScriptPath\$appVersion" }
     Set-Location -Path $appVersion
 
     # Detect if running from a Citrix session
@@ -262,7 +261,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "$appVendor $appName2 CANNOT BE INSTALLED from a Citrix session, please run install script from CONSOLE SESSION!" -Severity 3 -LogType CMTrace -WriteHost $True
         Exit-Script
-
     }
 
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup" -PathType Leaf))
@@ -280,16 +278,26 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Get-Process -Name $appProcesses | Stop-Process -Force
 
         Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
+        Execute-MSI -Action Install -Path "$appScriptPath\$appVersion\$appSetup" -Parameters $appInstallParameters
 
         Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
         # Configure application shortcut
+        If (Test-Path -Path "$envProgramFilesX86\Citrix\Connection Quality Indicator\Citrix.CQI.exe")
+        {
+            $appDestination = "$envProgramFilesX86\Citrix\Connection Quality Indicator"
+            $regCQI = "`"C:\Program Files (x86)\Citrix\Connection Quality Indicator\Launcher.cmd`""
+        }
+        ElseIf (Test-Path -Path "$envProgramFilesX86\Citrix\HDX\bin\Connection Quality Indicator\Citrix.CQI.exe")
+        {
+            $appDestination = "$envProgramFilesX86\Citrix\HDX\bin\Connection Quality Indicator"
+            $regCQI = "`"C:\Program Files (x86)\Citrix\HDX\bin\Connection Quality Indicator\Launcher.cmd`""
+        }
         New-Shortcut -Path "$envCommonStartMenuPrograms\$appVendor $appName.lnk" -TargetPath "$appDestination\Citrix.CQI.exe"
 
-        # Disbale automatic startup
+        # Disable automatic startup
         $regAppSetup = Get-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Value "AppSetup"
-        $regCQI = "`"C:\Program Files (x86)\Citrix\HDX\bin\Connection Quality Indicator\Launcher.cmd`""
+
         $regAppSetup = $regAppSetup.Replace(",$regCQI", "")
         Set-RegistryKey "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "AppSetup" -Value $regAppSetup -Type String
 
