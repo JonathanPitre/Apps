@@ -3,13 +3,13 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<metadata>
 		<schemaversion>2.0</schemaversion>
-		<version>1.0</version>
+		<version>2.0</version>
 		<id>66E7E805-2CC2-4AB8-82C6-C4F7855DE2E2</id>
-		<displayname>ITI Windows 11 22H2</displayname>
-		<description>ITI Windows 11 22H2</description>
+		<displayname>Windows 11 version 21H2, 22H2 from ITI</displayname>
+		<description>OS optimizations for Windows 11 version 21H2, 22H2</description>
 		<category>OS Optimizations</category>
-		<author>ITI</author>
-		<lastupdatedate>5/25/2023</lastupdatedate>
+		<author>Jonathan Pitre</author>
+		<lastupdatedate>05/30/2023</lastupdatedate>
 	</metadata>
 	<group>
 		<id>DisableServices</id>
@@ -876,7 +876,7 @@ https://support.citrix.com/article/CTX494488</description>
 		</entry>
 		<entry>
 			<name>Microsoft.ZuneMusic</name>
-			<description>Groove Music app</description>
+			<description>Music app, can be replaced by VLC media player</description>
 			<execute>1</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2145,7 +2145,7 @@ For more information, please refer to official Microsoft documentation: https://
 		</entry>
 		<entry>
 			<name>Microsoft.ZuneVideo</name>
-			<description>Movies and TV app</description>
+			<description>Movies and TV app, can be replaced by VLC media player</description>
 			<execute>1</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2178,7 +2178,7 @@ For more information, please refer to official Microsoft documentation: https://
 		</entry>
 		<entry>
 			<name>Microsoft.Paint</name>
-			<description>Microsoft.Paint</description>
+			<description>Basic graphics drawing app, can be replaced by Paint.NET</description>
 			<execute>1</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2189,7 +2189,7 @@ For more information, please refer to official Microsoft documentation: https://
 		</entry>
 		<entry>
 			<name>Microsoft.WindowsTerminal</name>
-			<description>App to provide Feedback on Windows and apps to Microsoft</description>
+			<description>A terminal app featuring tabs, panes, Unicode, UTF-8 character support, and GPU text rendering engine.</description>
 			<execute>0</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2200,7 +2200,7 @@ For more information, please refer to official Microsoft documentation: https://
 		</entry>
 		<entry>
 			<name>Microsoft.RawImageExtension</name>
-			<description>Microsoft.RawImageExtension</description>
+			<description>Adds RAW image support in Windows Explorer and Windows Photos. Also supported by ImageGlass</description>
 			<execute>0</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2210,19 +2210,8 @@ For more information, please refer to official Microsoft documentation: https://
 			</action>
 		</entry>
 		<entry>
-			<name>Microsoft.HEVCVideoExtension</name>
-			<description>Microsoft.HEVCVideoExtension</description>
-			<execute>0</execute>
-			<action>
-				<plugin>UWP</plugin>
-				<params>
-					<name>Microsoft.HEVCVideoExtension</name>
-				</params>
-			</action>
-		</entry>
-		<entry>
 			<name>Microsoft.WebpImageExtension</name>
-			<description>Adds support for image format WebP</description>
+			<description>Adds WebP image support in Microsoft Edge</description>
 			<execute>0</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2232,8 +2221,19 @@ For more information, please refer to official Microsoft documentation: https://
 			</action>
 		</entry>
 		<entry>
+			<name>Microsoft.HEVCVideoExtension</name>
+			<description>Play High Efficiency Video Coding (HEVC) videos in any video app. Not required for VLC media player</description>
+			<execute>0</execute>
+			<action>
+				<plugin>UWP</plugin>
+				<params>
+					<name>Microsoft.HEVCVideoExtension</name>
+				</params>
+			</action>
+		</entry>
+		<entry>
 			<name>Microsoft.HEIFImageExtension</name>
-			<description>Adds support for High Efficiency Image File (HEIF) format, usually with .heif extension</description>
+			<description>Adds support for High Efficiency Image File (HEIF) format. Such files can have a .heic or .heif file extension. Images that are stored in HEIF files that have the .heic file extension are compressed using the HEVC format. Such files require the HEVC Video Extensions package to be installed as well.</description>
 			<execute>0</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2244,7 +2244,7 @@ For more information, please refer to official Microsoft documentation: https://
 		</entry>
 		<entry>
 			<name>Microsoft.VP9VideoExtensions</name>
-			<description>Adds support for video codec VP9 (part of WebM project by Google)
+			<description>Play VP9 videos in any video app
 
 Note: This is required to support HDR video streaming</description>
 			<execute>0</execute>
