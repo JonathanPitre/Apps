@@ -897,17 +897,6 @@ https://support.citrix.com/article/CTX494488</description>
 			</action>
 		</entry>
 		<entry>
-			<name>MicrosoftCorporationII.QuickAssist</name>
-			<description>MicrosoftCorporationII.QuickAssist</description>
-			<execute>1</execute>
-			<action>
-				<plugin>UWP</plugin>
-				<params>
-					<name>MicrosoftCorporationII.QuickAssist</name>
-				</params>
-			</action>
-		</entry>
-		<entry>
 			<name>Microsoft.GamingApp</name>
 			<description>Xbox app</description>
 			<execute>1</execute>
@@ -2166,17 +2155,6 @@ For more information, please refer to official Microsoft documentation: https://
 			</action>
 		</entry>
 		<entry>
-			<name>Microsoft.WindowsNotepad</name>
-			<description>Microsoft Notepad app, can be replaced by Notepad3</description>
-			<execute>0</execute>
-			<action>
-				<plugin>UWP</plugin>
-				<params>
-					<name>Microsoft.WindowsNotepad</name>
-				</params>
-			</action>
-		</entry>
-		<entry>
 			<name>Microsoft.Paint</name>
 			<description>Basic graphics drawing app, can be replaced by Paint.NET</description>
 			<execute>1</execute>
@@ -2184,6 +2162,28 @@ For more information, please refer to official Microsoft documentation: https://
 				<plugin>UWP</plugin>
 				<params>
 					<name>Microsoft.Paint</name>
+				</params>
+			</action>
+		</entry>
+		<entry>
+			<name>MicrosoftCorporationII.QuickAssist</name>
+			<description>Remote help app, can be replaced by Windows Remote Assistance and Citrix screen sharing</description>
+			<execute>1</execute>
+			<action>
+				<plugin>UWP</plugin>
+				<params>
+					<name>MicrosoftCorporationII.QuickAssist</name>
+				</params>
+			</action>
+		</entry>
+		<entry>
+			<name>Microsoft.WindowsNotepad</name>
+			<description>Microsoft Notepad app, can be replaced by Notepad3</description>
+			<execute>0</execute>
+			<action>
+				<plugin>UWP</plugin>
+				<params>
+					<name>Microsoft.WindowsNotepad</name>
 				</params>
 			</action>
 		</entry>
