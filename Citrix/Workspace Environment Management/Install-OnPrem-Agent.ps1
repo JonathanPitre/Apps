@@ -214,11 +214,13 @@ Function Get-CitrixWEMAgent
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+#region Declarations
+
 [string]$appVendor = "Citrix"
 [string]$appName = "Workspace Environment Management Agent"
-$appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
-$appInstallParameters = "/quiet Cloud=0" # OnPrem 0 Cloud 1
-$Evergreen = Get-CitrixWEMAgent
+[array]$appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
+[string]$appInstallParameters = "/quiet Cloud=0" # OnPrem 0 Cloud 1
+[version]$Evergreen = Get-CitrixWEMAgent
 [string]$appShortVersion = $Evergreen.Version
 [string]$appSetup = "Citrix Workspace Environment Management Agent.exe"
 If (Test-Path -Path "$appScriptPath\$appShortVersion\$appSetup")
@@ -240,7 +242,11 @@ $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").D
 [string]$appUninstall = ($appUninstallString).Split("/")[0].Trim().Trim("""")
 [string]$appUninstallParameters = "/uninstall /quiet /noreboot"
 
+#endregion
+
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+#region Execution
 
 Set-Location -Path $appScriptPath
 Set-Location -Path $appVersion
@@ -302,6 +308,10 @@ If (($isAppInstalled -eq $false) -or ([version]$appVersion -gt [version]$appInst
         Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMMaintMsg.exe" -Force
         Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMRSAV.exe" -Force
         Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMUIAgent.exe" -Force
+
+        # Remove logs and cache files
+        Remove-File -Path "$env:ProgramData\Citrix\WEM\*.log"
+        Remove-File -Path "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent\Local Databases\*.*"
 
         # Configure application shortcut
         New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Agent Log Parser.lnk" -TargetPath "$appDestination\Agent Log Parser.exe"
@@ -378,6 +388,9 @@ ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInsta
         Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMRSAV.exe" -Force
         Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMUIAgent.exe" -Force
 
+        # Remove logs and cache files
+        Remove-File -Path "$env:ProgramData\Citrix\WEM\*.log"
+
         # Configure application shortcut
         New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Agent Log Parser.lnk" -TargetPath "$appDestination\Agent Log Parser.exe"
         New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Resultant Actions Viewer.lnk" -TargetPath "$appDestination\VUEMRSAV.exe"
@@ -394,5 +407,14 @@ ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInsta
 }
 ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInstalledFile -eq $true))
 {
+    # Stop processes
+    Get-Process -Name $appProcesses | Stop-Process -Force
+
+    # Remove logs and cache files
+    Remove-File -Path "$env:ProgramData\Citrix\WEM\*.log"
+    Remove-File -Path "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent\Local Databases\*.*"
+
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
+
+#endregion
