@@ -297,9 +297,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
         # Disable automatic startup
         $regAppSetup = Get-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Value "AppSetup"
-
         $regAppSetup = $regAppSetup.Replace(",$regCQI", "")
         Set-RegistryKey "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -Name "AppSetup" -Value $regAppSetup -Type String
+        Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "Connection Quality Indicator"
 
         # Go back to the parent folder
         Set-Location ..
