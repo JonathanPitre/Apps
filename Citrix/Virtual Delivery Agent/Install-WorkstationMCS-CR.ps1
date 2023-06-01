@@ -236,10 +236,10 @@ Function Get-SessionName
 
 [string]$appVendor = "Citrix"
 [string]$appName = "Virtual Delivery Agent"
-# Installation parameters available here - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
-# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
 [int]$appVersion = (Get-CitrixVDA).Version
 [string]$appInstall = "VDAWorkstationSetup_$appVersion.exe"
+# Installation parameters available here - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-command.html
+# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
 [string]$appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enable_ss_ports /exclude "Citrix Personalization for App-V - VDA","Citrix VDA Upgrade Agent" /includeadditional "Citrix Profile Management","Citrix Profile Management WMI Plug-in","Citrix MCS IODriver","Citrix Rendezvous V2","Citrix Web Socket VDA Registration Tool" /mastermcsimage /noreboot /noresume /quiet /remove_appdisk_ack /remove_pvd_ack'
 [array]$appProcesses = @("BrokerAgent", "picaSessionAgent")
 [array]$appServices = @("CitrixTelemetryService")
@@ -380,13 +380,19 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     }
 
     # Reduce HDX bandwidth usage by up to 15% -https://www.citrix.com/blogs/2023/04/06/reduce-your-hdx-bandwidth-usage
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\GroupPolicy\Defaults\WDSettings" -Name "ReducerOverrideMask" -Value "23" -Type "DWord"
+    #Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\GroupPolicy\Defaults\WDSettings" -Name "ReducerOverrideMask" -Value "23" -Type "DWord"
 
     # Enable new EDT congestion control - https://www.citrix.com/blogs/2023/04/25/turbo-charging-edt-for-unparalleled-experience-in-a-hybrid-world
-    Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd\Tds\udp\UDPStackParameters" -Name "edtBBR" -Value "1" -Type "DWord"
+    #Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd\Tds\udp\UDPStackParameters" -Name "edtBBR" -Value "1" -Type "DWord"
 
-    # CVAD 2303 Users stuck on welcome screen when reconnecting to a disconnected session - https://support.citrix.com/article/CTX547782/cvad-2303-users-stuck-on-welcome-screen-when-reconnecting-to-a-disconnected-session
-    #Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Graphics" -Name "PermitRunAsLocalSystem" -Value "1" -Type "DWord"
+    # Delete logs and cache files
+    Remove-File -Path "$env:ProgramData\Citrix\TelemetryService\CitrixAOT\*.etl"
+    Remove-File -Path "$env:ProgramData\Citrix\Citrix\VdaCEIP\*.json"
+    Remove-File -Path "$env:ProgramData\Citrix\Logs\*.log"
+    Remove-File -Path "$env:ProgramData\Citrix\GroupPolicy\*.*"
+    Remove-File -Path "$env:ProgramData\CitrixCseCache\*.*"
+    Remove-File -Path "$env:SystemRoot\System32\GroupPolicy\Machine\Citrix\GroupPolicy\*.*"
+    Remove-File -Path "$env:SystemRoot\System32\GroupPolicy\User\Citrix\GroupPolicy\*.*"
 
     # Go back to the parent folder
     Set-Location ..
