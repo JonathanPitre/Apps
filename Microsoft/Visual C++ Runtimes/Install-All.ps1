@@ -177,6 +177,31 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
+Function Get-MicrosoftVisualCPlusPlusVersion
+{
+    [OutputType([System.Management.Automation.PSObject])]
+    [CmdletBinding()]
+    Param ()
+    $DownloadURL = "https://community.chocolatey.org/packages/vcredist140"
+
+    Try
+    {
+        $DownloadText = (Invoke-WebRequest -Uri $DownloadURL -DisableKeepAlive -UseBasicParsing).RawContent
+    }
+    Catch
+    {
+        Throw "Failed to connect to URL: $DownloadURL with error $_."
+        Break
+    }
+    Finally
+    {
+        $RegEx = "(Microsoft Visual C\+\+ Redistributable for Visual Studio 2015\-\d{4}) ((?:\d+\.)+(?:\d+))"
+        $Version = (($DownloadText | Select-String -Pattern $RegEx -AllMatches).Matches.Groups[2].Value) + ".0"
+    }
+    return $Version
+}
+
 #endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
@@ -186,9 +211,10 @@ $appName = "Visual C++"
 $appMajorVersion = ( Get-VcList | Select-Object -Last 1).Release
 $VcList = Get-VcList
 $VcListVersion = ($VcList | Where-Object { $_.Release -eq $appMajorVersion -and $_.Architecture -eq "x64" }).Version
-$appVersion = $VcListVersion.Substring(0, $VcListVersion.Length - 2)
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion")
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName $appMajorVersion").DisplayVersion | Select-Object -First 1
+#$appVersion = $VcListVersion.Substring(0, $VcListVersion.Length - 2)
+$appVersion = Get-MicrosoftVisualCPlusPlusVersion
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor 2015-$appName $appMajorVersion")
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName 2015-$appMajorVersion").DisplayVersion | Select-Object -First 1
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
@@ -200,11 +226,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-MSIApplications -Name "$appVendor $appName" -ContinueOnError $True
 
     # Download latest setup file(s)
-    Write-Log -Message "Downloading $appVendor $appName Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Downloading $appVendor $appName runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
     Save-VcRedist -VcList $VcList -Path $appScriptPath
 
     # Install latest version
-    Write-Log -Message "Installing $appVendor $appName Runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing $appVendor $appName runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
     Install-VcRedist -Path $appScriptPath -VcList $VcList
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -212,9 +238,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appVendor $appName Runtimes were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName runtimes were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
 {
-    Write-Log -Message "$appVendor $appName $appMajorVersion $appInstalledVersion Runtimes are already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName 2015-$appMajorVersion $appInstalledVersion runtimes are already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
