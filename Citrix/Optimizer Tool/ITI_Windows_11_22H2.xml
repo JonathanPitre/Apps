@@ -2079,7 +2079,7 @@ For more information, please refer to official Microsoft documentation: https://
 		<description>Contains components that are often disabled for VDI\RDS machines, however can impact other applications or user experience. It is recommended to review these settings before applying them. </description>
 		<entry>
 			<name>Microsoft.DesktopAppInstaller</name>
-			<description>Required for UWP &amp; MSIX app installation</description>
+			<description>Microsoft App Installer IMPORTANT: Required for UWP, MSIX and WinGet support</description>
 			<execute>0</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2090,7 +2090,7 @@ For more information, please refer to official Microsoft documentation: https://
 		</entry>
 		<entry>
 			<name>Microsoft.WindowsStore</name>
-			<description>Microsoft Store application. Do not remove it if you're planning to use UWP applications. After removed, it is not possible to fix it without reverting to previous backup / snapshot or resetting operating system.</description>
+			<description>Microsoft Store application. IMPORTANT: Do not remove it if you're planning to use UWP applications. After removed, it is not possible to fix it without reverting to previous backup / snapshot or resetting operating system.</description>
 			<execute>0</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2101,7 +2101,7 @@ For more information, please refer to official Microsoft documentation: https://
 		</entry>
 		<entry>
 			<name>Microsoft.StorePurchaseApp</name>
-			<description>Microsoft Store application. Do not remove it if you're planning to use UWP applications. After removed, it is not possible to fix it without reverting to previous backup / snapshot or resetting operating system.</description>
+			<description>Microsoft Store application. IMPORTANT: Do not remove it if you're planning to use UWP applications. After removed, it is not possible to fix it without reverting to previous backup / snapshot or resetting operating system.</description>
 			<execute>0</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2112,7 +2112,7 @@ For more information, please refer to official Microsoft documentation: https://
 		</entry>
 		<entry>
 			<name>Microsoft.WindowsCalculator</name>
-			<description>Built-in Windows Calculator. If your users are using it (mostly desktop sessions rather than published applications), do not remove it unless you have a replacement calculator app.</description>
+			<description>Built-in Windows Calculator. IMPORTANT: If your users are using it (mostly desktop sessions rather than published applications), do not remove it unless you have a replacement calculator app.</description>
 			<execute>0</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2123,7 +2123,7 @@ For more information, please refer to official Microsoft documentation: https://
 		</entry>
 		<entry>
 			<name>Microsoft.ScreenSketch</name>
-			<description>Removes "Snip and Sketch" application. Provides functionality of Snipping Tool with additional improvements.</description>
+			<description>Removes "Snip and Sketch" application. Provides functionality of Snipping Tool with additional improvements. Can be replaced by ShareX</description>
 			<execute>1</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2244,9 +2244,7 @@ For more information, please refer to official Microsoft documentation: https://
 		</entry>
 		<entry>
 			<name>Microsoft.VP9VideoExtensions</name>
-			<description>Play VP9 videos in any video app
-
-Note: This is required to support HDR video streaming</description>
+			<description>Play VP9 videos in any video app. IMPORTANT: This is required to support HDR video streaming</description>
 			<execute>0</execute>
 			<action>
 				<plugin>UWP</plugin>
@@ -2293,7 +2291,7 @@ Note: This is required to support HDR video streaming</description>
 		</entry>
 		<entry>
 			<name>ScheduledDefrag</name>
-			<description>This task defragments the computers hard disk drives. Required for FSLogix disk compaction feature.</description>
+			<description>This task defragments the computers hard disk drives. IMPORTANT: Required for FSLogix disk compaction feature.</description>
 			<execute>2</execute>
 			<action>
 				<plugin>SchTasks</plugin>
@@ -2306,7 +2304,7 @@ Note: This is required to support HDR video streaming</description>
 		</entry>
 		<entry>
 			<name>Disable background disk defragmentation</name>
-			<description>Disabling background disk defragmentation can help improve EWF performance. Required for FSLogix disk compaction feature.</description>
+			<description>Disabling background disk defragmentation can help improve EWF performance. IMPORTANT: Required for FSLogix disk compaction feature.</description>
 			<execute>2</execute>
 			<action>
 				<plugin>Registry</plugin>
@@ -2339,7 +2337,7 @@ This entry restores the system to the original state and fixes this issue.</desc
 		</entry>
 		<entry>
 			<name>Optimize drives</name>
-			<description>11/17/2020 - Disabling this service prevents defragmentation (UI) from working. Required for FSLogix disk compaction feature.
+			<description>11/17/2020 - Disabling this service prevents defragmentation (UI) from working. IMPORTANT: Required for FSLogix disk compaction feature.
 
 This entry restores the system to the original state and fixes this issue.</description>
 			<execute>1</execute>
