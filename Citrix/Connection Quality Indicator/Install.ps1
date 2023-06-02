@@ -236,7 +236,9 @@ Function Get-SessionName
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appVendor = "Citrix"
-$appName = "Connection Quality Indicator"
+If ($currentLanguage -eq "EN") { $appName = "Connection Quality Indicator" }
+ElseIf ($currentUILanguage -eq "FR") { $appName = "Indicateur de qualité de la connexion" }
+Else { Write-Log -Message "Language not supported, please change display language to ENGLISH an try again!" -Severity 3 -LogType CMTrace -WriteHost $True; Exit-Script }
 $appProcesses = @("Citrix.CQI")
 $appInstallParameters = "/quiet DISABLE_CEIP=1"
 $Evergreen = Get-CitrixCQI
