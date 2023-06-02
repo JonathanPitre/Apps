@@ -217,11 +217,16 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Enable Media Optimization - https://docs.microsoft.com/en-us/azure/virtual-desktop/teams-on-avd
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Teams" -Name "IsWVDEnvironment" -Value "1" -Type DWord
-
+    
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Enable content sharing for Teams for Remote App - https://learn.microsoft.com/en-us/azure/virtual-desktop/teams-on-avd
+    Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\AddIns\WebRTC Redirector\Policy" -Name "ShareClientDesktop" -Value "1" -Type DWord
+    # Enable desktop screen share for Teams for Remote App - https://learn.microsoft.com/en-us/azure/virtual-desktop/teams-on-avd
+    Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\AddIns\WebRTC Redirector\Policy" -Name "DisableRAILAppSharing" -Value "0" -Type DWord
 
     # Go back to the parent folder
     Set-Location ..
