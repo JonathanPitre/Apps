@@ -91,7 +91,7 @@ Function Initialize-Module
     [CmdletBinding()]
     Param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $True)]
         [string]$Module
     )
     Write-Host -Object "Importing $Module module..." -ForegroundColor Green
@@ -298,7 +298,7 @@ If ([version]$appInstalledVersion -eq $null)
 
     # Download cleanup script
     Get-MicrosoftOfficeUninstaller
-    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true -ProductsToRemove $appName
+    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $True -Force $True -Remove2016Installs $True -NoReboot $True -ProductsToRemove $appName
 
     # Download latest version
     If (-Not(Test-Path -Path .\$appVersion)) { New-Folder -Path $appVersion }
