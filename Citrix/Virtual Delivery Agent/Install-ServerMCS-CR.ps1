@@ -236,10 +236,10 @@ Function Get-SessionName
 
 [string]$appVendor = "Citrix"
 [string]$appName = "Virtual Delivery Agent"
-# Installation parameters available here - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops-service/install-configure/install-command.html
-# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
 [int]$appVersion = (Get-CitrixVDA).Version
 [string]$appInstall = "VDAServerSetup_$appVersion.exe"
+# Installation parameters available here - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-command.html
+# https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/install-configure/install-vdas-sccm.html
 [string]$appInstallParameters = '/components vda /disableexperiencemetrics /enable_hdx_ports /enable_hdx_udp_ports /enable_real_time_transport /enable_remote_assistance /enable_ss_ports /exclude "Citrix Personalization for App-V - VDA","Citrix VDA Upgrade Agent" /includeadditional "Citrix MCS IODriver","Citrix Profile Management","Citrix Profile Management WMI Plug-in","Citrix Rendezvous V2","Citrix Web Socket VDA Registration Tool","Machine Identity Service" /mastermcsimage /noreboot /noresume /quiet /remove_appdisk_ack /remove_pvd_ack'
 [array]$appProcesses = @("BrokerAgent", "picaSessionAgent")
 [array]$appServices = @("CitrixTelemetryService")
@@ -379,7 +379,10 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
 
     # Run Citrix VDA CleanUp Utility
     Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Delete previous logs
+    Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
     Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
+    Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Copy $appInstall to $envTemp\Install to avoid install issue
     Copy-File -Path ".\$appInstall" -Destination "$envTemp\Install" -Recurse
@@ -391,6 +394,8 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
 
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Delete previous logs
+    Remove-Folder -Path "$env:Temp\Citrix\XenDesktop Installer" -Recurse
     Execute-Process -Path .\$appInstall -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -427,14 +432,20 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
 
     # CVAD 2303 Users stuck on welcome screen when reconnecting to a disconnected session - https://support.citrix.com/article/CTX547782/cvad-2303-users-stuck-on-welcome-screen-when-reconnecting-to-a-disconnected-session
     #Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Graphics" -Name "PermitRunAsLocalSystem" -Value "1" -Type "DWord"
+    # Delete logs and cache files
+    Remove-File -Path "$env:ProgramData\Citrix\TelemetryService\CitrixAOT\*.etl"
+    Remove-File -Path "$env:ProgramData\Citrix\Citrix\VdaCEIP\*.json"
+    Remove-File -Path "$env:ProgramData\Citrix\Logs\*.log"
+    Remove-File -Path "$env:ProgramData\Citrix\GroupPolicy\*.*"
+    Remove-File -Path "$env:ProgramData\CitrixCseCache\*.*"
+    Remove-File -Path "$env:SystemRoot\System32\GroupPolicy\Machine\Citrix\GroupPolicy\*.*"
+    Remove-File -Path "$env:SystemRoot\System32\GroupPolicy\User\Citrix\GroupPolicy\*.*"
 
     # Go back to the parent folder
     Set-Location ..
     Remove-Folder -Path "$envTemp\Install"
 
-    # Reboot and relaunch script
-    Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
-
+    # Reboot
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
@@ -462,6 +473,8 @@ ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScript
 
     # Run Citrix VDA CleanUp Utility
     Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Delete previous logs
+    Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
     Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
     Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 

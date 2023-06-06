@@ -288,6 +288,7 @@ Set-Location -Path $appVersion
 
 If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersion\$appInstall") -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
 {
+
     # Install prerequisites
     If (-Not($envOSName -like "*Windows Server*"))
     {
@@ -330,7 +331,10 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
 
     # Run Citrix VDA CleanUp Utility
     Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Delete previous logs
+    Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
     Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
+    Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Copy $appInstall to $envTemp\Install to avoid install issue
     Copy-File -Path ".\$appInstall" -Destination "$envTemp\Install" -Recurse
@@ -342,6 +346,8 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
 
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Delete previous logs
+    Remove-Folder -Path "$env:Temp\Citrix\XenDesktop Installer" -Recurse
     Execute-Process -Path .\$appInstall -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -398,9 +404,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Set-Location ..
     Remove-Folder -Path "$envTemp\Install"
 
-    # Reboot and relaunch script
-    Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
-
+    # Reboot
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
@@ -428,6 +432,8 @@ ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScript
 
     # Run Citrix VDA CleanUp Utility
     Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Delete previous logs
+    Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
     Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
     Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
