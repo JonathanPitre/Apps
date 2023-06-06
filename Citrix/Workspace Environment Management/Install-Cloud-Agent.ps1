@@ -195,7 +195,7 @@ Function Get-CitrixWEMAgent
     }
     Finally
     {
-        $RegEx = "(agent.+)(\d{4}.\d.\d.\d)"
+        $RegEx = "(Minimum agent version required\: )(\d{4}.\d.\d.\d)"
         $Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[2].Value
         $ZipVersion = $Version.Substring(0, $Version.Length - 4)
         $URL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=$($appDlNumber)&URL=https://downloads.citrix.com/$($appDlNumber)/Workspace-Environment-Management-Agent-$($ZipVersion).zip"
@@ -288,29 +288,40 @@ Function Get-CitrixDownload
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
-$appVendor = "Citrix"
-$appName = "Workspace Environment Management Agent"
-$appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
-$appInstallParameters = "/quiet Cloud=1" # OnPrem 0 Cloud 1
-$appDlNumber = "16122"
-$Evergreen = Get-CitrixWEMAgent
-$appVersion = $Evergreen.Version
-$appURL = $Evergreen.URI
-$appZip = Split-Path -Path $appURL -Leaf
-$appSetup = "Citrix Workspace Environment Management Agent.exe"
-$appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
-$citrixAccount = "myCitrixAccount"
+#region Declarations
+
+[string]$appVendor = "Citrix"
+[string]$appName = "Workspace Environment Management Agent"
+[array]$appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
+[string]$appInstallParameters = "/quiet Cloud=1" # OnPrem 0 Cloud 1
+[int]$appDlNumber = "16122"
+[array]$Evergreen = Get-CitrixWEMAgent
+[version]$appVersion = $Evergreen.Version
+[string]$appURL = $Evergreen.URI
+[string]$appZip = Split-Path -Path $appURL -Leaf
+[string]$appSetup = "Citrix Workspace Environment Management Agent.exe"
+[string]$appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
+[boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
+[version]$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
+[string]$appInstalledFile = (Test-Path -Path "$appDestination\Citrix.Wem.Agent.Service.exe")
+[string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor $appName").UninstallString
+[string]$appUninstall = ($appUninstallString).Split("/")[0].Trim().Trim("""")
+[string]$appUninstallParameters = "/uninstall /quiet /noreboot"
+[string]$citrixAccount = "myCitrixAccount"
+
+#endregion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ([version]$appVersion -gt [version]$appInstalledVersion)
-{
-    Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
-    Set-Location -Path $appVersion
+#region Execution
 
+Set-Location -Path $appScriptPath
+If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
+Set-Location -Path $appVersion
+
+If ($appVersion -gt $appInstalledVersion)
+{
+    # Detect if setup file is present
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
     {
         # Get Citrix account credentials
@@ -337,6 +348,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         # Download latest version
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixCredentialsUserName -CitrixPassword $CitrixPassword -dlPath .\
+        # Expand archive
         Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
         # Move the policy definitions files
         Copy-File -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptPath\PolicyDefinitions" -Recurse
@@ -352,9 +364,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcesses | Stop-Process -Force
+    # Uninstall previous versions
+    If ($appInstalledFile)
+    {
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Get-Process -Name $appProcesses | Stop-Process -Force
+        Execute-Process -Path $appUninstall -Parameters $appUninstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
+    }
 
+    # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters
 
@@ -378,6 +396,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMRSAV.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMUIAgent.exe" -Force
 
+    # Remove logs and cache files
+    Get-Process -Name $appProcesses | Stop-Process -Force
+    Remove-File -Path "$env:ProgramData\Citrix\WEM\*.log"
+    Remove-File -Path "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent\Local Databases\*.*"
+
     # Configure application shortcut
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Agent Log Parser.lnk" -TargetPath "$appDestination\Agent Log Parser.exe"
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Resultant Actions Viewer.lnk" -TargetPath "$appDestination\VUEMRSAV.exe"
@@ -391,7 +414,111 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
 }
-Else
+ElseIf (($appVersion -eq $appInstalledVersion) -and ($appInstalledFile -eq $false))
 {
+    Write-Log -Message "$appVendor $appName $appInstalledVersion installation is broken. It will now be reinstalled!" -Severity 2 -LogType CMTrace -WriteHost $True
+
+    # Detect if setup file is present
+    If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
+    {
+        # Get Citrix account credentials
+        [bool]$isCitrixCredentialsStored = [bool](Find-Credential -Filter "*$citrixAccount")
+        If ($isCitrixCredentialsStored)
+        {
+            Write-Host -Object "Stored credentials found for Citrix Account." -ForegroundColor Green
+            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixAccount -Store)
+            $CitrixCredentialsUserName = $CitrixCredentials.UserName
+            $CitrixCredentialsPassword = $CitrixCredentials.Password
+        }
+        Else
+        {
+            Write-Host -Object "Please enter your Citrix credentials" -ForegroundColor Green
+            $null = BetterCredentials\Get-Credential -UserName $citrixAccount -Store
+            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixAccount -Store)
+            $CitrixCredentialsUserName = $CitrixCredentials.UserName
+            $CitrixCredentialsPassword = $CitrixCredentials.Password
+        }
+
+        # Decrypt Citrix account password
+        $CitrixPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsPassword))
+
+        # Download latest version
+        Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixCredentialsUserName -CitrixPassword $CitrixPassword -dlPath .\
+        # Expand archive
+        Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
+        # Move the policy definitions files
+        Copy-File -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptPath\PolicyDefinitions" -Recurse
+        Copy-File -Path "$appScriptPath\$appVersion\Configuration Templates" -Destination "$appScriptPath" -Recurse
+
+        # Cleanup
+        Remove-Folder -Path "$appScriptPath\$appVersion\Agent Group Policies"
+        Remove-Folder -Path "$appScriptPath\$appVersion\Configuration Templates"
+        Remove-File -Path $appZip
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    # Uninstall previous versions
+    If ($appInstalledFile)
+    {
+        Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Get-Process -Name $appProcesses | Stop-Process -Force
+        Execute-Process -Path $appUninstall -Parameters $appUninstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
+    }
+
+    # Install latest version
+    Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Execute-Process -Path ".\$appSetup" -Parameters $appInstallParameters
+
+    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+    # Add Windows Defender exclusion(s) - https://docs.citrix.com/en-us/tech-zone/build/tech-papers/antivirus-best-practices.html
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\AgentCacheUtility.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\AgentGroupPolicyUtility.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\AppInfoViewer.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\Agent Log Parser.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\AppsMgmtUtil.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\Citrix.Wem.Agent.EnrollmentUtility.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\Citrix.Wem.Agent.Service.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\Citrix.Wem.Agent.LogonService.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\PrnsMgmtUtil.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMAppCmd.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMAppCmdDbg.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMAppHide.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMCmdAgent.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMMaintMsg.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMRSAV.exe" -Force
+    Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMUIAgent.exe" -Force
+
+    # Remove logs and cache files
+    Remove-File -Path "$env:ProgramData\Citrix\WEM\*.log"
+
+    # Configure application shortcut
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Agent Log Parser.lnk" -TargetPath "$appDestination\Agent Log Parser.exe"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Resultant Actions Viewer.lnk" -TargetPath "$appDestination\VUEMRSAV.exe"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Application Info Viewer.lnk" -TargetPath "$appDestination\AppInfoViewer.exe"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Manage Applications.lnk" -TargetPath "$appDestination\AppsMgmtUtil.exe"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Manage Printers.lnk" -TargetPath "$appDestination\PrnsMgmtUtil.exe"
+    Remove-File -Path "$envCommonStartMenuPrograms\$appVendor\WEM Enrollment Registration Utility.lnk" -ContinueOnError $True
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Enrollment Registration Utility.lnk" -TargetPath "$appDestination\Citrix.Wem.Agent.Enrollment.RegUtility.exe"
+
+    Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
+    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
+}
+ElseIf (($appVersion -eq $appInstalledVersion) -and ($appInstalledFile -eq $true))
+{
+    # Stop processes
+    Get-Process -Name $appProcesses | Stop-Process -Force
+
+    # Remove logs and cache files
+    Remove-File -Path "$env:ProgramData\Citrix\WEM\*.log"
+    Remove-File -Path "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent\Local Databases\*.*"
+
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
+
+#endregion

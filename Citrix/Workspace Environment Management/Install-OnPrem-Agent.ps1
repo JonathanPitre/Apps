@@ -196,7 +196,7 @@ Function Get-CitrixWEMAgent
     }
     Finally
     {
-        $RegEx = "(What’s new in )(\d{4})"
+        $RegEx = "(What\’s new in )(\d{4})"
         $Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[2].Value
 
         if ($Version)
@@ -220,23 +220,23 @@ Function Get-CitrixWEMAgent
 [string]$appName = "Workspace Environment Management Agent"
 [array]$appProcesses = @( "Citrix.Wem.Agent.Service", "Citrix.Wem.Agent.LogonService", "VUEMUIAgent", "VUEMAppCmd", "VUEMCmdAgent")
 [string]$appInstallParameters = "/quiet Cloud=0" # OnPrem 0 Cloud 1
-[version]$Evergreen = Get-CitrixWEMAgent
-[string]$appShortVersion = $Evergreen.Version
+[array]$Evergreen = Get-CitrixWEMAgent
+[int]$appShortVersion = $Evergreen.Version
 [string]$appSetup = "Citrix Workspace Environment Management Agent.exe"
 If (Test-Path -Path "$appScriptPath\$appShortVersion\$appSetup")
 {
-    $appVersion = Get-FileVersion -ProductVersion "$appScriptPath\$appShortVersion\$appSetup"
+    [version]$appVersion = Get-FileVersion -ProductVersion "$appScriptPath\$appShortVersion\$appSetup"
     Set-Location ..
     Rename-Item -Path "$appScriptPath\$appShortVersion" -NewName "$appScriptPath\$appVersion" -Force
-    $appVersion = (Get-ChildItem -Path "$appScriptPath\$appVendor $appName" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
+    [version]$appVersion = (Get-ChildItem -Path "$appScriptPath\$appVendor $appName" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 }
 Else
 {
-    $appVersion = (Get-ChildItem -Path "$appScriptPath\$appVendor $appName" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
+    [version]$appVersion = (Get-ChildItem -Path "$appScriptPath" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 }
-$appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
+[string]$appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
 [boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
+[version]$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
 [string]$appInstalledFile = (Test-Path -Path "$appDestination\Citrix.Wem.Agent.Service.exe")
 [string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor $appName").UninstallString
 [string]$appUninstall = ($appUninstallString).Split("/")[0].Trim().Trim("""")
@@ -251,7 +251,7 @@ $appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").D
 Set-Location -Path $appScriptPath
 Set-Location -Path $appVersion
 
-If (($isAppInstalled -eq $false) -or ([version]$appVersion -gt [version]$appInstalledVersion))
+If (($isAppInstalled -eq $false) -or ($appVersion -gt $appInstalledVersion))
 {
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
     {
@@ -310,6 +310,7 @@ If (($isAppInstalled -eq $false) -or ([version]$appVersion -gt [version]$appInst
         Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Citrix\Workspace Environment Management Agent\VUEMUIAgent.exe" -Force
 
         # Remove logs and cache files
+        Get-Process -Name $appProcesses | Stop-Process -Force
         Remove-File -Path "$env:ProgramData\Citrix\WEM\*.log"
         Remove-File -Path "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent\Local Databases\*.*"
 
@@ -327,7 +328,7 @@ If (($isAppInstalled -eq $false) -or ([version]$appVersion -gt [version]$appInst
         Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
     }
 }
-ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInstalledFile -eq $false))
+ElseIf (($appVersion -eq $appInstalledVersion) -and ($appInstalledFile -eq $false))
 {
     Write-Log -Message "$appVendor $appName $appInstalledVersion installation is broken. It will now be reinstalled!" -Severity 2 -LogType CMTrace -WriteHost $True
 
@@ -405,7 +406,7 @@ ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInsta
         Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
     }
 }
-ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInstalledFile -eq $true))
+ElseIf (($appVersion -eq $appInstalledVersion) -and ($appInstalledFile -eq $true))
 {
     # Stop processes
     Get-Process -Name $appProcesses | Stop-Process -Force
