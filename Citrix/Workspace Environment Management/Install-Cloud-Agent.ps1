@@ -296,13 +296,13 @@ Function Get-CitrixDownload
 [string]$appInstallParameters = "/quiet Cloud=1" # OnPrem 0 Cloud 1
 [int]$appDlNumber = "16122"
 [array]$Evergreen = Get-CitrixWEMAgent
-[version]$appVersion = $Evergreen.Version
+[string]$appVersion = $Evergreen.Version
 [string]$appURL = $Evergreen.URI
 [string]$appZip = Split-Path -Path $appURL -Leaf
 [string]$appSetup = "Citrix Workspace Environment Management Agent.exe"
 [string]$appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
 [boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-[version]$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
+[string]$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
 [string]$appInstalledFile = (Test-Path -Path "$appDestination\Citrix.Wem.Agent.Service.exe")
 [string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor $appName").UninstallString
 [string]$appUninstall = ($appUninstallString).Split("/")[0].Trim().Trim("""")
@@ -319,7 +319,7 @@ Set-Location -Path $appScriptPath
 If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
 Set-Location -Path $appVersion
 
-If ($appVersion -gt $appInstalledVersion)
+If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     # Detect if setup file is present
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
@@ -414,7 +414,7 @@ If ($appVersion -gt $appInstalledVersion)
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
 }
-ElseIf (($appVersion -eq $appInstalledVersion) -and ($appInstalledFile -eq $false))
+ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInstalledFile -eq $false))
 {
     Write-Log -Message "$appVendor $appName $appInstalledVersion installation is broken. It will now be reinstalled!" -Severity 2 -LogType CMTrace -WriteHost $True
 
@@ -509,7 +509,7 @@ ElseIf (($appVersion -eq $appInstalledVersion) -and ($appInstalledFile -eq $fals
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
 }
-ElseIf (($appVersion -eq $appInstalledVersion) -and ($appInstalledFile -eq $true))
+ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInstalledFile -eq $true))
 {
     # Stop processes
     Get-Process -Name $appProcesses | Stop-Process -Force

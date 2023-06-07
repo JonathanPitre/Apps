@@ -225,14 +225,14 @@ Function Get-CitrixWEMAgent
 [string]$appSetup = "Citrix Workspace Environment Management Agent.exe"
 If (Test-Path -Path "$appScriptPath\$appShortVersion\$appSetup")
 {
-    [version]$appVersion = Get-FileVersion -ProductVersion "$appScriptPath\$appShortVersion\$appSetup"
+    [string]$appVersion = Get-FileVersion -ProductVersion "$appScriptPath\$appShortVersion\$appSetup"
     Set-Location ..
     Rename-Item -Path "$appScriptPath\$appShortVersion" -NewName "$appScriptPath\$appVersion" -Force
-    [version]$appVersion = (Get-ChildItem -Path "$appScriptPath\$appVendor $appName" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
+    [string]$appVersion = (Get-ChildItem -Path "$appScriptPath\$appVendor $appName" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 }
 Else
 {
-    [version]$appVersion = (Get-ChildItem -Path "$appScriptPath" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
+    [string]$appVersion = (Get-ChildItem -Path "$appScriptPath" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 }
 [string]$appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
 [boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
@@ -251,7 +251,7 @@ Else
 Set-Location -Path $appScriptPath
 Set-Location -Path $appVersion
 
-If (($isAppInstalled -eq $false) -or ($appVersion -gt $appInstalledVersion))
+If (($isAppInstalled -eq $false) -or ([version]$appVersion -gt [version]$appInstalledVersion))
 {
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
     {
@@ -328,7 +328,7 @@ If (($isAppInstalled -eq $false) -or ($appVersion -gt $appInstalledVersion))
         Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
     }
 }
-ElseIf (($appVersion -eq $appInstalledVersion) -and ($appInstalledFile -eq $false))
+ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInstalledFile -eq $false))
 {
     Write-Log -Message "$appVendor $appName $appInstalledVersion installation is broken. It will now be reinstalled!" -Severity 2 -LogType CMTrace -WriteHost $True
 
@@ -355,7 +355,7 @@ ElseIf (($appVersion -eq $appInstalledVersion) -and ($appInstalledFile -eq $fals
         Remove-File -Path "$appScriptPath\$appVersion\Citrix Workspace Environment Management Infrastructure Services.exe"
 
         # Get real file version
-        $appVersion = Get-FileVersion -File "$appScriptPath\$appVersion\$appSetup"
+        [string]$appVersion = Get-FileVersion -File "$appScriptPath\$appVersion\$appSetup"
 
         # Uninstall previous versions
         If ($appInstalledFile)
@@ -406,7 +406,7 @@ ElseIf (($appVersion -eq $appInstalledVersion) -and ($appInstalledFile -eq $fals
         Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
     }
 }
-ElseIf (($appVersion -eq $appInstalledVersion) -and ($appInstalledFile -eq $true))
+ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInstalledFile -eq $true))
 {
     # Stop processes
     Get-Process -Name $appProcesses | Stop-Process -Force
