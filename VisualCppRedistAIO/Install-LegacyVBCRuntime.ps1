@@ -157,7 +157,7 @@ Function Initialize-Module
             {
                 # If the module is not imported, not available and not in the online gallery then abort
                 Write-Host -Object "Module $Module was not imported, not available and not in an online gallery, exiting." -ForegroundColor Red
-                EXIT 1
+                Exit 1
             }
         }
     }
