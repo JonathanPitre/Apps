@@ -177,31 +177,6 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
-
-Function Get-MicrosoftVisualCPlusPlusVersion
-{
-    [OutputType([System.Management.Automation.PSObject])]
-    [CmdletBinding()]
-    Param ()
-    $DownloadURL = "https://community.chocolatey.org/packages/vcredist140"
-
-    Try
-    {
-        $DownloadText = (Invoke-WebRequest -Uri $DownloadURL -DisableKeepAlive -UseBasicParsing).RawContent
-    }
-    Catch
-    {
-        Throw "Failed to connect to URL: $DownloadURL with error $_."
-        Break
-    }
-    Finally
-    {
-        $RegEx = "(Microsoft Visual C\+\+ Redistributable for Visual Studio 2015\-\d{4}) ((?:\d+\.)+(?:\d+))"
-        $Version = (($DownloadText | Select-String -Pattern $RegEx -AllMatches).Matches.Groups[2].Value) + ".0"
-    }
-    return $Version
-}
-
 #endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
@@ -211,8 +186,7 @@ $appName = "Visual C++"
 $appMajorVersion = ( Get-VcList | Select-Object -Last 1).Release
 $VcList = Get-VcList
 $VcListVersion = ($VcList | Where-Object { $_.Release -eq $appMajorVersion -and $_.Architecture -eq "x64" }).Version
-#$appVersion = $VcListVersion.Substring(0, $VcListVersion.Length - 2)
-$appVersion = Get-MicrosoftVisualCPlusPlusVersion
+$appVersion = $VcListVersion
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor 2015-$appName $appMajorVersion")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName 2015-$appMajorVersion").DisplayVersion | Select-Object -First 1
 
