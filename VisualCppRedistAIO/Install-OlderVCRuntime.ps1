@@ -195,7 +195,7 @@ Function Get-MicrosoftVisualCPlusPlusVersion
     }
     Finally
     {
-        $RegEx = "(2013: )((?:\d+\.)+(?:\d+))"
+        $RegEx = "(2010: )((?:\d+\.)+(?:\d+))"
         $Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[2].Value
     }
     return $Version
@@ -206,7 +206,7 @@ Function Get-MicrosoftVisualCPlusPlusVersion
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appName = "VisualCppRedistAIO"
-$appName2 = "Microsoft Visual C++ 2013"
+$appName2 = "Microsoft Visual C++ 2010"
 $appVersion = Get-MicrosoftVisualCPlusPlusVersion
 $appVersion = $appVersion.Substring(0, $appVersion.Length - 4)
 $appArchitecture = "x64"
@@ -215,7 +215,7 @@ $appSetupVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf
 $appSetup = "VisualCppRedist_AIO_x86_x64.exe"
-$appInstallParameters = "/ai58X23"
+$appInstallParameters = "/ai58X"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName2")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName2").DisplayVersion | Select-Object -First 1
 
@@ -240,15 +240,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
 
     # Install latest version
-    Write-Log -Message "Installing Microsoft Visual C++ 2005, 2008, 2010, 2012 and 2013 runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing Microsoft Visual C++ 2005, 2008 and 2010 runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
 
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "Microsoft Visual C++ 2005, 2008, 2010, 2012 and 2013 runtimes were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Microsoft Visual C++ 2005, 2008 and 2010 runtimes were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
 {
-    Write-Log -Message "Microsoft Visual C++ 2013 runtimes are already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Microsoft Visual C++ 2010 runtimes are already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
