@@ -237,6 +237,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    <#
     If (-Not(Test-Path -Path $appScriptPath\*.iglang))
     {
         Write-Log -Message "Downloading $appName language file..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -258,7 +259,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
+    #>
 
+    # Install latest version
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup
 
