@@ -87,7 +87,7 @@
       <Item key="SinglePageFormats" value="*.heic;*.heif;*.psd;" />
       <Item key="KeyComboActions" value="LeftRight:PrevNextImage;PageUpDown:PrevNextImage;SpaceBack:PauseSlideshow;UpDown:PanUpDown;" />
       <Item key="BackgroundColor" value="#232A30" />
-      <Item key="Language" value="French.v8.7.iglang" />
+      <Item key="Language" value="French.iglang" />
       <Item key="Theme" value="Kobe" />
     </Content>
   </Configuration>
