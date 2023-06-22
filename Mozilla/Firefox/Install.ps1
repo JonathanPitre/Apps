@@ -187,23 +187,24 @@ $appProcesses = @("firefox", "maintenanceservice")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
 $appChannel = "LATEST"
-$appAddParameters = "TASKBAR_SHORTCUT=false DESKTOP_SHORTCUT=false START_MENU_SHORTCUT=true INSTALL_MAINTENANCE_SERVICE=false PREVENT_REBOOT_REQUIRED=true REGISTER_DEFAULT_AGENT=false"
+$appAddParameters = "TaskbarShortcut=false DesktopShortcut=false StartMenuShortcut=true PrivateBrowsingShortcut=false MaintenanceService=false PreventRebootRequired=true RegisterDefaultAgent=false"
 [string]$currentUILanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2)
 #If ($currentUILanguage -eq "EN") { $appLanguage = "en-US" } Else { $appLanguage = $currentUILanguage} #EN is not a valid language
 $appLanguage = "fr" # Must be lowercase
-$Evergreen = Get-EvergreenApp -Name MozillaFirefox -AppParams @{Language=$appLanguage} | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Channel -match $appChannel -and $_.Language -eq "$appLanguage" -and $_.Type -eq "msi"}
+$Evergreen = Get-EvergreenApp -Name MozillaFirefox -AppParams @{Language = $appLanguage } | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Channel -match $appChannel -and $_.Language -eq "$appLanguage" -and $_.Type -eq "msi" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appSetup = (Split-Path -Path $appURL -Leaf).Replace("%20"," ")
+$appSetup = (Split-Path -Path $appURL -Leaf).Replace("%20", " ")
 $appDestination = "$env:ProgramFiles\Mozilla Firefox"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ([version]$appVersion -gt [version]$appInstalledVersion) {
+If ([version]$appVersion -gt [version]$appInstalledVersion)
+{
     Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
     # Delete machine policies to prevent issue during installation
@@ -212,18 +213,21 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
-    If ($IsAppInstalled) {
+    If ($IsAppInstalled)
+    {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Remove-MSIApplications -Name "$appVendor $appName" -Parameters $appInstallParameters
         Execute-Process -Path "$appDestination\uninstall\helper.exe" -Parameters "/S" -WindowStyle Hidden -PassThru
     }
 
     # Download latest setup file(s)
-    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup)) {
+    If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
+    {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
     }
-    Else {
+    Else
+    {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
@@ -252,7 +256,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "OverridePostUpdatePag" -Value "" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "OverridePostUpdatePag" -Value "" -Type String
 
-    # Creates a pinned taskbar icons for all users
+    # Configure application shortcut
     #New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appName" -WorkingDirectory "$appDestination"
 
     # Go back to the parent folder
@@ -260,6 +264,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
-Else {
+Else
+{
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTRace -WriteHost $True
 }
