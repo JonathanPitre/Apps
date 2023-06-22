@@ -185,7 +185,7 @@ $appName = "ImageGlass"
 $appProcesses = @("ImageGlass")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
-$Evergreen = Get-EvergreenApp -Name $appName | Where-Object { $_.Architecture -eq $appArchitecture -and $_.URI -notmatch "deleted" }
+$Evergreen = Get-EvergreenApp -Name $appName | Where-Object { $_.Architecture -eq $appArchitecture -and $_.URI -notmatch "delete*" }
 $appVersion = $Evergreen.Version
 $appShortVersion = $appVersion.Substring(0, 3)
 $appURL = $Evergreen.URI
@@ -269,10 +269,10 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "NoNewAppAlert" -Type DWord -Value "1"
 
     # Register file associations for images - https://imageglass.org/docs/command-line-utilities
-    Execute-Process -Path "$appDestination\igtasks.exe" -Parameters "regassociations *.avif;*.b64;*.bmp;*.cur;*.cut;*.dds;*.dib;*.emf;*.exif;*.gif;*.heic;*.heif;*.ico;*.jfif;*.jp2;*.jpe;*.jpeg;*.jpg;*.jxl;*.pbm;*.pcx;*.pgm;*.png;*.ppm;*.psb;*.svg;*.tif;*.tiff;*.webp;*.wmf;*.wpg;*.xbm;*.xpm;*.exr;*.hdr;*.psd;*.tga;*.3fr;*.ari;*.arw;*.bay;*.crw;*.cr2;*.cr3;*.cap;*.dcs;*.dcr;*.dng;*.drf;*.eip;*.erf;*.fff;*.gpr;*.iiq;*.k25;*.kdc;*.mdc;*.mef;*.mos;*.mrw;*.nef;*.nrw;*.obm;*.orf;*.pef;*.ptx;*.pxn;*.qoi;*.r3d;*.raf;*.raw;*.rwl;*.rw2;*.rwz;*.sr2;*.srf;*.srw;*.x3f;*.fits;*.xv;*.mjpeg;*.viff; --no-ui" -IgnoreExitCodes *
+    Execute-Process -Path "$appDestination\igtasks.exe" -Parameters "regassociations *.avif;*.b64;*.bmp;*.cur;*.cut;*.dds;*.dib;*.emf;*.exif;*.gif;*.heic;*.heif;*.ico;*.jfif;*.jp2;*.jpe;*.jpeg;*.jpg;*.jxl;*.pbm;*.pcx;*.pgm;*.png;*.ppm;*.psb;*.svg;*.tif;*.tiff;*.webp;*.wmf;*.wpg;*.xbm;*.xpm;*.exr;*.hdr;*.psd;*.tga;*.3fr;*.ari;*.arw;*.bay;*.crw;*.cr2;*.cr3;*.cap;*.dcs;*.dcr;*.dng;*.drf;*.eip;*.erf;*.fff;*.gpr;*.iiq;*.k25;*.kdc;*.mdc;*.mef;*.mos;*.mrw;*.nef;*.nrw;*.obm;*.orf;*.pef;*.ptx;*.pxn;*.qoi;*.r3d;*.raf;*.raw;*.rwl;*.rw2;*.rwz;*.sr2;*.srf;*.srw;*.x3f;*.fits;*.xv;*.mjpeg;*.viff --no-ui" -IgnoreExitCodes *
 
     # Install language pack - https://imageglass.org/docs/command-line-utilities
-    Copy-File -Path $appScriptPath\*$appShortVersion.iglang -Destination $appDestination\Languages
+    #Copy-File -Path $appScriptPath\*$appShortVersion.iglang -Destination $appDestination\Languages
 
     # Copy admin configs - https://imageglass.org/docs/app-configs
     Copy-File -Path $appScriptPath\*.xml -Destination $appDestination
@@ -282,7 +282,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Configure application shortcut
     Remove-File -Path $envCommonDesktop\$appName.lnk -ContinueOnError $True
-    Copy-File -Path $envCommonStartMenuPrograms\$appName\$appName.lnk -Destination $envCommonStartMenuPrograms -ContinueOnError $True
+    Copy-File -Path "$envAppData\Microsoft\Windows\Start Menu\Programs\$appName\$appName.lnk" -Destination $envCommonStartMenuPrograms -ContinueOnError $True
+    Remove-Folder -Path "$envAppData\Microsoft\Windows\Start Menu\Programs\$appName" -ContinueOnError $True
     Remove-Folder -Path $envCommonStartMenuPrograms\$appName -ContinueOnError $True
 
     # Go back to the parent folder
