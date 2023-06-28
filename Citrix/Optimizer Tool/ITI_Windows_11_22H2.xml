@@ -962,6 +962,17 @@ https://support.citrix.com/article/CTX494488</description>
 				</params>
 			</action>
 		</entry>
+		<entry>
+			<name>Microsoft.GetStarted</name>
+			<description>Learn about new Windows 11 features, essential apps, and the redesigned Microsoft Store</description>
+			<execute>1</execute>
+			<action>
+				<plugin>UWP</plugin>
+				<params>
+					<name>Microsoft.GetStarted</name>
+				</params>
+			</action>
+		</entry>
 	</group>
 	<group>
 		<id>DisableScheduledTasks</id>

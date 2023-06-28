@@ -446,6 +446,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Copy-File -Path "$envCommonStartMenuPrograms\$appVendor $appName.lnk" -Destination "$envCommonStartMenuPrograms\$appName.lnk" -ContinueFileCopyOnError $True
     Remove-File -Path "$envCommonStartMenuPrograms\$appVendor $appName.lnk" -ContinueOnError $True
     Rename-Item -Path "$envCommonStartMenuPrograms\$appVendor $appName (work or school).lnk" -NewName "$envCommonStartMenuPrograms\$appName.lnk" -Force
+    Remove-File -Path "$envCommonStartMenuPrograms\$appVendor $appName (work or school).lnk" -ContinueOnError $True
     Remove-Folder -Path "$envCommonStartMenuPrograms\$appVendor Corporation" -ContinueOnError $True
 
     # Fix Microsoft Outlook's Teams Presence issue
@@ -554,6 +555,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Microsoft\Teams\Update.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Microsoft\Teams\current\Squirrel.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles(x86)%\Microsoft\Teams\current\Teams.exe" -Force
+    Add-MpPreference -ExclusionPath "%ProgramFiles(x86)%\Microsoft\TeamsMeetingAddin" -Force
 
     # Add Windows Firewall rule(s) - https://docs.microsoft.com/en-us/microsoftteams/get-clients#windows
     If (-Not(Get-NetFirewallRule -DisplayName "$appVendor $appName"))
