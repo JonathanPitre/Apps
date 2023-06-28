@@ -242,6 +242,7 @@ If (Test-Path -Path "$envWinDir\ccmsetup\ccmsetup.exe")
 
     # Remove Start Menu shortcut
     Remove-Item -Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\Microsoft Endpoint Manager" -Force -Confirm:$false -Recurse -Verbose
+    Remove-Item -Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\\Microsoft Configuration Manager" -Force -Confirm:$false -Recurse -Verbose
 
     # Remove scheduled task folder
 
