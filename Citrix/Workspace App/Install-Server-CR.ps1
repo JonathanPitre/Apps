@@ -192,7 +192,7 @@ $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\ICA Client"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx)
+[boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx).DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
