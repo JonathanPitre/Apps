@@ -355,7 +355,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Configure application shortcut
     Remove-Item -Path "$env:PUBLIC\Desktop\$appShortName VDI.lnk" -Force
     Move-Item -Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\$appShortName VDI\$appShortName VDI.lnk" -Destination "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\$appShortName VDI.lnk" -Force
-    Remove-Item -Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\$appShortName VDI\$appShortName VDI" -Force
+    Remove-Item -Path "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\$appShortName VDI" -Force
 
     # Go back to the parent folder
     Set-Location ..
