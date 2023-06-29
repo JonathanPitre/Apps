@@ -71,7 +71,7 @@ Function Get-ScriptName
         ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
         ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
         ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
-        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        ElseIf ($MyInvocation.PSCommandPath) { Split-Path -Path $MyInvocation.PSCommandPath -Leaf } # Windows PowerShell
         Else
         {
             Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
@@ -172,11 +172,21 @@ Foreach ($Module in $Modules)
     Initialize-Module -Module $Module
 }
 
+# Set JSON file path
+[string]$scriptParametersFile = "$appScriptPath\parameters.json"
+# Read script parameters from JSON file
+$scriptParameters = Get-Content -Path $scriptParametersFile | ConvertFrom-Json
+# For each object in the JSON file, create a powershell variable
+$scriptParameters.PSObject.Properties | ForEach-Object {
+    New-Variable -Name $_.Name -Value $_.Value -Force
+}
+
 #endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Function Get-CitrixWEMAgent
 {
     [OutputType([System.Management.Automation.PSObject])]
@@ -215,41 +225,42 @@ Function Get-CitrixDownload
 {
     <#
 .SYNOPSIS
-  Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
+    Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
 .DESCRIPTION
-  Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
-  Ryan Butler 2/6/2020 https://github.com/ryancbutler/Citrix/tree/master/XenDesktop/AutoDownload
+    Downloads a Citrix VDA or ISO from Citrix.com utilizing authentication
+    Ryan Butler 2/6/2020 https://github.com/ryancbutler/Citrix/tree/master/XenDesktop/AutoDownload
 .PARAMETER dlNumber
-  Number assigned to binary download
+    Number assigned to binary download
 .PARAMETER dlEXE
-  File to be downloaded
+    File to be downloaded
 .PARAMETER dlPath
-  Path to store downloaded file. Must contain following slash (C:\Temp\)
+    Path to store downloaded file. Must contain following slash (C:\Temp\)
 .PARAMETER CitrixUserName
-  Citrix.com username
+    Citrix.com username
 .PARAMETER CitrixPassword
-  Citrix.com password
+    Citrix.com password
 .EXAMPLE
-  Get-CitrixDownload -dlNumber "16834" -dlEXE "Citrix_Virtual_Apps_and_Desktops_7_1912.iso" -CitrixUserName "MyCitrixUsername" -CitrixPassword "MyCitrixPassword" -dlPath "C:\Temp\"
+    Get-CitrixDownload -dlNumber "16834" -dlEXE "Citrix_Virtual_Apps_and_Desktops_7_1912.iso" -CitrixUserName "MyCitrixUsername" -CitrixPassword "MyCitrixPassword" -dlPath "C:\Temp\"
 #>
     Param(
         [Parameter(Mandatory = $true)]$dlNumber,
         [Parameter(Mandatory = $true)]$dlEXE,
         [Parameter(Mandatory = $true)]$dlPath,
-        [Parameter(Mandatory = $true)]$CitrixUserName,
-        [Parameter(Mandatory = $true)]$CitrixPassword
+        [Parameter(Mandatory = $true)]$citrixUserName,
+        [Parameter(Mandatory = $true)]$citrixPassword
     )
-    #Initialize Session
+
+    # Initialize Session
     Invoke-WebRequest "https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response" -SessionVariable websession -UseBasicParsing | Out-Null
 
-    #Set Form
+    # Set Form
     $Form = @{
         "persistent" = "on"
-        "userName"   = $CitrixUserName
-        "password"   = $CitrixPassword
+        "userName"   = $citrixUserName
+        "password"   = $citrixPassword
     }
 
-    #Authenticate
+    # Authenticate
     Try
     {
         Invoke-WebRequest -Uri ("https://identity.citrix.com/Utility/STS/Sign-In?ReturnUrl=%2fUtility%2fSTS%2fsaml20%2fpost-binding-response") -WebSession $websession -Method POST -Body $form -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -ErrorAction Stop | Out-Null
@@ -279,7 +290,7 @@ Function Get-CitrixDownload
     }
 
     $OutFile = ($dlPath + $dlEXE)
-    #Download
+    # Download
     Invoke-WebRequest -Uri $dlURL -WebSession $WebSession -Method POST -Body $Webform -ContentType "application/x-www-form-urlencoded" -UseBasicParsing -OutFile $OutFile
     return $OutFile
 }
@@ -296,18 +307,17 @@ Function Get-CitrixDownload
 [string]$appInstallParameters = "/quiet Cloud=1" # OnPrem 0 Cloud 1
 [int]$appDlNumber = "16122"
 [array]$Evergreen = Get-CitrixWEMAgent
-[string]$appVersion = $Evergreen.Version
+$appVersion = $Evergreen.Version
 [string]$appURL = $Evergreen.URI
 [string]$appZip = Split-Path -Path $appURL -Leaf
 [string]$appSetup = "Citrix Workspace Environment Management Agent.exe"
 [string]$appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
 [boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-[string]$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
+$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
 [string]$appInstalledFile = (Test-Path -Path "$appDestination\Citrix.Wem.Agent.Service.exe")
 [string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor $appName").UninstallString
 [string]$appUninstall = ($appUninstallString).Split('"')[1]
 [string]$appUninstallParameters = "/uninstall /quiet /noreboot"
-[string]$citrixAccount = "myCitrixAccount"
 
 #endregion
 
@@ -319,38 +329,53 @@ Set-Location -Path $appScriptPath
 If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
 Set-Location -Path $appVersion
 
-If ([version]$appVersion -gt [version]$appInstalledVersion)
+If (($isAppInstalled -eq $false) -or ([version]$appVersion -gt [version]$appInstalledVersion))
 {
     # Detect if setup file is present
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
     {
         # Get Citrix account credentials
-        [bool]$isCitrixCredentialsStored = [bool](Find-Credential -Filter "*$citrixAccount")
+        If ($null -eq $citrixUserName)
+        {
+            $citrixUserName = "myCitrixUserName"
+        }
+        Else
+        {
+            [bool]$isCitrixCredentialsStored = [bool](Find-Credential -Filter "*$citrixUserName")
+        }
+        # Read stored credentials
         If ($isCitrixCredentialsStored)
         {
             Write-Host -Object "Stored credentials found for Citrix Account." -ForegroundColor Green
-            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixAccount -Store)
-            $CitrixCredentialsUserName = $CitrixCredentials.UserName
+            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixUserName -Store)
+            $citrixUserName = $CitrixCredentials.UserName
             $CitrixCredentialsPassword = $CitrixCredentials.Password
         }
         Else
         {
+            # Ask for credentials
             Write-Host -Object "Please enter your Citrix credentials" -ForegroundColor Green
-            $null = BetterCredentials\Get-Credential -UserName $citrixAccount -Store
-            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixAccount -Store)
-            $CitrixCredentialsUserName = $CitrixCredentials.UserName
+            $null = BetterCredentials\Get-Credential -UserName $citrixUserName -Store
+            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixUserName -Store)
+            $citrixUserName = $CitrixCredentials.UserName
             $CitrixCredentialsPassword = $CitrixCredentials.Password
+            # Create JSON object to store citrixUserName
+            $jsonObj = @{
+                "citrixUserName" = "$citrixUserName"
+            }
+            # Convert object to JSON
+            $json = $jsonObj | ConvertTo-Json
+            # Save JSON to file
+            $json | Set-Content -Path $scriptParametersFile -Force
+            Write-Host -Object "Citrix credentials were saved!" -ForegroundColor Green
         }
 
-        # Decrypt Citrix account username
-        $CitrixUserName = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsUserName))
-
         # Decrypt Citrix account password
-        $CitrixPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsPassword))
+        $citrixPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsPassword))
 
         # Download latest version
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
+        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $citrixUserName -CitrixPassword $citrixPassword -dlPath .\
         # Expand archive
         Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
         # Move the policy definitions files
@@ -425,32 +450,47 @@ ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInsta
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
     {
         # Get Citrix account credentials
-        [bool]$isCitrixCredentialsStored = [bool](Find-Credential -Filter "*$citrixAccount")
+        If ($null -eq $citrixUserName)
+        {
+            $citrixUserName = "myCitrixUserName"
+        }
+        Else
+        {
+            [bool]$isCitrixCredentialsStored = [bool](Find-Credential -Filter "*$citrixUserName")
+        }
+        # Read stored credentials
         If ($isCitrixCredentialsStored)
         {
             Write-Host -Object "Stored credentials found for Citrix Account." -ForegroundColor Green
-            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixAccount -Store)
-            $CitrixCredentialsUserName = $CitrixCredentials.UserName
+            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixUserName -Store)
+            $citrixUserName = $CitrixCredentials.UserName
             $CitrixCredentialsPassword = $CitrixCredentials.Password
         }
         Else
         {
+            # Ask for credentials
             Write-Host -Object "Please enter your Citrix credentials" -ForegroundColor Green
-            $null = BetterCredentials\Get-Credential -UserName $citrixAccount -Store
-            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixAccount -Store)
-            $CitrixCredentialsUserName = $CitrixCredentials.UserName
+            $null = BetterCredentials\Get-Credential -UserName $citrixUserName -Store
+            $CitrixCredentials = (BetterCredentials\Get-Credential -UserName $citrixUserName -Store)
+            $citrixUserName = $CitrixCredentials.UserName
             $CitrixCredentialsPassword = $CitrixCredentials.Password
+            # Create JSON object to store citrixUserName
+            $jsonObj = @{
+                "citrixUserName" = "$citrixUserName"
+            }
+            # Convert object to JSON
+            $json = $jsonObj | ConvertTo-Json
+            # Save JSON to file
+            $json | Set-Content -Path $scriptParametersFile -Force
+            Write-Host -Object "Citrix credentials were saved!" -ForegroundColor Green
         }
 
-        # Decrypt Citrix account username
-        $CitrixUserName = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsUserName))
-
         # Decrypt Citrix account password
-        $CitrixPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsPassword))
+        $citrixPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsPassword))
 
         # Download latest version
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
+        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $citrixUserName -CitrixPassword $citrixPassword -dlPath .\
         # Expand archive
         Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
         # Move the policy definitions files
