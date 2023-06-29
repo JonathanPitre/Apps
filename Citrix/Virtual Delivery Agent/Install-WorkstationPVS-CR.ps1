@@ -71,7 +71,7 @@ Function Get-ScriptName
         ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
         ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
         ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
-        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        ElseIf ($MyInvocation.PSCommandPath) { Split-Path -Path $MyInvocation.PSCommandPath -Leaf } # Windows PowerShell
         Else
         {
             Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
@@ -104,7 +104,7 @@ Function Initialize-Module
     Else
     {
         # If module is not imported, but available on disk then import
-        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+        If ( [bool](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
 
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
@@ -157,7 +157,7 @@ Function Initialize-Module
             {
                 # If the module is not imported, not available and not in the online gallery then abort
                 Write-Host -Object "Module $Module was not imported, not available and not in an online gallery, exiting." -ForegroundColor Red
-                EXIT 1
+                Exit 1
             }
         }
     }
