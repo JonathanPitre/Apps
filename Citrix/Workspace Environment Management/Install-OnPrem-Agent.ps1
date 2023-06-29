@@ -225,18 +225,18 @@ Function Get-CitrixWEMAgent
 [string]$appSetup = "Citrix Workspace Environment Management Agent.exe"
 If (Test-Path -Path "$appScriptPath\$appShortVersion\$appSetup")
 {
-    [string]$appVersion = Get-FileVersion -ProductVersion "$appScriptPath\$appShortVersion\$appSetup"
+    $appVersion = Get-FileVersion -ProductVersion "$appScriptPath\$appShortVersion\$appSetup"
     Set-Location ..
     Rename-Item -Path "$appScriptPath\$appShortVersion" -NewName "$appScriptPath\$appVersion" -Force
-    [string]$appVersion = (Get-ChildItem -Path "$appScriptPath\$appVendor $appName" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
+    $appVersion = (Get-ChildItem -Path "$appScriptPath\$appVendor $appName" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 }
 Else
 {
-    [string]$appVersion = (Get-ChildItem -Path "$appScriptPath" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
+    $appVersion = (Get-ChildItem -Path "$appScriptPath" -Directory | Where-Object { $_.Name -match "^\d+?" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Select-Object -ExpandProperty Name)
 }
 [string]$appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
 [boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-[string]$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
+$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
 [string]$appInstalledFile = (Test-Path -Path "$appDestination\Citrix.Wem.Agent.Service.exe")
 [string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor $appName").UninstallString
 [string]$appUninstall = ($appUninstallString).Split('"')[1]
@@ -253,6 +253,7 @@ Set-Location -Path $appVersion
 
 If (($isAppInstalled -eq $false) -or ([version]$appVersion -gt [version]$appInstalledVersion))
 {
+    # Detect if setup file is present
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
     {
         Write-Log -Message "$appVendor $appName $appShortVersion MUST BE DOWNLOADED MANUALLY FIRST!" -Severity 3 -LogType CMTrace -WriteHost $True
