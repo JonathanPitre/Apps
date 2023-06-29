@@ -236,10 +236,10 @@ Else
 }
 [string]$appDestination = "${env:ProgramFiles(x86)}\Citrix\Workspace Environment Management Agent"
 [boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-[version]$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
+[string]$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
 [string]$appInstalledFile = (Test-Path -Path "$appDestination\Citrix.Wem.Agent.Service.exe")
 [string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor $appName").UninstallString
-[string]$appUninstall = ($appUninstallString).Split("/")[0].Trim().Trim("""")
+[string]$appUninstall = ($appUninstallString).Split('"')[1]
 [string]$appUninstallParameters = "/uninstall /quiet /noreboot"
 
 #endregion

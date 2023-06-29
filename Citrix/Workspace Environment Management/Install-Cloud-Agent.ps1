@@ -305,7 +305,7 @@ Function Get-CitrixDownload
 [string]$appInstalledVersion = ((Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion) | Sort-Object -Descending | Select-Object -First 1
 [string]$appInstalledFile = (Test-Path -Path "$appDestination\Citrix.Wem.Agent.Service.exe")
 [string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor $appName").UninstallString
-[string]$appUninstall = ($appUninstallString).Split("/")[0].Trim().Trim("""")
+[string]$appUninstall = ($appUninstallString).Split('"')[1]
 [string]$appUninstallParameters = "/uninstall /quiet /noreboot"
 [string]$citrixAccount = "myCitrixAccount"
 
@@ -342,12 +342,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
             $CitrixCredentialsPassword = $CitrixCredentials.Password
         }
 
+        # Decrypt Citrix account username
+        $CitrixUserName = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsUserName))
+
         # Decrypt Citrix account password
         $CitrixPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsPassword))
 
         # Download latest version
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixCredentialsUserName -CitrixPassword $CitrixPassword -dlPath .\
+        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
         # Expand archive
         Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
         # Move the policy definitions files
@@ -439,12 +442,15 @@ ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInsta
             $CitrixCredentialsPassword = $CitrixCredentials.Password
         }
 
+        # Decrypt Citrix account username
+        $CitrixUserName = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsUserName))
+
         # Decrypt Citrix account password
         $CitrixPassword = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($CitrixCredentialsPassword))
 
         # Download latest version
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixCredentialsUserName -CitrixPassword $CitrixPassword -dlPath .\
+        Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $CitrixUserName -CitrixPassword $CitrixPassword -dlPath .\
         # Expand archive
         Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
         # Move the policy definitions files
