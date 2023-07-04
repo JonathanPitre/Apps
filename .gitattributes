@@ -1,2 +1,78 @@
 # Auto detect text files and perform LF normalization
-* text=auto
+text=auto
+
+#* whitespace=cr-at-eol
+# Convert line endings to CRLF on checkout
+text eol=crlf
+
+#docs/apps.md      text eof=auto
+#docs/apps.md      text eol=crlf
+
+# PowerShell
+*.ps1              text
+*.psd1             text
+*.psm1             text
+
+# Configuration
+*.cfg              text
+*.config           text
+*.csv              text
+*.inf              text
+*.ini              text
+*.json             text
+*.xml              text
+master_preferences text
+
+# Documentation
+*.ipynb            text
+*.markdown         text
+*.mdown            text
+*.mdtext           text
+*.mdtxt            text
+*.mdwn             text
+*.mkd              text
+*.mkdn             text
+*.txt              text
+*COPYRIGHT*        text
+*README*           text
+#*.md              text
+AUTHORS            text
+CHANGELOG          text
+CHANGES            text
+CONTRIBUTING       text
+COPYING            text
+copyright          text
+INSTALL            text
+license            text
+LICENSE            text
+NEWS               text
+readme             text
+TODO               text
+
+# Git Configs
+.gitattributes     text
+.gitconfig         text
+
+# Graphics
+*.ai               binary
+*.bmp              binary
+*.eps              binary
+*.gif              binary
+*.gifv             binary
+*.ico              binary
+*.jng              binary
+*.jp2              binary
+*.jpeg             binary
+*.jpg              binary
+*.jpx              binary
+*.jxr              binary
+*.pdf              binary
+*.png              binary
+*.psb              binary
+*.psd              binary
+*.svg              text
+*.svgz             binary
+*.tif              binary
+*.tiff             binary
+*.wbmp             binary
+*.webp             binary
