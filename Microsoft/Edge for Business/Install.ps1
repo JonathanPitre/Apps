@@ -181,6 +181,8 @@ Foreach ($Module in $Modules)
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+#region Declarations
+
 $appVendor = "Microsoft"
 $appName = "Edge"
 $appLongName = "for Business"
@@ -201,7 +203,11 @@ $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
 
+#endregion
+
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+#region Execution
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -210,10 +216,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-Location -Path $appVersion
 
     # Delete machine policies to prevent issue during installation
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\Edge" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
+    If ([boolean](Get-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Edge")) { Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Recurse -ContinueOnError $True }
+    If ([boolean](Get-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate")) { Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True }
+    If ([boolean](Get-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\Edge")) { Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\Edge" -Recurse -ContinueOnError $True }
+    If ([boolean](Get-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\EdgeUpdate")) { Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True }
+
+
+
+
 
     # Uninstall previous versions
     # Edge cannot be uninstall anymore - https://answers.microsoft.com/en-us/microsoftedge/forum/all/getting-there-is-a-problem-with-this-windows/c5fb02db-6b40-4cd7-b74a-88470c71d730
@@ -241,9 +251,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-Folder -Path "$envProgramFilesX86\Microsoft\Temp" -ContinueOnError $True
 
     # Remove previous registry entries
-    Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Edge" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKCU:\Software\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{9459C573-B17A-45AE-9F64-1857B5D58CEE}" -Recurse -ContinueOnError $True
+    If ([boolean](Get-RegistryKey -Key "HKCU:\Software\Microsoft\Edge")) { Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Edge" -Recurse -ContinueOnError $True }
+    If ([boolean](Get-RegistryKey -Key "HKCU:\Software\Microsoft\EdgeUpdate")) { Remove-RegistryKey -Key "HKCU:\Software\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True }
+    If ([boolean](Get-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{9459C573-B17A-45AE-9F64-1857B5D58CEE}")) { Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Active Setup\Installed Components\{9459C573-B17A-45AE-9F64-1857B5D58CEE}" -Recurse -ContinueOnError $True }
     #Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Edge" -Recurse -ContinueOnError $True
     #Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
     #Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True
@@ -337,3 +347,5 @@ Else
 {
     Write-Log -Message "$appVendor $appName $appLongName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
+
+#endregion
