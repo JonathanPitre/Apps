@@ -1,4 +1,4 @@
-# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
+﻿# Standalone application install script for VDI environment - (C)2023 Jonathan Pitre
 
 #Requires -Version 5.1
 #Requires -RunAsAdministrator
@@ -181,25 +181,30 @@ Foreach ($Module in $Modules)
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+#region Declarations
+
 $appVendor = "Mozilla"
 $appName = "Firefox"
 $appProcesses = @("firefox", "maintenanceservice")
 $appInstallParameters = "/QB"
-$appArchitecture = "x64"
+$appArchitecture = "64"
 $appChannel = "LATEST"
-$appAddParameters = "TaskbarShortcut=false DesktopShortcut=false StartMenuShortcut=true PrivateBrowsingShortcut=false MaintenanceService=false PreventRebootRequired=true RegisterDefaultAgent=false"
-[string]$currentUILanguage = [string](Get-UICulture | Select-Object Name -ExpandProperty Name).Substring(0, 2)
-#If ($currentUILanguage -eq "EN") { $appLanguage = "en-US" } Else { $appLanguage = $currentUILanguage} #EN is not a valid language
-$appLanguage = "fr" # Must be lowercase
-$Evergreen = Get-EvergreenApp -Name MozillaFirefox -AppParams @{Language = $appLanguage } | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Channel -match $appChannel -and $_.Language -eq "$appLanguage" -and $_.Type -eq "msi" }
+$appAddParameters = "TASKBAR_SHORTCUT=false DESKTOP_SHORTCUT=false START_MENU_SHORTCUT=true PRIVATE_BROWSING_SHORTCUT=false INSTALL_MAINTENANCE_SERVICE=false PREVENT_REBOOT_REQUIRED=true REGISTER_DEFAULT_AGENT=false"
+$Evergreen = Get-EvergreenApp -Name MozillaFirefox -AppParams @{Language = "en-US" } | Where-Object { $_.Architecture -like "*$appArchitecture" -and $_.Channel -match "$appChannel" -and $_.Language -eq "en-US" -and $_.Type -eq "msi" }
 $appVersion = $Evergreen.Version
+$appLanguage = "fr" # Must be lowercase
+$appLanguagePackUrl = "https://releases.mozilla.org/pub/firefox/releases/$($appVersion)/win$($appArchitecture)/xpi/$($appLanguage).xpi"
 $appURL = $Evergreen.URI
 $appSetup = (Split-Path -Path $appURL -Leaf).Replace("%20", " ")
 $appDestination = "$env:ProgramFiles\Mozilla Firefox"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
 
+#endregion
+
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+#region Execution
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -219,6 +224,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Remove-MSIApplications -Name "$appVendor $appName" -Parameters $appInstallParameters
         Execute-Process -Path "$appDestination\uninstall\helper.exe" -Parameters "/S" -WindowStyle Hidden -PassThru
     }
+    Remove-Folder -Path $appDestination
+    Remove-Folder -Path $envAppData\$appVendor\$appName
+    Remove-Folder -Path $envLocalAppData\$appVendor\$appName
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
@@ -234,6 +242,57 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
+
+    # Create policies.json file
+    $distributionPath = "$appDestination\distribution"
+    # Create the distribution folder
+    New-Folder -Path $distributionPath
+    New-Folder -Path $distributionPath\extensions
+    # Download latest language pack
+    Write-Log -Message "Downloading $appVendor $appName $appLanguage language pack..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Invoke-WebRequest -UseBasicParsing -Uri $appLanguagePackUrl -OutFile "$distributionPath\extensions\langpack-$appLanguage@firefox.mozilla.org.xpi"
+
+    $policiesJson = @"
+{
+    "policies":
+    {
+        "DisableTelemetry": true,
+        "DisableFirefoxStudies": true,
+        "OverrideFirstRunPage": "",
+        "RequestedLocales": ["$appLanguage", "en-US"],
+        "NoDefaultBookmarks": true,
+        "Extensions": {
+            "Install": [
+                "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+            ]
+        },
+        "ExtensionSettings": {
+            "uBlock0@raymondhill.net": {
+                "installation_mode": "force_installed",
+                "install_url": "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi"
+            }
+        }
+    }
+}
+"@
+
+    # Create policies json file
+    Set-Content -Path "${distributionPath}\policies.json" -Encoding ASCII -Value $policiesJson
+    Write-Output 'Created policies.json file.'
+
+    # Create default preferences file
+    $defaultPrefPath = "$appDestination\browser\defaults\preferences"
+    # Ensure the path exists
+    New-Folder -Path $defaultPrefPath
+    $defaultPrefJson = @"
+pref('browser.startup.homepage', 'about:blank');
+pref('browser.urlbar.trimURLs', false);
+pref('browser.newtabpage.enabled', false);
+pref('browser.disableResetPrompt', true);
+
+"@
+    Set-Content -Path "${defaultPrefPath}\config.js" -Encoding ASCII -Value $defaultPrefJson
+    Write-Output 'Created default preferences.'
 
     # Disable autoupdate
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "BackgroundAppUpdate" -Value "0" -Type DWord
@@ -253,10 +312,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Disable first run page
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "OverrideFirstRunPage" -Value "" -Type String
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "OverrideFirstRunPage" -Value "" -Type String
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "OverridePostUpdatePag" -Value "" -Type String
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "OverridePostUpdatePag" -Value "" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Mozilla\Firefox" -Name "OverridePostUpdatePage" -Value "" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Mozilla\Firefox" -Name "OverridePostUpdatePage" -Value "" -Type String
 
     # Configure application shortcut
+    Remove-File -Path "$envUserStartMenuPrograms\Firefox Private Browsing.lnk"
     #New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appName" -WorkingDirectory "$appDestination"
 
     # Go back to the parent folder
@@ -268,3 +328,5 @@ Else
 {
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTRace -WriteHost $True
 }
+
+#endregion
