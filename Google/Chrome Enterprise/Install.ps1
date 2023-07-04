@@ -181,6 +181,8 @@ Foreach ($Module in $Modules)
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+#region Declarations
+
 $appVendor = "Google"
 $appName = "Chrome"
 $appLongName = "Enterprise"
@@ -199,7 +201,11 @@ $appDestination = "$env:ProgramFiles\$appVendor\$appName\Application"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
 
+#endregion
+
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+#region Execution
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -232,7 +238,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If (Test-Path -Path "$envProgramFilesX86\$appVendor\Update\$($appVendor)Update.exe")
     {
         Write-Log -Message "Removing previous $appVendor $appName $appLongName folder to fix issues with new installation." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-Process -Path "$envProgramFilesX86\$appVendor\Update\$($appVendor)Update.exe" -Parameters "-uninstall" -IgnoreExitCodes 1606220281 -ContinueOnError $True
+        Execute-Process -Path "$envProgramFilesX86\$appVendor\Update\$($appVendor)Update.exe" -Parameters "-uninstall" -IgnoreExitCodes * -ContinueOnError $True
     }
 
     # Remove previous install folders
@@ -254,11 +260,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-Folder -Path "$envProgramFiles\$appVendor\CrashReports" -ContinueOnError $True
 
     # Remove previous registry entries
-    Remove-RegistryKey -Key "HKCU:\Software\Google\Chrome" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKCU:\Software\Google\Update" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Google\Chrome" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Google\Update" -Recurse -ContinueOnError $True
-    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Google\Update" -Recurse -ContinueOnError $True
+    If ([boolean](Get-RegistryKey -Key "HKCU:\Software\Google\Chrome")) { Remove-RegistryKey -Key "HKCU:\Software\Google\Chrome" -Recurse -ContinueOnError $True }
+    If ([boolean](Get-RegistryKey -Key "HKCU:\Software\Google\Update")) { Remove-RegistryKey -Key "HKCU:\Software\Google\Update" -Recurse -ContinueOnError $True }
+    If ([boolean](Get-RegistryKey -Key "HKLM:\SOFTWARE\Google\Chrome")) { Remove-RegistryKey -Key "HKLM:\SOFTWARE\Google\Chrome" -Recurse -ContinueOnError $True }
+    If ([boolean](Get-RegistryKey -Key "HKLM:\SOFTWARE\Google\Update")) { Remove-RegistryKey -Key "HKLM:\SOFTWARE\Google\Update" -Recurse -ContinueOnError $True }
+    If ([boolean](Get-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Google\Update")) { Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Google\Update" -Recurse -ContinueOnError $True }
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appSetup"))
@@ -329,3 +335,5 @@ Else
 {
     Write-Log -Message "$appVendor $appName $appLongName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
+
+#endregion
