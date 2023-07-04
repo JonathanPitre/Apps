@@ -597,13 +597,13 @@ DOES NOT SUPPORT ROLLBACK!</description>
 			</action>
 		</entry>
 		<entry>
-			<name>Microsoft.Getstarted</name>
+			<name>Microsoft.GetStarted</name>
 			<description>Windows tips app</description>
 			<execute>1</execute>
 			<action>
 				<plugin>UWP</plugin>
 				<params>
-					<name>Microsoft.Getstarted</name>
+					<name>Microsoft.GetStarted</name>
 				</params>
 			</action>
 		</entry>
@@ -959,17 +959,6 @@ https://support.citrix.com/article/CTX494488</description>
 				<plugin>UWP</plugin>
 				<params>
 					<name>MicrosoftTeams</name>
-				</params>
-			</action>
-		</entry>
-		<entry>
-			<name>Microsoft.GetStarted</name>
-			<description>Learn about new Windows 11 features, essential apps, and the redesigned Microsoft Store</description>
-			<execute>1</execute>
-			<action>
-				<plugin>UWP</plugin>
-				<params>
-					<name>Microsoft.GetStarted</name>
 				</params>
 			</action>
 		</entry>
