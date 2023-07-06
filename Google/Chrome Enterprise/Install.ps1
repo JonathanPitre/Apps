@@ -325,6 +325,38 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Configure application shortcut
     Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
+    # Fix an issue with Citrix Virtual Delivery Agent - https://support.google.com/chrome/a/answer/7380899?hl=en
+    [boolean]$isCitrixVdaInstalled = [boolean](Get-InstalledApplication -Name "Citrix .*Virtual Delivery Agent.*" -RegEx)
+    $ctxHookExcludedProcesses = ""
+    If ($isCitrixVdaInstalled)
+    {
+        $ctxHookExcludedProcesses = (Get-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\CtxHook" -Value "ExcludedImageNames")
+        $ctxHookProcessesToAdd = @("chrome.exe", "nacl64.exe")
+
+        If (-Not([String]::IsNullOrEmpty($ctxHookExcludedProcesses)))
+        {
+            ForEach ($ctxHookProcessToAdd in $ctxHookProcessesToAdd)
+            {
+                If ($ctxHookExcludedProcesses -like "*$ctxHookProcessToAdd*")
+                {
+
+                    Write-Log -Message "The $ctxHookProcessToAdd processes have already been added." -Severity 2 -LogType CMTrace -WriteHost $True
+                }
+                Else
+                {
+                    $ctxHookExcludedProcesses = $ctxHookExcludedProcesses + "," + $ctxHookProcessToAdd
+                }
+
+            }
+        }
+        Else
+        {
+            $ctxHookExcludedProcesses = "chrome.exe,nacl64.exe"
+        }
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\CtxHook" -Name "ExcludedImageNames" -Value $ctxHookExcludedProcesses -Type String
+        Write-Log -Message "$appVendor $appName $appLongName fix for Citrix Virtual Delivery Agent  was applied successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
     # Go back to the parent folder
     Set-Location ..
 
