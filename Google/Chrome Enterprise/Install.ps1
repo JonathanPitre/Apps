@@ -354,7 +354,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
             $ctxHookExcludedProcesses = "chrome.exe,nacl64.exe"
         }
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\CtxHook" -Name "ExcludedImageNames" -Value $ctxHookExcludedProcesses -Type String
-        Write-Log -Message "$appVendor $appName $appLongName fix for Citrix Virtual Delivery Agent  was applied successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "$appVendor $appName $appLongName fix for Citrix Virtual Delivery Agent was applied successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
     # Go back to the parent folder
