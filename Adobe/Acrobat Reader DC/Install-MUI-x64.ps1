@@ -187,7 +187,7 @@ $appProduct = "Reader"
 $appTrack = "DC"
 $appLanguage = "MUI"
 $appArchitecture = "x64"
-$appProcesses = @("Acrobat", "AdobeCollabSync", "AcroCEF", "acrobat_sl")
+$appProcesses = @("Acrobat", "AdobeCollabSync", "AcroCEF", "acrobat_sl", "acrodist", "AcroServicesUpdater", "acrotray", "AGSService", "outlook", "chrome", "iexplore")
 $appTransformURL = "https://github.com/JonathanPitre/Apps/raw/master/Adobe/Acrobat%20Reader%20DC/AcroProx64.mst"
 $appTransform = Split-Path -Path $appTransformURL -Leaf
 $appInstallParameters = "/QB"
@@ -247,12 +247,20 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Detect if Citrix Virtual Delivery Agent is installed
+    [boolean]$isCitrixVdaInstalled = [boolean](Get-InstalledApplication -Name "Citrix .*Virtual Delivery Agent.*" -RegEx)
+    $ctxHookExcludedProcesses = ""
+    If ($isCitrixVdaInstalled)
+    {
+        # Get the excluded processes list from CtxHook
+        $ctxHookExcludedProcesses = (Get-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\CtxHook" -Value "ExcludedImageNames")
+    }
     # Uninstall previous versions
     Get-Process -Name $appProcesses | Stop-Process -Force
     If (($IsAppInstalled) -and (Test-Path -Path $appScriptPath\$appMsiSetup))
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Remove-MSIApplications -Name "$appVendor $appName*" -WildCard
+        Remove-MSIApplications -Name "$appVendor $appName*" -WildCard -Exact
     }
 
     If ((Test-Path -Path "$appScriptPath\$appMsiSetup") -and (Test-Path -Path $appScriptPath\$appPatch))
@@ -305,6 +313,34 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
 
     # Configure application shortcut
     Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
+
+    # Fix an issue with Citrix Virtual Delivery Agent installed, excluded process from CtxHook gets overwritten by Adobe Acrobat installation
+    If ($isCitrixVdaInstalled)
+    {
+        $ctxHookProcessesToAdd = @("Acrobat.exe", "AcroCEF.exe")
+        If (-Not([String]::IsNullOrEmpty($ctxHookExcludedProcesses)))
+        {
+            ForEach ($ctxHookProcessToAdd in $ctxHookProcessesToAdd)
+            {
+                If ($ctxHookExcludedProcesses -like "*$ctxHookProcessToAdd*")
+                {
+
+                    Write-Log -Message "The $ctxHookProcessToAdd processes have already been added." -Severity 2 -LogType CMTrace -WriteHost $True
+                }
+                Else
+                {
+                    $ctxHookExcludedProcesses = $ctxHookExcludedProcesses + "," + $ctxHookProcessToAdd
+                }
+
+            }
+        }
+        Else
+        {
+            $ctxHookExcludedProcesses = "Acrobat.exe,AcroCEF.exe"
+        }
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\CtxHook" -Name "ExcludedImageNames" -Value $ctxHookExcludedProcesses -Type String
+        Write-Log -Message "$appVendor $appName $appLongName fix for Citrix Virtual Delivery Agent was applied successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    }
 
     # Go back to the parent folder
     Set-Location ..
