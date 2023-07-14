@@ -71,7 +71,7 @@ Function Get-ScriptName
         ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
         ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
         ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
-        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        ElseIf ($MyInvocation.PSCommandPath) { Split-Path -Path $MyInvocation.PSCommandPath -Leaf } # Windows PowerShell
         Else
         {
             Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
@@ -182,7 +182,7 @@ Function Get-DruideAntidote
     [OutputType([System.Management.Automation.PSObject])]
     [CmdletBinding()]
     Param ()
-    $DownloadURL = "https://www.antidote.info/fr/assistance/mises-a-jour/installation/antidote-10/windows"
+    $DownloadURL = "https://www.antidote.info/fr/assistance/mises-a-jour/installation/antidote-$($appShortVersion)/windows"
 
     Try
     {
@@ -195,23 +195,23 @@ Function Get-DruideAntidote
     }
     Finally
     {
-        $RegExAntidote = "href\=(https.+\/Diff_Antidote_10_C_((?:\d+\.)+(?:\d+))\.msp)"
+        $RegExAntidote = "href\=(https.+\/Diff_Antidote_$($appShortVersion)_C_((?:\d+\.)+(?:\d+))\.msp)"
         $VersionAntidote = ($DownloadText | Select-String -Pattern $RegExAntidote).Matches.Groups[2].Value
         $URLAntidote = ($DownloadText | Select-String -Pattern $RegExAntidote).Matches.Groups[1].Value
 
-        $RegExAntidoteF = "href\=(https.+\/Diff_Antidote_10_Module_F_((?:\d+\.)+(?:\d+))\.msp)"
+        $RegExAntidoteF = "href\=(https.+\/Diff_Antidote_$($appShortVersion)_Module_F_((?:\d+\.)+(?:\d+))\.msp)"
         $VersionAntidoteF = ($DownloadText | Select-String -Pattern $RegExAntidoteF).Matches.Groups[2].Value
         $URLAntidoteF = ($DownloadText | Select-String -Pattern $RegExAntidoteF).Matches.Groups[1].Value
 
-        $RegExAntidoteE = "href\=(https.+\/Diff_Antidote_10_Module_E_((?:\d+\.)+(?:\d+))\.msp)"
+        $RegExAntidoteE = "href\=(https.+\/Diff_Antidote_$($appShortVersion)_Module_E_((?:\d+\.)+(?:\d+))\.msp)"
         $VersionAntidoteE = ($DownloadText | Select-String -Pattern $RegExAntidoteE).Matches.Groups[2].Value
         $URLAntidoteE = ($DownloadText | Select-String -Pattern $RegExAntidoteE).Matches.Groups[1].Value
 
-        $RegExConnectix = "href\=(https.+\/Diff_Connectix_10_C_((?:\d+\.)+(?:\d+))\.msp)"
+        $RegExConnectix = "href\=(https.+\/Diff_Connectix_$($appShortVersion)_C_((?:\d+\.)+(?:\d+).(?:\d+))\.msp)"
         $VersionConnectix = ($DownloadText | Select-String -Pattern $RegExConnectix).Matches.Groups[2].Value
         $URLConnectix = ($DownloadText | Select-String -Pattern $RegExConnectix).Matches.Groups[1].Value
 
-        $URLGestionnaire = "https://telechargement.druide.com/telecharger/Reseau/antidote_10/GestionnaireMultiposte_Antidote10.exe"
+        $URLGestionnaire = "https://telechargement.druide.com/telecharger/Reseau/antidote_$($appShortVersion)/GestionnaireMultiposte_Antidote$($appShortVersion).exe"
 
         if ($VersionAntidote -and $URLAntidote)
         {
@@ -273,14 +273,16 @@ Function Get-DruideAntidote
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+#region Declarations
+
 $appVendor = "Druide"
 $appName = "Antidote"
 $appProcesses = @("Antidote", "AgentAntidote", "Connectix", "AgentConnectix", "OUTLOOK", "WINWORD", "EXCEL", "POWERPNT", "CHROME", "msedge")
 $appTransformAntidote = "ReseauAntidote.mst"
 $appTransformConnectix = "ReseauConnectix.mst"
-$appShortVersion = "10"
-$DownloadText10= (Invoke-WebRequest -Uri "https://www.antidote.info/fr/assistance/mises-a-jour/installation/antidote-10/windows" -DisableKeepAlive -UseBasicParsing).Content
-$appVersion = ($DownloadText10 | Select-String -Pattern "MSI ((?:\d+\.)+(?:\d+))").Matches.Groups[1].Value
+$appShortVersion = "11"
+$DownloadText = (Invoke-WebRequest -Uri "https://www.antidote.info/fr/assistance/mises-a-jour/installation/antidote-$($appShortVersion)/windows" -DisableKeepAlive -UseBasicParsing).Content
+$appVersion = ($DownloadText| Select-String -Pattern "MSI ((?:\d+\.)+(?:\d+))").Matches.Groups[1].Value
 $Nevergreen = Get-DruideAntidote
 $appPatchVersion = ($Nevergreen | Where-Object { $_.Name -eq $appName }).Version
 $appUrlPatchAntidote = ($Nevergreen | Where-Object { $_.Name -eq $appName }).Uri
@@ -293,16 +295,20 @@ $appPatchAntidoteF = Split-Path -Path $appUrlPatchAntidoteF -Leaf
 $appPatchAntidoteE = Split-Path -Path $appUrlPatchAntidoteE -Leaf
 $appPatchConnectix = Split-Path -Path $appUrlPatchConnectix -Leaf
 $appGestionnaire = Split-Path -Path $appUrlGestionnaire -Leaf
-$appSetupAntidote = "Antidote$appShortVersion.msi"
-$appSetupAntidoteF = "Antidote$appShortVersion-Module-francais.msi"
-$appSetupAntidoteE = "Antidote$appShortVersion-English-module.msi"
-$appSetupConnectix = "Antidote-Connectix$appShortVersion.msi"
+$appSetupAntidote = "Antidote$($appShortVersion).msi"
+$appSetupAntidoteF = "Antidote$($appShortVersion)-Module-francais.msi"
+$appSetupAntidoteE = "Antidote$($appShortVersion)-English-module.msi"
+$appSetupConnectix = "Antidote-Connectix$($appShortVersion).msi"
 $appInstallParameters = "/QB"
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\Application\Bin64"
 [boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appName \d{2}" -RegEx -Exact) | Select-Object -First 1
 $appInstalledVersion = (Get-InstalledApplication -Name "$appName \d{2}" -RegEx -Exact).DisplayVersion | Select-Object -First 1
 
+#endregion
+
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+#region Execution
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -452,3 +458,5 @@ Else
 {
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
+
+#endregion
