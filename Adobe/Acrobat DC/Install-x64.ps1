@@ -200,7 +200,7 @@ $appPatchURL = $Evergreen.URI
 $appPatch = Split-Path -Path $appPatchURL -Leaf
 $appDestination = "$env:ProgramFiles\$appVendor\$appName $appShortVersion\$appName"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName.*" -RegEx)
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName (.*-bit)" -Exact).DisplayVersion
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName (.*-bit)" -RegEx).DisplayVersion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
