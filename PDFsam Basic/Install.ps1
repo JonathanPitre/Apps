@@ -182,7 +182,7 @@ Foreach ($Module in $Modules)
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 $appName = "PDFsam Basic"
-$appProcesses = 'pdfsam,javaw'
+$appProcesses = @("pdfsam", " javaw")
 $appLanguage = "fr"
 $appInstallParameters = "/QB"
 $appAddParameters = "LOCALE=$appLanguage ACCEPT_EULA=true SKIPTHANKSPAGE=Yes CHECK_FOR_UPDATES=false CHECK_FOR_NEWS=false PLAY_SOUNDS=false DONATE_NOTIFICATION=false PREMIUM_MODULES=false DESKTOPSHORTCUT=false"
@@ -213,21 +213,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-    # Show Welcome Message, Close apps automatically
-    Show-InstallationWelcome -CloseApps $appProcesses -BlockExecution -Silent
-
     If ($IsAppInstalled)
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        # Show Progress Message (With a Message to Indicate the Application is Being Uninstalled)
-        #Show-InstallationProgress -StatusMessage "Uninstalling previous version. Please Wait..."
         # Uninstall previous versions
         Remove-MSIApplications -Name $appName -Parameters $appInstallParameters
     }
 
     # Install latest version
     Write-Log -Message "Installing $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    #Show-InstallationProgress "Installing $appName $appVersion. This may take some time. Please wait..."
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -241,7 +235,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-Location ..
 
     Write-Log -Message "$appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
-
 }
 Else
 {

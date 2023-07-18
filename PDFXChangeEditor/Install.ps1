@@ -183,7 +183,7 @@ Foreach ($Module in $Modules)
 
 $appVendor = "Tracker Software"
 $appName = "PDF-XChange Editor"
-$appProcesses = 'PDFXHost32,PDFXEdit,PDFXHost64,pdfSaverL,PDFX.ProcessPool.Worker.x64'
+$appProcesses = @("PDFXHost32", "PDFXEdit", "PDFXHost64,pdfSaverL", "PDFX.ProcessPool.Worker.x64")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
 $appAddParameters = "DESKTOP_SHORTCUTS=0 SET_AS_DEFAULT=0 SET_LITE_AS_DEFAULT=0 NOUPDATER=1 SCHEDULEUPDATER=0"
@@ -214,15 +214,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
-
-    # Show Welcome Message, Close apps automatically
-    Show-InstallationWelcome -CloseApps $appProcesses -Silent
-
     If ($IsAppInstalled)
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        # Show Progress Message (With a Message to Indicate the Application is Being Uninstalled)
-        #Show-InstallationProgress -StatusMessage "Uninstalling previous version. Please Wait..." -WindowLocation BottomRight
         # Uninstall previous versions
         Get-Process explorer | Stop-Process -Force
         Remove-MSIApplications -Name $appName -Parameters $appInstallParameters
@@ -231,7 +225,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process explorer | Stop-Process -Force
-    #Show-InstallationProgress -StatusMessage  "Installing $appVendor $appName $appVersion. This may take some time. Please wait..." -WindowLocation BottomRight
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -245,7 +238,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Set-Location ..
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
-
 }
 Else
 {
