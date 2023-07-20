@@ -260,7 +260,7 @@ If ([version]$appPatchVersion -gt [version]$appInstalledVersion)
     If (($IsAppInstalled) -and (Test-Path -Path $appScriptPath\$appMsiSetup))
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Remove-MSIApplications -Name "$appVendor $appName*" -WildCard -Exact
+        Remove-MSIApplications -Name "$appVendor $appName $appProduct" 
     }
 
     If ((Test-Path -Path "$appScriptPath\$appMsiSetup") -and (Test-Path -Path $appScriptPath\$appPatch))
