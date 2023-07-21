@@ -376,16 +376,27 @@ If (($isAppInstalled -eq $false) -or ([version]$appVersion -gt [version]$appInst
         # Download latest version
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $citrixUserName -CitrixPassword $citrixPassword -dlPath .\
-        # Expand archive
-        Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
-        # Move the policy definitions files
-        Copy-File -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptPath\PolicyDefinitions" -Recurse
-        Copy-File -Path "$appScriptPath\$appVersion\Configuration Templates" -Destination "$appScriptPath" -Recurse
 
-        # Cleanup
-        Remove-Folder -Path "$appScriptPath\$appVersion\Agent Group Policies"
-        Remove-Folder -Path "$appScriptPath\$appVersion\Configuration Templates"
-        Remove-File -Path $appZip
+        # Verify if downloaded file is present
+        If ([bool](Get-ChildItem -Path $appScriptPath\$appVersion -Filter *.zip))
+        {
+            # Expand archive
+            Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
+            # Move the policy definitions files
+            Copy-File -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptPath\PolicyDefinitions" -Recurse
+            Copy-File -Path "$appScriptPath\$appVersion\Configuration Templates" -Destination "$appScriptPath" -Recurse
+
+            # Cleanup
+            Remove-Folder -Path "$appScriptPath\$appVersion\Agent Group Policies"
+            Remove-Folder -Path "$appScriptPath\$appVersion\Configuration Templates"
+            Remove-File -Path $appZip
+        }
+        Else
+        {
+            Write-Log -Message "Unable to find $appZip, download failed! Verify your Citrix credentials." -Severity 3 -LogType CMTrace -WriteHost $True
+            Start-Sleep -Seconds 3
+            Exit-Script
+        }
     }
     Else
     {
@@ -490,15 +501,24 @@ ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInsta
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Get-CitrixDownload -dlNumber $appDlNumber -dlEXE $appZip -CitrixUserName $citrixUserName -CitrixPassword $citrixPassword -dlPath .\
         # Expand archive
-        Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
-        # Move the policy definitions files
-        Copy-File -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptPath\PolicyDefinitions" -Recurse
-        Copy-File -Path "$appScriptPath\$appVersion\Configuration Templates" -Destination "$appScriptPath" -Recurse
+        If (Get-ChildItem -Path $appScriptPath\$appVersion -Filter *.zip)
+        {
+            Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
+            # Move the policy definitions files
+            Copy-File -Path "$appScriptPath\$appVersion\Agent Group Policies\ADMX\*" -Destination "$appScriptPath\PolicyDefinitions" -Recurse
+            Copy-File -Path "$appScriptPath\$appVersion\Configuration Templates" -Destination "$appScriptPath" -Recurse
 
-        # Cleanup
-        Remove-Folder -Path "$appScriptPath\$appVersion\Agent Group Policies"
-        Remove-Folder -Path "$appScriptPath\$appVersion\Configuration Templates"
-        Remove-File -Path $appZip
+            # Cleanup
+            Remove-Folder -Path "$appScriptPath\$appVersion\Agent Group Policies"
+            Remove-Folder -Path "$appScriptPath\$appVersion\Configuration Templates"
+            Remove-File -Path $appZip
+        }
+        Else
+        {
+            Write-Log -Message "Unable to find $appZip, download failed!" -Severity 3 -LogType CMTrace -WriteHost $True
+            Start-Sleep -Seconds 3
+            Exit-Script
+        }
     }
     Else
     {
