@@ -71,7 +71,7 @@ Function Get-ScriptName
         ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
         ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
         ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
-        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        ElseIf ($MyInvocation.PSCommandPath) { Split-Path -Path $MyInvocation.PSCommandPath -Leaf } # Windows PowerShell
         Else
         {
             Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
@@ -201,7 +201,7 @@ Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate
 $null = Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d -Confirm:$False
 
 # Pause and give the service time to update
-Start-Sleep -Seconds 30
+Start-Sleep -Seconds 10
 
 # Start Windows Update service
 Set-ServiceStartMode -Name $appService -StartMode "Automatic"
@@ -210,7 +210,6 @@ Start-ServiceAndDependencies -Name $appService
 Write-Log -Message "Gettings available $appVendor $appName..." -Severity 1 -LogType CMTrace -WriteHost $True
 $WinUpdates = Get-WindowsUpdate -NotCategory "Drivers", "Upgrade" -NotTitle "Preview" -MicrosoftUpdate
 $WinUpdates = $WinUpdates | Select-Object KB, Size, Title
-
 
 If ($null -ne $WinUpdates)
 {
@@ -237,11 +236,11 @@ If ($WURebootStatus)
 {
     Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     Write-Log -Message "A computer restart is required." -Severity 2 -LogType CMTrace -WriteHost $True
-    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
+    Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
 ElseIf ($isRebootPending)
 {
     Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     Write-Log -Message "A computer restart is required." -Severity 2 -LogType CMTrace -WriteHost $True
-    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
+    Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
