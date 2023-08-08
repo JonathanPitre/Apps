@@ -212,24 +212,41 @@ Function Get-Download
     Get-Item -Path $destinationPath | Unblock-File
 }
 
-Function Get-ZoomAdmx
-{
-    Try
-    {
-        $sourceUrl = "https://support.zoom.us/hc/en-us/articles/360039100051"
-        # Grab content
-        $web = Invoke-WebRequest -Uri $sourceUrl -UseBasicParsing
-        # Find ADMX download
-        $admxUrl = (($web.links | Where-Object { $_.href -like "*msi-templates*.zip" })[-1]).href
-        # Grab version
-        $admxVersion = ($admxUrl.Split("/")[-1] | Select-String -Pattern "(\d+(\.\d+){1,4})" -AllMatches | ForEach-Object { $_.Matches } | ForEach-Object { $_.Value }).ToString()
-
-        # Return object
-        return @{ Version = $admxVersion; URI = $admxUrl }
+Function Get-ZoomVDI {
+    [OutputType([System.Management.Automation.PSObject])]
+    [CmdletBinding()]
+    Param ()
+        $url = "https://support.zoom.us/hc/en-us/articles/4415057249549"
+    Try {
+        $webRequest = Invoke-WebRequest -UseBasicParsing -Uri $url -ErrorAction SilentlyContinue
     }
-    Catch
-    {
-        Throw $_
+    Catch {
+        Throw "Failed to connect to URL: $url with error $_."
+        Break
+    }
+    Finally {
+        $regexAppVersionD = 'class="panel-title"><a class="fill-div" href="#collapseGeneric.." data-toggle="collapse">........'
+        $webVersionZoomVDID = $webRequest.RawContent | Select-String -Pattern $regexAppVersionD -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
+        $webSplitD = $webVersionZoomVDID.Split(">")
+        $webSplitD = $webSplitD[2].Split("<")
+        #$VersionD = $webSplitD[0]
+        $regexAppVersion = 'ZoomCitrixHDXMediaPlugin.msi" target="_self" rel="undefined">..............'
+        $webVersionZoomVDI = $webRequest.RawContent | Select-String -Pattern $regexAppVersion -AllMatches | ForEach-Object { $_.Matches.Value } | Select-Object -First 1
+        $webSplit = $webVersionZoomVDI.Split(">")
+        $webSplit = $webSplit[1].Split("<")
+        $Version = $webSplit[0]
+        $VersionSplit = $Version.Split(".")
+        $VersionApps = $VersionSplit[0] + "." + $VersionSplit[1] + "." + $VersionSplit[3]
+        $x64 = "https://zoom.us/download/vdi/" + $Version + "/ZoomInstallerVDI.msi"
+
+        $PSObject = [PSCustomObject] @{
+        Version      = $Version
+        Architecture = "x64"
+        URI          = $x64
+        VersionApps = $VersionApps
+        }
+
+        Write-Output -InputObject $PSObject
     }
 }
 
@@ -244,17 +261,14 @@ $appServices = @("ZoomCptService")
 $appInstallParameters = "/QB"
 # https://support.zoom.us/hc/en-us/articles/201362163-Mass-Installation-and-Configuration-for-Windows
 $appAddParameters = "zNoDesktopShortCut=1"
-$Evergreen = Get-NevergreenApp Zoom | Where-Object { $_.Name -like "*VDI Client" }
-$appVersion = $Evergreen.Version
+$Evergreen = Get-ZoomVDI
+$appVersion = $Evergreen.VersionApps  
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\ZoomVDI\bin"
 $appUninstallerURL = "https://support.zoom.us/hc/en-us/article_attachments/360084068792/CleanZoom.zip"
 $appUninstallerZip = Split-Path -Path $appUninstallerURL -Leaf
 $appUninstallerSetup = "CleanZoom.exe"
-$appAdmxVersion = (Get-ZoomAdmx).Version
-$appAdmxUrl = (Get-ZoomAdmx).URI
-$appAdmx = Split-Path -Path $appAdmxUrl -Leaf
 [boolean]$IsAppInstalled = [boolean](Get-ItemProperty -Path HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like "*$appName*" })
 $appInstalledVersion = (Get-ItemProperty -Path HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object {$_.DisplayName -like "*$appName*"}).Comments | Sort-Object -Property Version -Descending | Select-Object -First 1
 $appInstalledVersion = $appInstalledVersion.Split("(")[0]
@@ -286,7 +300,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Uninstall previous versions
     Write-Host -Object "Uninstalling previous versions..." -ForegroundColor Green -Debug
     Get-Process -Name $appProcesses | Stop-Process -Force
-    #Start-Process -FilePath msiexec.exe -ArgumentList "/x $appSetup" -PassThru -Wait -ErrorAction Stop | Out-Null
     Start-Process -FilePath $appScriptPath\$appUninstallerSetup -ArgumentList '/silent' -NoNewWindow -Wait
 
     # Remove user install
@@ -319,19 +332,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     }
     Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings
     #>
-
-    # Download latest policy definitions
-    Write-Host -Object "Downloading $appShortName ADMX templates $appAdmxVersion..." -ForegroundColor Green -Debug
-    Get-Download -Url $appAdmxUrl -Destination $appScriptPath $appAdmx -IncludeStats
-    Expand-Archive -Path "$appScriptPath\$appAdmx" -DestinationPath "$appScriptPath\Temp" -Force
-    Remove-Item -Path "$appScriptPath\$appAdmx" -Force
-
-    If (-Not(Test-Path -Path "$appScriptPath\PolicyDefinitions")) { New-Folder -Path "$appScriptPath\PolicyDefinitions" }
-    Move-Item -Path "$appScriptPath\Temp\*\*.admx" -Destination "$appScriptPath\PolicyDefinitions" -Force
-    If (-Not(Test-Path -Path "$appScriptPath\PolicyDefinitions\en-US")) { New-Folder -Path "$appScriptPath\PolicyDefinitions\en-US" }
-    Move-Item -Path "$appScriptPath\Temp\*\en-US\*.adml" -Destination "$appScriptPath\PolicyDefinitions\en-US" -Force
-    Remove-Item -Path "$appScriptPath\Temp" -Force -Recurse
-    Write-Host -Object "$appShortName ADMX templates $appAdmxVersion were downloaded successfully!" -ForegroundColor Green -Debug
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
