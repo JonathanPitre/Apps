@@ -221,10 +221,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If ([boolean](Get-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\Edge")) { Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\Edge" -Recurse -ContinueOnError $True }
     If ([boolean](Get-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\EdgeUpdate")) { Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Policies\Microsoft\EdgeUpdate" -Recurse -ContinueOnError $True }
 
-
-
-
-
     # Uninstall previous versions
     # Edge cannot be uninstall anymore - https://answers.microsoft.com/en-us/microsoftedge/forum/all/getting-there-is-a-problem-with-this-windows/c5fb02db-6b40-4cd7-b74a-88470c71d730
     Get-Process -Name $appProcesses | Stop-Process -Force
