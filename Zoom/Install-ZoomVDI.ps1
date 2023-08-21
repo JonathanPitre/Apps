@@ -192,8 +192,8 @@ $appArchitecture = "x64"
 $Evergreen = Get-NevergreenApp -Name Zoom | Where-Object { $_.Name -eq "Zoom VDI Client" -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "msi" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
-$appSetup = Split-Path -Path $appURL -Leaf
-$appDestination = "${env:ProgramFiles(x86)}\ZoomVDI\bin"
+$appSetup = ((Split-Path -Path $appURL -Leaf).Trim("?archType=$appArchitecture"))
+$appDestination = "$env:ProgramFiles\ZoomVDI\bin"
 $appUninstallerURL = "https://support.zoom.us/hc/en-us/article_attachments/360084068792/CleanZoom.zip"
 $appUninstallerZip = Split-Path -Path $appUninstallerURL -Leaf
 $appUninstallerSetup = "CleanZoom.exe"
@@ -247,15 +247,13 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         }
     }
 
-    # Remove registry entries from all user profiles - https://www.reddit.com/r/SCCM/comments/fu3q6f/zoom_uninstall_if_anyone_needs_this_information
-    [scriptblock]$HKCURegistrySettings = {
-        Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Zoom" -Recurse -ContinueOnError $True -SID $UserProfile.SID
-        Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ZoomUMX" -Recurse -ContinueOnError $True -SID $UserProfile.SID
-        Remove-RegistryKey -Key "HKCU:\Software\Zoom" -Recurse -ContinueOnError $True -SID $UserProfile.SID
-        Remove-RegistryKey -Key "HKCU:\Software\ZoomUMX" -Recurse -ContinueOnError $True -SID $UserProfile.SID
-        Remove-RegistryKey -Key "HKCU:\Software\Policies\Zoom\Zoom Meetings\VDI" -Recurse -ContinueOnError $True -SID $UserProfile.SID
-    }
-    Invoke-HKCURegistrySettingsForAllUsers -RegistrySettings $HKCURegistrySettings
+    # Remove registry entries from current profile
+    Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Zoom" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\ZoomUMX" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKCU:\Software\Zoom" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKCU:\Software\ZoomUMX" -Recurse -ContinueOnError $True
+    Remove-RegistryKey -Key "HKCU:\Software\Policies\Zoom\Zoom Meetings\VDI" -Recurse -ContinueOnError $True
+
 
     # Download latest setup file(s)
     If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
