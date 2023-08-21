@@ -284,10 +284,11 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     #Copy-File -Path $appScriptPath\*.igtheme -Destination $appDestination\Themes
 
     # Configure application shortcut
-    Remove-File -Path $envCommonDesktop\$appName.lnk -ContinueOnError $True
+    Remove-File -Path "$envCommonDesktop\$appName.lnk" -ContinueOnError $True
+    Remove-File -Path "$envUserDesktop\$appName.lnk" -ContinueOnError $True
     Copy-File -Path "$envAppData\Microsoft\Windows\Start Menu\Programs\$appName\$appName.lnk" -Destination $envCommonStartMenuPrograms -ContinueOnError $True
     Remove-Folder -Path "$envAppData\Microsoft\Windows\Start Menu\Programs\$appName" -ContinueOnError $True
-    Remove-Folder -Path $envCommonStartMenuPrograms\$appName -ContinueOnError $True
+    Remove-Folder -Path "$envCommonStartMenuPrograms\$appName" -ContinueOnError $True
 
     # Go back to the parent folder
     Set-Location ..
