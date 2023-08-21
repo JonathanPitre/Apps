@@ -275,12 +275,6 @@ Else
     $localCredentialsPassword = $localCredentials.Password
 }
 
-# Detect if running from a Citrix session
-If ($sessionName -like "*ica*")
-{
-    Write-Log -Message "$appVendor $appName CANNOT BE INSTALLED from a Citrix session, please run the installation from a CONSOLE SESSION!" -Severity 3 -LogType CMTrace -WriteHost $True
-    Exit-Script
-}
 
 Set-Location -Path $appScriptPath
 If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
@@ -288,6 +282,12 @@ Set-Location -Path $appVersion
 
 If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersion\$appInstall") -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
 {
+    # Detect if running from a Citrix session
+    If ($sessionName -like "*ica*")
+    {
+    	Write-Log -Message "$appVendor $appName CANNOT BE INSTALLED from a Citrix session, please run the installation from a CONSOLE SESSION!" -Severity 3 -LogType CMTrace -WriteHost $True
+	Exit-Script
+    }
 
     # Install prerequisites
     If (-Not($envOSName -like "*Windows Server*"))
@@ -407,7 +407,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     # Reboot
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
-    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
+    Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
 ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
 {
@@ -440,7 +440,7 @@ ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScript
     # Reboot and relaunch script
     Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
-    Show-InstallationRestartPrompt -CountdownSeconds 30 -CountdownNoHideSeconds 30
+    Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
 ElseIf ($appVersion -eq $appInstalledVersion)
 {
