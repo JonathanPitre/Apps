@@ -207,7 +207,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName$appMajorVersion $appVersion runtimes..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Install-VcRedist -Path $appScriptPath -VcList $VcList
+    Install-VcRedist -VcList $VcList
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
