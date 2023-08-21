@@ -186,7 +186,7 @@ $appName = "VLC media player"
 $appProcesses = @("vlc", "vlc-cache-gen")
 $appInstallParameters = "/QB"
 $appArchitecture = "x64"
-$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/VLC%20Player/vlcrc"
+$appConfigURL = "https://github.com/JonathanPitre/Apps/blob/master/VLC%20media%20player/vlcrc"
 $appConfig = Split-Path -Path $appConfigURL -Leaf
 $Evergreen = Get-EvergreenApp -Name VideoLanVlcPlayer | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Type -eq "msi" }
 $appVersion = $Evergreen.Version + ".0"
@@ -201,7 +201,7 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName").DisplayVersio
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
     # Download latest setup file(s)
