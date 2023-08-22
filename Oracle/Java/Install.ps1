@@ -204,6 +204,7 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appName \d Update \d{3}
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
+If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptPath
     If (-Not(Test-Path -Path $appVersion))
