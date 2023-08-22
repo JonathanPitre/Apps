@@ -1,0 +1,8 @@
+[Setup]
+Lang=en
+Dir=C:\Program Files\Greenshot
+Group=Greenshot
+NoIcons=0
+SetupType=custom
+Components=greenshot,plugins\office,plugins\ocr,plugins\externalcommand,languages,languages\eses,languages\frqc
+Tasks=startup
