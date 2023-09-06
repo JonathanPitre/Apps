@@ -197,8 +197,8 @@ $appDestination = "$env:ProgramFiles\ZoomVDI\bin"
 $appUninstallerURL = "https://support.zoom.us/hc/en-us/article_attachments/360084068792/CleanZoom.zip"
 $appUninstallerZip = Split-Path -Path $appUninstallerURL -Leaf
 $appUninstallerSetup = "CleanZoom.exe"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
-$appInstalledVersion = If ($IsAppInstalled) { Get-FileVersion -File "$appDestination\Installer.exe" }
+[boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
+$appInstalledVersion = If ($isAppInstalled) { Get-FileVersion -File "$appDestination\Installer.exe" }
 $appInstalledVersion = $appInstalledVersion.Replace(",", ".")
 
 
