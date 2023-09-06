@@ -191,6 +191,15 @@ Foreach ($Module in $Modules)
 # Set current path
 Set-Location -Path $appScriptPath
 
+# Install latest version of VMware Tools
+$appName = "VMware Tools"
+$appURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/VMWare/Tools/Install.ps1"
+$appScript = Split-Path -Path $appURL -Leaf
+New-Folder -Path "$appScriptPath\$appName"
+Set-Location -Path "$appScriptPath\$appName"
+Invoke-WebRequest -Uri $appURL -UseBasicParsing -OutFile .\$appScript
+& ".\$appScript"
+
 # Enable Automatic Updates for Microsoft Store Apps - https://winbuzzer.com/2020/07/17/how-to-turn-off-automatic-updates-for-microsoft-store-apps-in-windows-10-xcxwbt
 Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "AutoDownload" -Value "4" -Type DWord
 Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Recurse
@@ -237,7 +246,7 @@ Remove-Item -Path $appScriptPath\*.crt -Force
 Set-RegistryKey -Key "HKLM:\Software\Policies\Microsoft\SystemCertificates\AuthRoot" -Name "DisableRootAutoUpdate" -Value 0 -Type DWord
 
 # Install latest version of Microsoft Visual C++ Runtimes
-$appName = "Microsoft Visual C++ Latest Runtimes"
+$appName = "Microsoft Visual C++ Runtimes"
 $appURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Visual%20C%2B%2B%20Runtimes/Install-LatestOnly.ps1"
 $appScript = Split-Path -Path $appURL -Leaf
 New-Folder -Path "$appScriptPath\$appName"
@@ -254,7 +263,6 @@ Set-Location -Path "$appScriptPath\$appName"
 Invoke-WebRequest -Uri $appURL -UseBasicParsing -OutFile .\$appSetup
 Add-AppxPackage -Path .\$appSetup
 Remove-Item -Path $appSetup -Force
-
 
 # Install latest version Microsoft DesktopAppInstaller (aka WinGet)
 $appName = "Microsoft DesktopAppInstaller"
