@@ -16,7 +16,7 @@ Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT") # Modules list
+[array]$Modules = @("PSADT") # Modules list
 
 Function Get-ScriptPath
 {
@@ -24,7 +24,7 @@ Function Get-ScriptPath
     .SYNOPSIS
         Get-ScriptPath returns the path of the current script.
     .OUTPUTS
-        System.String
+        System.string
     #>
     [CmdletBinding()]
     [OutputType([string])]
@@ -71,7 +71,7 @@ Function Get-ScriptName
         ElseIf ($psEXE) { [System.Diagnotics.Process]::GetCurrentProcess.Name } # PS1 converted to EXE
         ElseIf ($null -ne $HostInvocation) { $HostInvocation.MyCommand.Name } # SAPIEN PowerShell Studio
         ElseIf ($psISE) { $psISE.CurrentFile.DisplayName.Trim("*") } # Windows PowerShell ISE
-        ElseIf ($MyInvocation.MyCommand.Name) { $MyInvocation.MyCommand.Name } # Windows PowerShell
+        ElseIf ($MyInvocation.PSCommandPath) { Split-Path -Path $MyInvocation.PSCommandPath -Leaf } # Windows PowerShell
         Else
         {
             Write-Host -Object "Uanble to resolve script's file name!" -ForegroundColor Red
@@ -86,7 +86,7 @@ Function Initialize-Module
     .SYNOPSIS
         Initialize-Module install and import modules from PowerShell Galllery.
     .OUTPUTS
-        System.String
+        System.string
     #>
     [CmdletBinding()]
     Param
@@ -104,7 +104,7 @@ Function Initialize-Module
     Else
     {
         # If module is not imported, but available on disk then import
-        If ( [boolean](Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
+        If ( [bool] (Get-Module -ListAvailable | Where-Object { $_.Name -eq $Module }) )
 
         {
             $InstalledModuleVersion = (Get-InstalledModule -Name $Module).Version
@@ -138,7 +138,7 @@ Function Initialize-Module
 
             # Update PowerShellGet
             $InstalledPSGetVersion = (Get-PackageProvider -Name PowerShellGet).Version
-            $PSGetVersion = [version](Find-PackageProvider -Name PowerShellGet).Version
+            $PSGetVersion = [version] (Find-PackageProvider -Name PowerShellGet).Version
             If ($PSGetVersion -gt $InstalledPSGetVersion)
             {
                 Install-PackageProvider -Name PowerShellGet -Force
@@ -157,14 +157,14 @@ Function Initialize-Module
             {
                 # If the module is not imported, not available and not in the online gallery then abort
                 Write-Host -Object "Module $Module was not imported, not available and not in an online gallery, exiting." -ForegroundColor Red
-                EXIT 1
+                Exit 1
             }
         }
     }
 }
 
-[string]$appScriptPath = Get-ScriptPath # Get the current script path
-[string]$appScriptName = Get-ScriptName # Get the current script name
+[string]$script:appScriptPath = Get-ScriptPath # Get the current script path
+[string]$script:appScriptName = Get-ScriptName # Get the current script name
 
 # Install and import modules list
 Foreach ($Module in $Modules)
@@ -186,17 +186,49 @@ $appName = "Remote Server Administration Tools (RSAT)"
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
-If ($envOSName -like "*Windows 10*")
+If (($envOSName -like "*Windows 10*") -or ($envOSName -like "*Windows 11*"))
 {
     # Install RSAT Tools
     # http://woshub.com/install-rsat-feature-windows-10-powershell
 
-    # Active Directory Tools
-    Add-WindowsCapability –Online –Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0
-    # DNS Tools
-    Add-WindowsCapability –Online –Name Rsat.Dns.Tools~~~~0.0.1.0
-    # Group Policy Management
-    Add-WindowsCapability -Online -Name Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0
+    # Install Group Policy Management
+    $isRsatGPMCinstalled = (Get-WindowsCapability -Name "Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0" -Online).State
+    If ($isRsatGPMCinstalled -eq "Installed")
+    {
+        Write-Log -Message "Group Policy Management is already installed!" -Severity 2 -LogType CMTrace -WriteHost $True
+    }
+    Else
+    {
+        Write-Log -Message "Installing Group Policy Management..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Add-WindowsCapability -Online -Name "Rsat.GroupPolicy.Management.Tools~~~~0.0.1.0"
+        Write-Log -Message "Group Policy Management was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    # Install Active Directory Tools
+    $isRsatADinstalled = (Get-WindowsCapability -Name "Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0" -Online).State
+    If ($isRsatADinstalled -eq "Installed")
+    {
+        Write-Log -Message "Active Directory Tools are already installed!" -Severity 2 -LogType CMTrace -WriteHost $True
+    }
+    Else
+    {
+        Write-Log -Message "Installing Active Directory Tools..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Add-WindowsCapability -Online -Name "Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0"
+        Write-Log -Message "Active Directory Tools were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    # Install DNS Tools
+    $isRsatDNSinstalled = (Get-WindowsCapability -Name "Rsat.Dns.Tools~~~~0.0.1.0" -Online).State
+    If ($isRsatDNSinstalled -eq "Installed")
+    {
+        Write-Log -Message "DNS Tools are already installed!" -Severity 2 -LogType CMTrace -WriteHost $True
+    }
+    Else
+    {
+        Write-Log -Message "Installing DNS Tools..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Add-WindowsCapability -Online -Name "Rsat.Dns.Tools~~~~0.0.1.0"
+        Write-Log -Message "DNS Tools were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    }
 
     # Remote Desktop Service Tools
     #Add-WindowsCapability -Online -Name Rsat.RemoteDesktop.Services.Tools~~~~0.0.1.0
@@ -218,39 +250,53 @@ If ($envOSName -like "*Windows 10*")
     #Add-WindowsCapability -Online -Name Rsat.SystemInsights.Management.Tools~~~~0.0.1.0
     #Add-WindowsCapability -Online -Name Rsat.VolumeActivation.Tools~~~~0.0.1.0
     #Add-WindowsCapability -Online -Name Rsat.WSUS.Tools~~~~0.0.1.0
-}
 
-If ($envOSName -like "*Windows Server*")
+    Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+}
+ElseIf ($envOSName -like "*Windows Server*")
 {
-    # Group Policy Management
+    # Install Group Policy Management
     If ((Get-WindowsFeature -Name GPMC | Select-Object -ExpandProperty "InstallState") -ne "Installed")
     {
+        Write-Log -Message "Installing Group Policy Management..." -Severity 1 -LogType CMTrace -WriteHost $True
         Install-WindowsFeature -Name GPMC | Out-Null
+        Write-Log -Message "Group Policy Management was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     }
     Else
     {
         Write-Log -Message "Group Policy Management is already installed!" -Severity 2 -LogType CMTrace -WriteHost $True
     }
-    # Active Directory Tools
+
+    # Install Active Directory Tools
     If ((Get-WindowsFeature -Name RSAT-AD-Tools | Select-Object -ExpandProperty "InstallState") -ne "Installed")
     {
+        Write-Log -Message "Installing Active Directory Tools..." -Severity 1 -LogType CMTrace -WriteHost $True
         Install-WindowsFeature -Name RSAT-AD-Tools | Out-Null
+        Write-Log -Message "Active Directory Tools were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     }
     Else
     {
         Write-Log -Message "Active Directory Tools are already installed!" -Severity 2 -LogType CMTrace -WriteHost $True
     }
-    # DNS Tools
+
+    # Install DNS Tools
     If ((Get-WindowsFeature -Name RSAT-DNS-Server | Select-Object -ExpandProperty "InstallState") -ne "Installed")
     {
+        Write-Log -Message "Installing DNS Tools..." -Severity 1 -LogType CMTrace -WriteHost $True
         Install-WindowsFeature -Name RSAT-DNS-Server | Out-Null
+        Write-Log -Message "DNS Tools were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     }
     Else
     {
         Write-Log -Message "DNS Tools are already installed!" -Severity 2 -LogType CMTrace -WriteHost $True
     }
+
     # Install-WindowsFeature -Name RSAT-DHCP
     # Install-WindowsFeature -Name RSAT-DFS-Mgmt-Con
-}
 
-Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName were installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+}
+Else
+{
+    Write-Log -Message "Operating system is not supported!" -Severity 3 -LogType CMTrace -WriteHost $True
+}
