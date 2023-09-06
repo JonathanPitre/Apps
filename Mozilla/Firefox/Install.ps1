@@ -79,7 +79,6 @@ Function Get-ScriptName
         }
     }
 }
-
 Function Initialize-Module
 {
     <#
@@ -317,6 +316,7 @@ pref('browser.disableResetPrompt', true);
 
     # Configure application shortcut
     Remove-File -Path "$envUserStartMenuPrograms\Firefox Private Browsing.lnk"
+    Remove-File -Path "$envCommonDesktop\$appName.lnk" -ContinueOnError $True
     #New-Shortcut -Path "$envSystemDrive\Users\Default\AppData\Roaming\Microsoft\Internet Explorer\Quick Launch\User Pinned\Taskbar\$appName.lnk" -TargetPath "$appDestination\$($appProcesses[0]).exe" -IconLocation "$appDestination\$($appProcesses[0]).exe" -Description "$appName" -WorkingDirectory "$appDestination"
 
     # Go back to the parent folder
