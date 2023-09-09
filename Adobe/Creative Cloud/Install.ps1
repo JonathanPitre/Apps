@@ -16,7 +16,7 @@ Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Evergreen") # Modules list
+$Modules = @("PSADT") # Modules list
 
 Function Get-ScriptPath
 {
@@ -177,6 +177,7 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Function Get-AdobeCreativeCloud
 {
     [OutputType([System.Management.Automation.PSObject])]
@@ -266,9 +267,10 @@ $appInstallParameters = "--silent" #--INSTALLLANGUAGE=<ProductInstallLanguage>
 $appURLCleanerTool = "https://swupmf.adobe.com/webfeed/CleanerTool/win/AdobeCreativeCloudCleanerTool.exe"
 $appCleanerTool = Split-Path -Path $appURLCleanerTool -Leaf
 $appCleanerToolParameters = "--cleanupXML=$appScriptPath\cleanup.xml"
-$Nevergreen = Get-AdobeCreativeCloud | Where-Object { $_.Architecture -eq "x64" -and $_.Edition -eq 'Enterprise' -and $_.Type -eq 'Zip' }
-$appVersion = $Nevergreen.Version
-$appURL = $Nevergreen.URI
+$Evergreen = Get-AdobeCreativeCloud | Where-Object { $_.Architecture -eq "x64" -and $_.Edition -eq 'Enterprise' -and $_.Type -eq 'Zip' }
+$appVersion = $Evergreen.Version
+$appVersion = $appVersion.Substring(0, $appVersion.Length - 2)
+$appURL = $Evergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf
 $appSetup = "Set-up.exe"
 $appDestination = "${env:ProgramFiles(x86)}\Adobe\Adobe Creative Cloud\Utils"
