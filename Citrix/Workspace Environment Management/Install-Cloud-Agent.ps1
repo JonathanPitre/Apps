@@ -307,7 +307,7 @@ Function Get-CitrixDownload
 [string]$appInstallParameters = "/quiet Cloud=1" # OnPrem 0 Cloud 1
 [int]$appDlNumber = "16122"
 [array]$Evergreen = Get-CitrixWEMAgent
-$appVersion = $Evergreen.Version
+$appVersion = "2309.1.0.1"
 [string]$appURL = $Evergreen.URI
 [string]$appZip = Split-Path -Path $appURL -Leaf
 [string]$appSetup = "Citrix Workspace Environment Management Agent.exe"
@@ -446,8 +446,9 @@ If (($isAppInstalled -eq $false) -or ([version]$appVersion -gt [version]$appInst
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Application Info Viewer.lnk" -TargetPath "$appDestination\AppInfoViewer.exe"
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Manage Applications.lnk" -TargetPath "$appDestination\AppsMgmtUtil.exe"
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Manage Printers.lnk" -TargetPath "$appDestination\PrnsMgmtUtil.exe"
-    Remove-File -Path "$envCommonStartMenuPrograms\$appVendor\WEM Enrollment Registration Utility.lnk" -ContinueOnError $True
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Enrollment Registration Utility.lnk" -TargetPath "$appDestination\Citrix.Wem.Agent.Enrollment.RegUtility.exe"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Reset Cache.lnk" -TargetPath "$appDestination\AgentCacheUtility.exe" -Arguments "-RefreshSettings -RefreshCache -Reinitialize -Debug"
+    Remove-File -Path "$envCommonStartMenuPrograms\$appVendor\WEM Enrollment Registration Utility.lnk" -ContinueOnError $True
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
@@ -566,8 +567,9 @@ ElseIf (([version]$appVersion -eq [version]$appInstalledVersion) -and ($appInsta
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Application Info Viewer.lnk" -TargetPath "$appDestination\AppInfoViewer.exe"
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Manage Applications.lnk" -TargetPath "$appDestination\AppsMgmtUtil.exe"
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Manage Printers.lnk" -TargetPath "$appDestination\PrnsMgmtUtil.exe"
-    Remove-File -Path "$envCommonStartMenuPrograms\$appVendor\WEM Enrollment Registration Utility.lnk" -ContinueOnError $True
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Enrollment Registration Utility.lnk" -TargetPath "$appDestination\Citrix.Wem.Agent.Enrollment.RegUtility.exe"
+    New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\$appVendor WEM Reset Cache.lnk" -TargetPath "$appDestination\AgentCacheUtility.exe" -Arguments "-RefreshSettings -RefreshCache -Reinitialize -Debug"
+    Remove-File -Path "$envCommonStartMenuPrograms\$appVendor\WEM Enrollment Registration Utility.lnk" -ContinueOnError $True
 
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
