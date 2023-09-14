@@ -238,6 +238,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Configure UI Language
     Set-RegistryKey -Key "HKLM:\DefaultUser\Software\paint.net" -Name "UI/Language" -Value $appLanguage -Type String
 
+    # Disable animations
+    Set-RegistryKey -Key "HKLM:\DefaultUser\Software\paint.net" -Name "UI/EnableAnimations" -Value "False" -Type String
+
     # Cleanup (to prevent access denied issue unloading the registry hive)
     [GC]::Collect()
     Start-Sleep -Seconds 5
