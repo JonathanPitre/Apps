@@ -221,15 +221,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If (Test-Path -Path $appDestination\Notepad3.ini)
     {
         Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Notepad3" -Key "Notepad3.ini" -Value "%APPDATA%\Rizonesoft\Notepad3\Notepad3.ini"
-        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings" -Key "SettingsVersion" -Value "5"
+        #Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings" -Key "SettingsVersion" -Value "5"
+        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings" -Key Favorites -Value "%APPDATA%\Rizonesoft\Notepad3\Favorites\"
         Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings" -Key "AutoCompleteWords" -Value "true"
-        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Suppressed Messages" -Key "MsgSaveSettingsInfo" -Value "1"
-        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings2" -Key "PreferredLanguageLocaleName" -Value "$appPreferredLanguage"
+        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings" -Key "AutoDetectIndentSettings" -Value "true"
         Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings2" -Key "ReuseWindow" -Value "true"
-        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings2" -Key "SingleFileInstance" -Value "1"
+        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings2" -Key "PreferredLanguageLocaleName" -Value "$appPreferredLanguage"
+        #Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Settings2" -Key "SingleFileInstance" -Value "1"
+        Set-IniValue -FilePath "$appDestination\Notepad3.ini" -Section "Suppressed Messages" -Key "MsgSaveSettingsInfo" -Value "1"
     }
     # Copy settings to Default user profile
-    Copy-File -Path "$appDestination\Notepad3.ini" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\Rizonesoft\Notepad3"
+    #Copy-File -Path "$appDestination\Notepad3.ini" -Destination "$envSystemDrive\Users\Default\AppData\Roaming\Rizonesoft\Notepad3"
+    New-Folder -Path "$envSystemDrive\Users\Default\AppData\Roaming\Rizonesoft\Notepad3"
 
     # Go back to the parent folder
     Set-Location ..
