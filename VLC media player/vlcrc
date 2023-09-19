@@ -1,5 +1,5 @@
 ﻿###
-###  vlc 3.0.16
+###  vlc 3.0.18
 ###
 
 ###
@@ -356,6 +356,12 @@
 
 # Use hardware blending support (boolean)
 #direct3d11-hw-blending=1
+
+# ? (integer)
+#winrt-d3dcontext=0
+
+# ? (integer)
+#winrt-swapchain=0
 
 [transform] # Video transformation filter
 
@@ -1465,7 +1471,7 @@
 #sout-avi-subject=
 
 # Encoder (string)
-#sout-avi-encoder=VLC Media Player - 3.0.16 Vetinari
+#sout-avi-encoder=VLC Media Player - 3.0.18 Vetinari
 
 # Keywords (string)
 #sout-avi-keywords=
@@ -1595,7 +1601,7 @@
 #skins2-config=
 
 # Systray icon (boolean)
-#skins2-systray=0
+#skins2-systray=1
 
 # Show VLC on the taskbar (boolean)
 #skins2-taskbar=1
@@ -2286,10 +2292,10 @@ qt-privacy-ask=0
 #sout-x264-stats=x264_2pass.log
 
 # Default preset setting used (string)
-sout-x264-preset=ultrafast
+#sout-x264-preset=
 
 # Default tune setting used (string)
-sout-x264-tune=film
+#sout-x264-tune=
 
 # x264 advanced options (string)
 #sout-x264-options=
@@ -2843,9 +2849,6 @@ sout-x264-tune=film
 # Frames Threads (integer)
 #dav1d-thread-frames=0
 
-# Tiles Threads (integer)
-#dav1d-thread-tiles=0
-
 [cc] # Closed Captions decoder
 
 # Opacity (boolean)
@@ -2996,6 +2999,7 @@ sout-x264-tune=film
 
 # Advanced options (string)
 #sout-avio-options=
+avcodec-hw=d3d11va
 
 [aribsub] # ARIB subtitles decoder
 
@@ -3346,20 +3350,26 @@ sout-x264-tune=film
 
 [access_output_srt] # SRT stream output
 
-# SRT chunk size (bytes) (integer)
-#chunk-size=1316
-
 # Return poll wait after timeout milliseconds (-1 = infinite) (integer)
-#poll-timeout=100
+#poll-timeout=-1
 
 # SRT latency (ms) (integer)
-#latency=125
+#latency=120
 
 # Password for stream encryption (string)
 #passphrase=
 
+# SRT maximum payload size (bytes) (integer)
+#payload-size=1316
+
+# SRT maximum bandwidth ceiling (bytes) (integer)
+#bandwidth-overhead-limit=25
+
 # Crypto key length in bytes (integer)
 #key-length=16
+
+#  SRT Stream ID (string)
+#streamid=
 
 [access_output_shout] # IceCAST output
 
@@ -3950,6 +3960,9 @@ sout-x264-tune=film
 # Audio CD device (string)
 #cd-audio=D:
 
+# Musicbrainz Server (string)
+#musicbrainz-server=musicbrainz.org
+
 # CDDB Server (string)
 #cddb-server=freedb.videolan.org
 
@@ -3963,20 +3976,20 @@ sout-x264-tune=film
 
 [access_srt] # SRT input
 
-# SRT chunk size (bytes) (integer)
-#chunk-size=1316
-
 # Return poll wait after timeout milliseconds (-1 = infinite) (integer)
 #poll-timeout=-1
 
 # SRT latency (ms) (integer)
-#latency=125
+#latency=120
 
 # Password for stream encryption (string)
 #passphrase=
 
 # Crypto key length in bytes (integer)
 #key-length=16
+
+#  SRT Stream ID (string)
+#streamid=
 
 [access_mms] # Microsoft Media Server (MMS) input
 
@@ -4074,7 +4087,7 @@ sout-x264-tune=film
 #audio-time-stretch=1
 
 # Audio output module (string)
-aout=any
+#aout=
 
 # Media role (string)
 #role=video
@@ -4212,7 +4225,7 @@ aout=any
 #deinterlace-mode=auto
 
 # Video output module (string)
-vout=any
+#vout=
 
 # Video filter module (string)
 #video-filter=
@@ -5305,4 +5318,3 @@ metadata-network-access=1
 
 # Playlist bookmark 10 (string)
 #bookmark10=
-
