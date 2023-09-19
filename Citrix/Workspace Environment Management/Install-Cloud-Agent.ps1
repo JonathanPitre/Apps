@@ -206,8 +206,7 @@ Function Get-CitrixWEMAgent
     Finally
     {
         $RegEx = "(Minimum agent version required\: )(\d{4}.\d.\d.\d)"
-        #$Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[2].Value
-        $Version = "2309.1.0.1"
+        $Version = ($DownloadText | Select-String -Pattern $RegEx).Matches.Groups[2].Value
         $ZipVersion = $Version.Substring(0, $Version.Length - 4)
         $URL = "https://secureportal.citrix.com/Licensing/Downloads/UnrestrictedDL.aspx?DLID=$($appDlNumber)&URL=https://downloads.citrix.com/$($appDlNumber)/Workspace-Environment-Management-Agent-$($ZipVersion).zip"
 
