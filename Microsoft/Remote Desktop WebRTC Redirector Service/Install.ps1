@@ -217,14 +217,24 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
 
     # Enable Media Optimization - https://docs.microsoft.com/en-us/azure/virtual-desktop/teams-on-avd
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Teams" -Name "IsWVDEnvironment" -Value "1" -Type DWord
-    
+
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
+    # Remove registry entries for Citrix/VMware
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\PortICA"
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Citrix\PortICA"
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\CtxHook\AppInit_Dlls\SfrHook\Teams.exe"
+    Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\VMware, Inc.\VMware WebRTCRedir"
+
+    # Disable fallback mode - https://learn.microsoft.com/en-us/microsoftteams/teams-for-vdi
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Teams" -Name "DisableFallback" -Value "0" -Type DWord
+
     # Enable content sharing for Teams for Remote App - https://learn.microsoft.com/en-us/azure/virtual-desktop/teams-on-avd
     Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\AddIns\WebRTC Redirector\Policy" -Name "ShareClientDesktop" -Value "1" -Type DWord
+
     # Enable desktop screen share for Teams for Remote App - https://learn.microsoft.com/en-us/azure/virtual-desktop/teams-on-avd
     Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\AddIns\WebRTC Redirector\Policy" -Name "DisableRAILAppSharing" -Value "0" -Type DWord
 
