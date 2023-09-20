@@ -377,6 +377,9 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Copy-File -Path "$appScriptPath\com.adobe.acc.container.default.prefs" -Destination "$envSystemDrive\Users\Default\AppData\Local\Adobe\OOBE\com.adobe.acc.container.default.prefs"
     Copy-File -Path "$appScriptPath\com.adobe.acc.default.prefs" -Destination "$envSystemDrive\Users\Default\AppData\Local\Adobe\OOBE\com.adobe.acc.default.prefs"
 
+    # Clean setup files
+    Remove-File -Path $envSystemDrive\Set-up.exe
+
     # Go back to the parent folder
     Set-Location ..
 
