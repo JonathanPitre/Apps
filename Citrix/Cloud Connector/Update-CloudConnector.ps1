@@ -254,6 +254,15 @@ Set-Location -Path "$appScriptPath\$appName"
 Invoke-WebRequest -Uri $appURL -UseBasicParsing -OutFile .\$appScript
 & ".\$appScript"
 
+# Install latest version of Remote Server Administration Tools
+$appName = "Microsoft Remote Server Administration Tools"
+$appURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Remote%20Server%20Administration%20Tools/Install.ps1"
+$appScript = Split-Path -Path $appURL -Leaf
+New-Folder -Path "$appScriptPath\$appName"
+Set-Location -Path "$appScriptPath\$appName"
+Invoke-WebRequest -Uri $appURL -UseBasicParsing -OutFile .\$appScript
+& ".\$appScript"
+
 # Install latest Microsoft VCLibs
 $appName = "Microsoft VCLibs"
 $appURL = "https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx"
