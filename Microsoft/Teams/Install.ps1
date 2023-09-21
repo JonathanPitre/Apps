@@ -448,6 +448,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Rename-Item -Path "$envCommonStartMenuPrograms\$appVendor $appName (work or school).lnk" -NewName "$envCommonStartMenuPrograms\$appName.lnk" -Force
     Remove-File -Path "$envCommonStartMenuPrograms\$appVendor $appName (work or school).lnk" -ContinueOnError $True
     Remove-Folder -Path "$envCommonStartMenuPrograms\$appVendor Corporation" -ContinueOnError $True
+    Rename-Item -Path "$envCommonStartMenuPrograms\$appVendor $appName classic.lnk" -NewName "$envCommonStartMenuPrograms\$appName.lnk" -Force
+    Remove-File -Path "$envCommonStartMenuPrograms\$appVendor $appName classic.lnk" -ContinueOnError $True
 
     # Fix Microsoft Outlook's Teams Presence issue
     If (Test-Path -Path "$envProgramFiles\Microsoft Office\root\Office16\OUTLOOK.EXE")
