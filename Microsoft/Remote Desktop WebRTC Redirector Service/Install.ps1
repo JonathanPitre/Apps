@@ -230,7 +230,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\VMware, Inc.\VMware WebRTCRedir"
 
     # Disable fallback mode - https://learn.microsoft.com/en-us/microsoftteams/teams-for-vdi
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Teams" -Name "DisableFallback" -Value "0" -Type DWord
+    #Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Teams" -Name "DisableFallback" -Value "0" -Type DWord
 
     # Enable content sharing for Teams for Remote App - https://learn.microsoft.com/en-us/azure/virtual-desktop/teams-on-avd
     Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\AddIns\WebRTC Redirector\Policy" -Name "ShareClientDesktop" -Value "1" -Type DWord
