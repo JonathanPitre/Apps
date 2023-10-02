@@ -160,8 +160,6 @@
     <Exclude Copy="0">AppData\Local\Microsoft\Windows\RoamingTiles</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Windows\SchCache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Windows\Temporary Internet Files</Exclude>
-    <Exclude Copy="0">AppData\Local\Microsoft\Windows\WebCache.old</Exclude>
-    <Exclude Copy="0">AppData\Local\Microsoft\Windows\WebCache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Windows\WER</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\WINMSIPC\csr\Logs</Exclude>
     <Exclude Copy="0">AppData\Local\Package Cache</Exclude>
