@@ -334,7 +334,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Start-Sleep -Seconds 5
     Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "LOAD HKLM\DefaultUser $envSystemDrive\Users\Default\NTUSER.DAT" -WindowStyle Hidden
 
-    # Set OneDriveSetup variable
+    # Get Micrososoft OneDrive setups run keys
     $regOneDriveSetup = Get-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Run" -Value "OneDriveSetup"
 
     # Remove the built-in OneDrive setup from running on new user profile
@@ -342,6 +342,17 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If ($regOneDriveSetup)
     {
         Remove-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDriveSetup"
+    }
+
+    # Get Micrososoft OneDrive run keys
+    $regOneDrive = Get-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\Run" -Value "OneDrive"
+
+    If (($envOSName -like "*Windows Server 2019*") -and ($regOneDrive -eq $True))
+    {
+        # Prevent automatic launch of OneDrive on Windows Server since the ADD Plugin must be repaired first for the OneDrive SSO to work
+        Remove-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\RunOnce" -Name "OneDrive"
+        # Enable Storage Sense - https://james-rankin.com/all-posts/quickpost-setting-storage-sense-cloud-content-dehydration-on-server-2019
+        Set-RegistryKey -Key "HKLM:\DefaultUser\Software\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" -Name "01" -Type DWord -Value "1"
     }
 
     # Cleanup (to prevent access denied issue unloading the registry hive)
