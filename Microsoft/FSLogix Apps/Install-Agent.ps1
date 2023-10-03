@@ -481,7 +481,7 @@ Function Get-MicrosoftFSLogixApps
 $appVendor = "Microsoft"
 $appName = "FSLogix Apps"
 $appSetup = "FSLogixAppsSetup.exe"
-$appProcesses = @("frxsvc", "frxtray", "frxshell", "frxccds")
+$appProcesses = @("frxsvc", "frxtray", "frxshell", "frxccd")
 $appInstallParameters = "/install /quiet /norestart"
 $Evergreen = Get-MicrosoftFSLogixApps | Where-Object { $_.Channel -eq "Production" }
 $appVersion = $Evergreen.Version
@@ -507,18 +507,19 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
         Expand-Archive -Path $appZip -DestinationPath $appScriptPath
         Rename-Item -Path "FSLogix_Apps_$appVersion" -NewName $appVersion -Force
-        Set-Location -Path $appScriptPath\$appVersion
         # Move the policy definitions files
         If (-Not(Test-Path -Path "$appScriptPath\PolicyDefinitions")) { New-Folder -Path "$appScriptPath\PolicyDefinitions" }
         If (-Not(Test-Path -Path "$appScriptPath\PolicyDefinitions\en-US")) { New-Folder -Path "$appScriptPath\PolicyDefinitions\en-US" }
-        Move-Item -Path .\fslogix.admx -Destination "$appScriptPath\PolicyDefinitions\fslogix.admx" -Force
-        Move-Item -Path .\fslogix.adml -Destination "$appScriptPath\PolicyDefinitions\en-US\fslogix.adml" -Force
+        Move-Item -Path .$appVersion\fslogix.admx -Destination "$appScriptPath\PolicyDefinitions\fslogix.admx" -Force
+        Move-Item -Path .$appVersion\fslogix.adml -Destination "$appScriptPath\PolicyDefinitions\en-US\fslogix.adml" -Force
         Remove-File -Path $appScriptPath\$appZip
     }
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
+
+    Set-Location -Path $appScriptPath\$appVersion
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\x64\Release\$appSetup -Parameters $appInstallParameters

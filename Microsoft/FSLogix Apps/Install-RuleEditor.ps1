@@ -497,6 +497,7 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Ex
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptPath
+
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
 
@@ -506,13 +507,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
         Expand-Archive -Path $appZip -DestinationPath $appScriptPath
         Rename-Item -Path "FSLogix_Apps_$appVersion" -NewName $appVersion -Force
-        Set-Location -Path $appScriptPath\$appVersion
         Remove-File -Path $appScriptPath\$appZip
     }
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
+
+    Set-Location -Path $appScriptPath\$appVersion
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\x64\Release\$appSetup -Parameters $appInstallParameters
