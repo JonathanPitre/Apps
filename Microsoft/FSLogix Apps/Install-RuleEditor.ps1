@@ -177,6 +177,7 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Function Get-Version
 {
     <#
@@ -496,23 +497,22 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Ex
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
-    Set-Location -Path $appVersion
+    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     If (-Not(Test-Path -Path $appScriptPath\$appVersion\x64\Release\$appSetup))
     {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
-        Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
-        Remove-File -Path $appZip
+        Expand-Archive -Path $appZip -DestinationPath $appScriptPath
+        Rename-Item -Path "FSLogix_Apps_$appVersion" -NewName $appVersion -Force
+        Set-Location -Path $appScriptPath\$appVersion
+        Remove-File -Path $appScriptPath\$appZip
     }
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
-
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\x64\Release\$appSetup -Parameters $appInstallParameters

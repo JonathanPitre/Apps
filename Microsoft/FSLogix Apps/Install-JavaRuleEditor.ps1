@@ -6,6 +6,7 @@
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
 #region Initialisations
+
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "SilentlyContinue"
 # Set the script execution policy for this process
@@ -81,6 +82,12 @@ Function Get-ScriptName
 
 Function Initialize-Module
 {
+    <#
+    .SYNOPSIS
+        Initialize-Module install and import modules from PowerShell Galllery.
+    .OUTPUTS
+        System.String
+    #>
     [CmdletBinding()]
     Param
     (
@@ -164,11 +171,13 @@ Foreach ($Module in $Modules)
 {
     Initialize-Module -Module $Module
 }
+
 #endregion
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Function Get-Version
 {
     <#
@@ -465,7 +474,6 @@ Function Get-MicrosoftFSLogixApps
     }
 }
 
-
 #endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
@@ -481,31 +489,30 @@ $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\FSLogix\Apps"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact) | Select-Object -Last 1
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -Last 1
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact) | Select-Object -First 1
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
-    Set-Location -Path $appVersion
+    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Get-Process -Name $appProcesses | Stop-Process -Force
 
     If (-Not(Test-Path -Path $appScriptPath\$appVersion\x64\Release\$appSetup))
     {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
-        Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
-        Remove-File -Path $appZip
+        Expand-Archive -Path $appZip -DestinationPath $appScriptPath
+        Rename-Item -Path "FSLogix_Apps_$appVersion" -NewName $appVersion -Force
+        Set-Location -Path $appScriptPath\$appVersion
+        Remove-File -Path $appScriptPath\$appZip
     }
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
-
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcesses | Stop-Process -Force
 
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\x64\Release\$appSetup -Parameters $appInstallParameters

@@ -177,6 +177,7 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Function Get-Version
 {
     <#
@@ -487,17 +488,15 @@ $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\FSLogix\Apps"
-$appURLScript = "https://raw.githubusercontent.com/FSLogix/Invoke-FslShrinkDisk/master/Invoke-FslShrinkDisk.ps1"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact) | Select-Object -Last 1
-$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -Last 1
+$serviceName = "WSearch"
+[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact) | Select-Object -First 1
+$appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
-    Set-Location -Path $appVersion
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
@@ -506,13 +505,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     {
         Write-Log -Message "Downloading $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appZip
-        Expand-Archive -Path $appZip -DestinationPath $appScriptPath\$appVersion
+        Expand-Archive -Path $appZip -DestinationPath $appScriptPath
+        Rename-Item -Path "FSLogix_Apps_$appVersion" -NewName $appVersion -Force
+        Set-Location -Path $appScriptPath\$appVersion
         # Move the policy definitions files
         If (-Not(Test-Path -Path "$appScriptPath\PolicyDefinitions")) { New-Folder -Path "$appScriptPath\PolicyDefinitions" }
         If (-Not(Test-Path -Path "$appScriptPath\PolicyDefinitions\en-US")) { New-Folder -Path "$appScriptPath\PolicyDefinitions\en-US" }
         Move-Item -Path .\fslogix.admx -Destination "$appScriptPath\PolicyDefinitions\fslogix.admx" -Force
         Move-Item -Path .\fslogix.adml -Destination "$appScriptPath\PolicyDefinitions\en-US\fslogix.adml" -Force
-        Remove-File -Path $appZip
+        Remove-File -Path $appScriptPath\$appZip
     }
     Else
     {
@@ -532,32 +533,15 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     New-Shortcut -Path "$envCommonStartMenuPrograms\Administrative Tools\FSLogix Tray Icon.lnk" -TargetPath "$appDestination\frxtray.exe" -IconLocation "$appDestination\frxtray.exe" -Description "FSLogix Tray Icon" -WorkingDirectory "$appDestination"
 
     # Enable FSLogix Apps agent search roaming - Apply different configurations based on operating system
-    If ($envOSName -like "*Windows Server 2012*" -or $envOSName -like "*Windows Server 2016")
+    If ($envOSName -like "*Windows Server 2012*" -or $envOSName -like "*Windows Server 2016*")
     {
         # Install Windows Search feature when missing, if Office was installed before it must be repair!
         If (-Not(Get-WindowsFeature -Name Search-Service)) { Install-WindowsFeature Search-Service }
     }
-    If ($envOSName -like "*Windows Server 2016")
+    If ($envOSName -like "*Windows Server 2019*" -or $envOSName -like "*Windows 10 Enterprise for Virtual Desktops*")
     {
-        # Limit Windows Search to a single cpu core - https://social.technet.microsoft.com/Forums/en-US/88725f57-67ed-4c09-8ae6-780ff785e555/problems-with-search-service-on-server-2012-r2-rds?forum=winserverTS
-        #Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "CoreCount" -Type "DWord" -Value "1"
-        # Configure multi-user search - https://docs.microsoft.com/en-us/fslogix/configure-search-roaming-ht
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Value "2" -Type DWord
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Value "2" -Type DWord
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Value "0" -Type DWord
-    }
-    If ($envOSName -like "*Windows Server 2019*" -or $envOSName -like "*Windows Server 2022*" -or $envOSName -like "*Windows 10 Enterprise for Virtual Desktops")
-    {
-        # Limit Windows Search to a single cpu core - https://social.technet.microsoft.3.com/Forums/en-US/88725f57-67ed-4c09-8ae6-780ff785e555/problems-with-search-service-on-server-2012-r2-rds?forum=winserverTS
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "CoreCount" -Value "1" -Type DWord
-        # Enable Windows per user search catalog since FSLogix search indexing functionality is not recommended on Windows Server 2019 and Windows 10 multi-session
-        # https://docs.microsoft.com/en-us/fslogix/configure-search-roaming-ht
+        # Add schedule task to fix Windows Searh error 0x80004002
         # https://jkindon.com/2020/03/15/windows-search-in-server-2019-and-multi-session-windows-10
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows Search" -Name "EnablePerUserCatalog" -Value 1 -Type DWord
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Value "0" -Type DWord
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Value "0" -Type DWord
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Value "0" -Type DWord
-
         # Define CIM object variables - https://virtualwarlock.net/how-to-install-the-fslogix-apps-agent
         # This is needed for accessing the non-default trigger settings when creating a schedule task using Powershell
         $Class = Get-CimClass MSFT_TaskEventTrigger root/Microsoft/Windows/TaskScheduler
@@ -583,15 +567,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Register-ScheduledTask @RegSchTaskParameters
         Write-Log -Message "Scheduled Task to reset Windows Search was registered!" -Severity 1 -LogType CMTrace -WriteHost $True
     }
-    If ($envOSName -like "*Windows 10*" -and $envOSName -ne "*Windows 10 Enterprise for Virtual Desktops")
-    {
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Apps" -Name "RoamSearch" -Value "1" -Type DWord
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\FSLogix\Profiles" -Name "RoamSearch" -Value "1" -Type DWord
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\FSLogix\ODFC" -Name "RoamSearch" -Value "0" -Type DWord
-    }
 
     # Configure Windows Search service auto-start and start it
-    $serviceName = "WSearch"
     If ((Get-ServiceStartMode -Name $serviceName) -ne "Automatic") { Set-ServiceStartMode -Name $serviceName -StartMode "Automatic" }
     Start-ServiceAndDependencies -Name $serviceName
 
@@ -623,7 +600,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Add-MpPreference -ExclusionPath "%TEMP%\*.VHD" -Force
     Add-MpPreference -ExclusionPath "%TEMP%\*.VHDX" -Force
     Add-MpPreference -ExclusionPath "%Windir%\TEMP\*.VHD" -Force
-    Add-MpPreference -ExclusionPath "%Windir%\TEMP­­\*.VHDX" -Force
+    Add-MpPreference -ExclusionPath "%Windir%\TEMPÂ­Â­\*.VHDX" -Force
     Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Cache\*.VHD" -Force
     Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Cache\*.VHDX" -Force
     Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Proxy\*.VHD" -Force
@@ -642,6 +619,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Go back to the parent folder
     Set-Location ..
 
+    Write-Log -Message "Please ensure to update to the new Policy Definitions files (ADMX)!" -Severity 2 -LogType CMTrace -WriteHost $True
     Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
