@@ -329,6 +329,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     Write-Log -Message "Installing $appVendor $appName $appLongName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters
+    Execute-Process -Path "$envWinDir\explorer.exe"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
