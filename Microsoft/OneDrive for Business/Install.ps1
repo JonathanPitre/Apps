@@ -201,7 +201,7 @@ $appModule = Split-Path -Path $appModuleURL -Leaf
 $appDestination = "${env:ProgramFiles}\Microsoft OneDrive"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName").DisplayVersion
-$appUninstallString = ((Get-InstalledApplication -Name "$appVendor $appName").UninstallString).Split("/")[0]
+$appUninstallString = "$appDestination\$appInstalledVersion\OneDriveSetup.exe"
 $appUninstallParameters = ((Get-InstalledApplication -Name "$appVendor $appName").UninstallString).TrimStart($appUninstallString)
 [boolean]$IsAppInstalledU = [boolean](Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like "*$appName*" })
 $appUninstallStringU = ((Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | Where-Object { $_.DisplayName -like "*$appName*" }).UninstallString).Split("/")[0]
@@ -231,7 +231,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Uninstall machine installation
     Get-Process -Name $appProcesses | Stop-Process -Force
-    If ($IsAppInstalled)
+    If ($isAppInstalled)
     {
         Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-Process -Path $appUninstallString -Parameters $appUninstallParameters
@@ -292,6 +292,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Remove left over files
     Remove-File -Path "$envWinDir\ServiceProfiles\LocalService\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\OneDrive.lnk" -ContinueOnError $True
     Remove-File -Path "$envWinDir\ServiceProfiles\NetworkService\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\OneDrive.lnk" -ContinueOnError $True
+    Get-Process -Name $appProcesses | Stop-Process -Force
+    Remove-Folder -Path "$appDestination" -ContinueOnError $True
     Remove-Folder -Path "$envProgramData\Microsoft\OneDrive" -ContinueOnError $True
     Remove-Folder -Path "$envSystemDrive\OneDriveTemp" -ContinueOnError $True
 
