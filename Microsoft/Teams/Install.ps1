@@ -299,6 +299,8 @@ https://github.com/asheroto/Search-Registry
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+#region Declarations
+
 $appVendor = "Microsoft"
 $appName = "Teams"
 $appProcesses = @("Teams", "Update", "Squirrel", "Outlook")
@@ -313,15 +315,19 @@ $appRegtlibURL = "https://github.com/JonathanPitre/Apps/raw/master/Microsoft/Tea
 $appRegtlib = Split-Path -Path $appRegtlibURL -Leaf
 $appInstallParameters = "/QB"
 $appAddParameters = "ALLUSERS=1 ALLUSER=1 OPTIONS='noAutoStart=true"
-$Evergreen = Get-EvergreenApp -Name $appVendor$appName | Where-Object { $_.Ring -eq $appRing -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "Msi" }
+$Evergreen = Get-EvergreenApp -Name $appVendor$appName | Where-Object { $_.Ring -eq $appRing -and $_.Architecture -eq $appArchitecture -and $_.Type -eq "msi" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
 $appDestination = "${env:ProgramFiles(x86)}\Microsoft\Teams\current"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName")
-$appInstalledVersion = If ($IsAppInstalled) { Get-FileVersion -File "$appDestination\Teams.exe" }
+[boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact)
+$appInstalledVersion = If ($isAppInstalled) { Get-FileVersion -File "$appDestination\Teams.exe" }
+
+#endregion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+#region Execution
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -424,10 +430,16 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
     }
 
+    # Detect if running from a Citrix machine
+    [boolean]$isCitrixInstalled = [boolean](Get-InstalledApplication -Name "Citrix .*Virtual Apps and Desktops.*" -RegEx)
+    If ($isCitrixInstalled)
+    {
+        # Add required reg key for Citrix - https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/1912-ltsr/multimedia/opt-ms-teams.html
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix" -Name "PortICA"
+    }
+
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-    # Required if not using the custom MST
-    #New-Item -Path "HKLM:\SOFTWARE\Citrix" -Name "PortICA" -Force
     Execute-MSI -Action Install -Path $appSetup -Parameters $appInstallParameters -AddParameters $appAddParameters -Transform "$appScriptPath\$appTransform"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -438,8 +450,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Remove unneeded applications from running at start-up
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "TeamsMachineUninstallerLocalAppData" -ContinueOnError $True
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name "TeamsMachineUninstallerProgramData" -ContinueOnError $True
-    # If Teams is configured to Auto-start, the issue in the bullet above might also manifest. We recommend disabling auto-start by deleting the Teams regkeys
-    # https://support.citrix.com/article/CTX253754
+    # It is recommended to disable auto-start by deleting the Teams registry keys. oing so prevents many logons that occur at the same time (for example, at the beginning of your work day) from spiking up the VM’s CPU.
+    # https://docs.citrix.com/en-us/citrix-virtual-apps-desktops/multimedia/opt-ms-teams.html
     Remove-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run" -Name $appName -ContinueOnError $True
 
     # Configure application shortcut
@@ -576,3 +588,5 @@ Else
 {
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
+
+#endregion
