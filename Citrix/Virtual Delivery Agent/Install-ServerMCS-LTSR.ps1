@@ -177,6 +177,7 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Function Get-CitrixVDA
 {
     [OutputType([System.Management.Automation.PSObject])]
