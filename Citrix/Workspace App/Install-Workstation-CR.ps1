@@ -181,6 +181,8 @@ Foreach ($Module in $Modules)
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+#region Declarations
+
 $appVendor = "Citrix"
 $appName = "Workspace"
 $appName2 = "app"
@@ -195,7 +197,11 @@ $appDestination = "${env:ProgramFiles(x86)}\Citrix\ICA Client"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx).DisplayVersion
 
+#endregion
+
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+#region Execution
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -268,11 +274,14 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Fix AutoCAD slow mouse performance - https://support.citrix.com/article/CTX235943
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Mouse" -Name "MouseTimer" -Type "String" -Value "25"
 
+    # Enable support for EDT Lossy protocol - https://docs.citrix.com/en-us/citrix-workspace-app-for-windows/about-this-release/features-in-technical-preview
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Citrix\ICA Client\Engine\Configuration\Advanced\Modules\ClientAudio" -Name "EdtUnreliableAllowed" -Type "String" -Value "1"
+
     # Don't sync keyboard layout
-    #Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Keyboard" -Name "LocalIME" -Type "String" -Value "0"
+    #Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channel s\Keyboard" -Name "LocalIME" -Type "String" -Value "0"
     #Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Keyboard" -Name "KeyboardSyncMode" -Type "String" -Value "(Server Default)"
 
-    # Copy policy definitions files to lacal computer
+    # Copy policy definitions files to local computer
     Copy-File -Path $appDestination\Configuration\*.admx, $appDestination\Configuration\en-us -Destination $envWinDir\PolicyDefinitions -Recurse
 
     # Go back to the parent folder
@@ -284,3 +293,5 @@ Else
 {
     Write-Log -Message "$appVendor $appName $appName2 $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
+
+#endregion
