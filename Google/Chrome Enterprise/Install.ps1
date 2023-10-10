@@ -324,6 +324,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     # Configure application shortcut
     Remove-File -Path "$envCommonDesktop\$appVendor $appName.lnk" -ContinueOnError $True
+    Remove-File -Path "$envUserDesktop\$appVendor $appName.lnk" -ContinueOnError $True
 
     # Fix an issue with Citrix Virtual Delivery Agent - https://support.google.com/chrome/a/answer/7380899?hl=en
     [boolean]$isCitrixVdaInstalled = [boolean](Get-InstalledApplication -Name "Citrix .*Virtual Delivery Agent.*" -RegEx)
