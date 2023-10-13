@@ -212,7 +212,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion) {
     }
 
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Stop-ServiceAndDependencies -Name $appServices[0]
+    Get-Service -Name $appServices[0] | Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest
     Remove-MSIApplications -Name $appName
 
     # Enable Media Optimization - https://docs.microsoft.com/en-us/azure/virtual-desktop/teams-on-avd
