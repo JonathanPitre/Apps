@@ -390,14 +390,11 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Copy-File -Path ".\$appInstall" -Destination "$envTemp\Install" -Recurse
     Set-Location -Path "$envTemp\Install"
 
-    # Uninstall previous versions
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcesses | Stop-Process -Force
-
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     # Delete previous logs
     Remove-Folder -Path "$env:Temp\Citrix\XenDesktop Installer" -Recurse
+    Disable-Autologon
     Execute-Process -Path .\$appInstall -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -516,7 +513,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     }
 
     # Disable
-    If ($enableCitrixVirtualSmartCard)
+    If ($enableCitrixVirtualSmartCard -eq $false)
     {
         # "C:\Program Files\Citrix\Virtual Smart Card\Citrix.Authentication.VirtualSmartcard.Launcher.exe"
         Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "Citrix Virtual Smart Card"
@@ -550,10 +547,6 @@ ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScript
         Write-Log -Message "Uninstalling Citrix Connection Quality Indicator..." -Severity 1 -LogType CMTrace -WriteHost $True
         Remove-MSIApplications -Name "Citrix Connection Quality Indicator" -Exact
     }
-
-    # Copy $appInstall to $envTemp\Install to avoid install issue
-    Copy-File -Path ".\$appInstall" -Destination "$envTemp\Install" -Recurse
-    Set-Location -Path "$envTemp\Install"
 
     # Uninstall previous versions
     Write-Log -Message "$appVendor $appName $appInstalledVersion must be uninstalled first." -Severity 2 -LogType CMTrace -WriteHost $True
