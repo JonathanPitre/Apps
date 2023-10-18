@@ -275,6 +275,7 @@ If ($isLocalCredentialStored)
 {
     Write-Host -Object "Stored credentials found for current account." -ForegroundColor Green
     $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Store)
+    $localCredentialsUserName = $localCredentials.UserName
     $localCredentialsPassword = $localCredentials.Password
 }
 Else
@@ -282,6 +283,7 @@ Else
     Write-Host -Object "Please enter your current account credentials." -ForegroundColor Green
     $null = BetterCredentials\Get-Credential -UserName $env:USERNAME -Store
     $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Store)
+    $localCredentialsUserName = $localCredentials.UserName
     $localCredentialsPassword = $localCredentials.Password
 }
 
@@ -289,7 +291,7 @@ Set-Location -Path $appScriptPath
 If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
 Set-Location -Path $appVersion
 
-# New installation
+# VDA new installation
 If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersion\$appInstall") -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
 {
     # Detect if running from a Citrix session
@@ -403,12 +405,6 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     # Delete previous logs
     Remove-Folder -Path "$env:Temp\Citrix\XenDesktop Installer" -Recurse
     Execute-Process -Path .\$appInstall -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
-
-    # Put back runonce value
-    If ((-Not [string]::IsNullOrEmpty($regRunOnceValue)))
-    {
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "(Default)" -Value $regRunOnceValue
-    }
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
     # Stop and disable unneeded services
@@ -544,12 +540,29 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Set-Location ..
     Remove-Folder -Path "$envTemp\Install"
 
+    # Set back previous runonce value
+    If ((-Not [string]::IsNullOrEmpty($regRunOnceValue)))
+    {
+        Enable-AutoLogon -Password $localCredentialsPassword -AsynchronousRunOnce
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "(Default)" -Value $regRunOnceValue
+    }
+
+    # Verify Citrix Service
+    If (Test-ServiceExists -Name "BrokerAgent")
+    {
+        Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+    Else
+    {
+        Write-Log -Message "$appVendor $appName $appVersion installation FAILLED!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Start-Sleep -Seconds 5
+    }
+
     # Reboot
-    Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
-# In-place update
+# VDA in-place update
 ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
 {
     # Fix an issue with Citrix Connection Quality Indicator
@@ -583,12 +596,41 @@ ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScript
     {
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "(Default)" -Value $regRunOnceValue
     }
+
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
+# VDA is already installed
 ElseIf ($appVersion -eq $appInstalledVersion)
 {
-    Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Test Citrix Service
+    If (Test-ServiceExists -Name "BrokerAgent")
+    {
+        Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+    Else
+    {
+        Write-Log -Message "$appVendor $appName $appVersion installation FAILLED!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Start-Sleep -Seconds 5
+        # Run Citrix VDA CleanUp Utility
+        Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+        # Delete previous logs
+        Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
+        Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
+        Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+        # Reboot and relaunch script
+        If ([string]::IsNullOrEmpty($regRunOnceValue))
+        {
+            Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
+        }
+        Else
+        {
+            Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "(Default)" -Value $regRunOnceValue
+        }
+
+        Write-Log -Message "A reboot is required to relaunch $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
+        Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
+    }
 }
 Else
 {
