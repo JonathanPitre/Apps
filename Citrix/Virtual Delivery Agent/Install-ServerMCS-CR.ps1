@@ -262,6 +262,13 @@ Function Get-SessionName
 
 #region Execution
 
+# Disable automatic logon at next reboot to avoid powershell from automatically launching after the VDA installation
+$regRunOnceValue = Get-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Value "(default)"
+If ((-Not [string]::IsNullOrEmpty($regRunOnceValue)))
+{
+    Disable-AutoLogon
+}
+
 # Get current account credentials
 [bool]$isLocalCredentialStored = [bool](Find-Credential -Filter "*$envUserName")
 If ($isLocalCredentialStored)
@@ -282,6 +289,7 @@ Set-Location -Path $appScriptPath
 If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
 Set-Location -Path $appVersion
 
+# New installation
 If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersion\$appInstall") -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
 {
     # Detect if running from a Citrix session
@@ -394,11 +402,15 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
     # Delete previous logs
     Remove-Folder -Path "$env:Temp\Citrix\XenDesktop Installer" -Recurse
-    Disable-Autologon
     Execute-Process -Path .\$appInstall -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
 
-    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Put back runonce value
+    If ((-Not [string]::IsNullOrEmpty($regRunOnceValue)))
+    {
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "(Default)" -Value $regRunOnceValue
+    }
 
+    Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
     # Stop and disable unneeded services
     Get-Service -Name $appServices[0] | Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest
     Get-Service -Name $appServices[0] | Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
@@ -512,7 +524,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
         }
     }
 
-    # Disable
+    # Disable Citrix Virtual Smart Card process
     If ($enableCitrixVirtualSmartCard -eq $false)
     {
         # "C:\Program Files\Citrix\Virtual Smart Card\Citrix.Authentication.VirtualSmartcard.Launcher.exe"
@@ -537,6 +549,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
+# In-place update
 ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
 {
     # Fix an issue with Citrix Connection Quality Indicator
@@ -562,14 +575,15 @@ ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScript
     #Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Reboot and relaunch script
-    #Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
+    If ([string]::IsNullOrEmpty($regRunOnceValue))
+    {
+        Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
+    }
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
 ElseIf ($appVersion -eq $appInstalledVersion)
 {
-    # Disable autologon
-    #Disable-AutoLogon
     Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
@@ -578,9 +592,6 @@ Else
     Start-Process -FilePath "https://www.citrix.com/downloads/citrix-virtual-apps-and-desktops"
     Start-Sleep -Seconds 2
     Start-Process -FilePath "https://support.citrix.com/article/CTX209255/vda-cleanup-utility"
-
-    # Disable autologon
-    #Disable-AutoLogon
 }
 
 #endregion
