@@ -385,11 +385,14 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
         Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\VirtualDesktopAgent" -Name "GctRegistration" -Value "1" -Type "DWord"
     }
 
-    # Reduce HDX bandwidth usage by up to 15% -https://www.citrix.com/blogs/2023/04/06/reduce-your-hdx-bandwidth-usage
-    #Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\GroupPolicy\Defaults\WDSettings" -Name "ReducerOverrideMask" -Value "23" -Type "DWord"
+    # Reduce HDX bandwidth usage by up to 15% - https://www.citrix.com/blogs/2023/04/06/reduce-your-hdx-bandwidth-usage
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\GroupPolicy\Defaults\WDSettings" -Name "ReducerOverrideMask" -Value "23" -Type "DWord"
 
     # Enable new EDT congestion control - https://www.citrix.com/blogs/2023/04/25/turbo-charging-edt-for-unparalleled-experience-in-a-hybrid-world
-    #Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd\Tds\udp\UDPStackParameters" -Name "edtBBR" -Value "1" -Type "DWord"
+    Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\icawd\Tds\udp\UDPStackParameters" -Name "edtBBR" -Value "1" -Type "DWord"
+
+    # Enable support for EDT Lossy protocol - https://docs.citrix.com/en-us/citrix-workspace-app-for-windows/ear.html
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Audio" -Name "EdtUnreliableAllowed" -Value "1" -Type "DWord"
 
     # Delete logs and cache files
     Remove-File -Path "$env:ProgramData\Citrix\TelemetryService\CitrixAOT\*.etl"
