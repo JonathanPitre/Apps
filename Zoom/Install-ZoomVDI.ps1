@@ -181,6 +181,8 @@ Foreach ($Module in $Modules)
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+#region Declarations
+
 $appShortName = "Zoom"
 $appName = "Zoom Client for VDI"
 $appProcesses = @("Zoom", "Zoom_launcher", "ZoomOutlookIMPlugin")
@@ -194,15 +196,18 @@ $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = ((Split-Path -Path $appURL -Leaf).Trim("?archType=$appArchitecture"))
 $appDestination = "$env:ProgramFiles\ZoomVDI\bin"
-$appUninstallerURL = "https://support.zoom.us/hc/en-us/article_attachments/360084068792/CleanZoom.zip"
+$appUninstallerURL = "https://assets.zoom.us/docs/msi-templates/CleanZoom.zip"
 $appUninstallerZip = Split-Path -Path $appUninstallerURL -Leaf
 $appUninstallerSetup = "CleanZoom.exe"
 [boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appName")
 $appInstalledVersion = If ($isAppInstalled) { Get-FileVersion -File "$appDestination\Installer.exe" }
 $appInstalledVersion = $appInstalledVersion.Replace(",", ".")
 
+#endregion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+#region Execution
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -289,3 +294,5 @@ Else
 {
     Write-Log -Message "$appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
+
+#endregion
