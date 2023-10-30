@@ -190,9 +190,10 @@ $appProcesses = @("CDViewer", "concentr", "HdxBrowser", "HdxRtcEngine", "redirec
 # https://docs.citrix.com/en-us/citrix-workspace-app-for-windows/install.html
 $appInstallParameters = "EnableCEIP=false EnableTracing=false /forceinstall /noreboot /silent /includeSSON"
 $Evergreen = Get-EvergreenApp -Name CitrixWorkspaceApp | Where-Object { $_.Title -like "Citrix Workspace - Current Release" }
-$appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appSetup = Split-Path -Path $appURL -Leaf
+$appVersion = ($appSetup -replace "[a-z]" , '')
+$appVersion = $appVersion.Substring(0,$appVersion.Length-1)
 $appDestination = "${env:ProgramFiles(x86)}\Citrix\ICA Client"
 [boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName \d+" -RegEx).DisplayVersion
