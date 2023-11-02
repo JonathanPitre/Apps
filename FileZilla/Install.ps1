@@ -16,7 +16,7 @@ Get-ChildItem -Recurse *.ps*1 | Unblock-File
 $env:SEE_MASK_NOZONECHECKS = 1
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [System.Net.WebRequest]::DefaultWebProxy.Credentials = [System.Net.CredentialCache]::DefaultCredentials
-$Modules = @("PSADT", "Evergreen") # Modules list
+$Modules = @("PSADT", "Nevergreen") # Modules list
 
 Function Get-ScriptPath
 {
@@ -177,23 +177,33 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 #endregion
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+#region Declarations
+
 $appName = "FileZilla"
 $appProcesses = @("filezilla", "fzputtygen", "fzsftp")
 $appInstallParameters = "/S /user=all"
+# Set browser agent, powershell is blocked - https://twitter.com/xenappblog/status/1659325235127042050
+$userAgent = [Microsoft.PowerShell.Commands.PSUserAgent]::Chrome
 $Evergreen = Get-EvergreenApp -Name $appName
-$appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
+$appVersion = $Evergreen.Version
 $appSetup = Split-Path -Path $appURL -Leaf
-$appLanguage = "fr"
+$appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/FileZilla/fzdefaults.xml"
+$appConfig = Split-Path -Path $appConfigURL -Leaf
 $appDestination = "$env:ProgramFiles\FileZilla FTP Client"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appName.*" -RegEx)
-$appInstalledVersion = ((Get-InstalledApplication -Name "$appName.*" -RegEx).DisplayVersion))
+[boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appName.*" -RegEx)
+$appInstalledVersion = ((Get-InstalledApplication -Name "$appName.*" -RegEx).DisplayVersion)
+
+#endregion
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+#region Execution
 
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
@@ -205,7 +215,18 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
     {
         Write-Log -Message "Downloading $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup
+        Invoke-WebRequest -UseBasicParsing -Uri $appURL -OutFile $appSetup -UserAgent $userAgent
+    }
+    Else
+    {
+        Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+
+    # Download required config file
+    If (-Not(Test-Path -Path "$appScriptPath\$appConfig"))
+    {
+        Write-Log -Message "Downloading $appName Config.." -Severity 1 -LogType CMTrace -WriteHost $True
+        Invoke-WebRequest -UseBasicParsing -Uri $appConfigURL -OutFile "$appScriptPath\$appConfig" -UserAgent $userAgent
     }
     Else
     {
@@ -227,33 +248,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
-    <#
-    # Configure application shortcut
-    Copy-File -Path "$envCommonStartMenuPrograms\$appName\$appName File Manager.lnk" -Destination "$envCommonStartMenuPrograms" -ContinueFileCopyOnError $True
-    Remove-Folder -Path "$envCommonStartMenuPrograms\$appName" -ContinueOnError $True
-
-    # Load the Default User registry hive
-    Write-Log -Message "Loading the Default User registry hive..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Start-Sleep -Seconds 5
-    Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "LOAD HKLM\DefaultUser $envSystemDrive\Users\Default\NTUSER.DAT" -WindowStyle Hidden
-
-    # Configure application display language
-    If ($appLanguage -ne "en")
-    {
-        Set-RegistryKey -Key "HKLM:\DefaultUser\Software\7-Zip" -Name "Lang" -Type String -Value $appLanguage
-    }
-    Else
-    {
-        Set-RegistryKey -Key "HKLM:\DefaultUser\Software\7-Zip" -Name "Lang" -Type String -Value "-"
-    }
-
-    # Cleanup (to prevent access denied issue unloading the registry hive)
-    [GC]::Collect()
-    Start-Sleep -Seconds 5
-
-    # Unload the Default User registry hive
-    Execute-Process -Path "$envWinDir\System32\reg.exe" -Parameters "UNLOAD HKLM\DefaultUser" -WindowStyle Hidden
-    #>
+    # Copy preferences file
+    Copy-File -Path "$appScriptPath\$appConfig" -Destination $appDestination
 
     # Go back to the parent folder
     Set-Location ..
@@ -265,3 +261,5 @@ Else
 {
     Write-Log -Message "$appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
+
+#endregion
