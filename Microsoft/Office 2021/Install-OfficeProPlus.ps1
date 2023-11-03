@@ -91,7 +91,7 @@ Function Initialize-Module
     [CmdletBinding()]
     Param
     (
-        [Parameter(Mandatory = $true)]
+        [Parameter(Mandatory = $True)]
         [string]$Module
     )
     Write-Host -Object "Importing $Module module..." -ForegroundColor Green
@@ -259,6 +259,7 @@ Function Get-MicrosoftOfficeConfig
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
+#region Declarations
 $appVendor = "Microsoft"
 $appName = "Office LTSC Professional Plus 2021"
 $appConfigURL = "https://raw.githubusercontent.com/JonathanPitre/Apps/master/Microsoft/Office%202021/Office2021-x64-VDI.xml"
@@ -275,13 +276,26 @@ $Evergreen = Get-EvergreenApp -Name Microsoft365Apps | Where-Object { $_.Channel
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appUninstallerDir = "$appScriptPath\Remove-PreviousOfficeInstalls"
-$appUpdateTool = "$env:CommonProgramW6432\microsoft shared\ClickToRun\OfficeC2RClient.exe"
-If ($appBitness -eq "64") { $appDestination = "$env:ProgramFiles\Microsoft Office\root\Office16" }
-If ($appBitness -eq "86") { $appDestination = "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16" }
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName .+" -RegEx)
+If ($appBitness -eq "64")
+{
+    $appUpdateTool = "$env:CommonProgramFiles\microsoft shared\ClickToRun\OfficeC2RClient.exe"
+    $appDestination = "$env:ProgramFiles\Microsoft Office\root\Office16"
+    $appDownloadPath = "$env:ProgramFiles\Microsoft Office\Updates\Download"
+}
+ElseIf ($appBitness -eq "86")
+{
+    $appUpdateTool = "${env:CommonProgramFiles(x86)}\microsoft shared\ClickToRun\OfficeC2RClient.exe"
+    $appDestination = "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16"
+    $appDownloadPath = "${env:ProgramFiles(x86)}\Microsoft Office\Updates\Download"
+}
+[boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName .+" -RegEx)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName .*" -RegEx).DisplayVersion | Sort-Object -Descending | Select-Object -First 1
 
+#endregion
+
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
+
+#region Execution
 
 Set-Location -Path $appScriptPath
 
@@ -298,7 +312,7 @@ If ([version]$appInstalledVersion -eq $null)
 
     # Download cleanup script
     Get-MicrosoftOfficeUninstaller
-    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $true -Force $true -Remove2016Installs $true -NoReboot $true
+    & $appUninstallerDir\Remove-PreviousOfficeInstalls.ps1 -RemoveClickToRunVersions $True -Force $True -Remove2016Installs $True -ProductsToRemove MainOfficeProduct -NoReboot $True
 
     # Download latest version
     If (-Not(Test-Path -Path .\$appVersion)) { New-Folder -Path $appVersion }
@@ -307,7 +321,7 @@ If ([version]$appInstalledVersion -eq $null)
 
     If (-Not(Test-Path -Path .\Office\Data\v$appBitness.cab))
     {
-        Write-Log -Message "Downloading $appVendor $appName x$appBitness..." -Severity 1 -LogType CMTrace -WriteHost $True
+        Write-Log -Message "Downloading $appVendor $appName x$appBitness $appChannel..." -Severity 1 -LogType CMTrace -WriteHost $True
         Execute-Process -Path .\$appSetup -Parameters $appDownloadParameters -PassThru
     }
     Else
@@ -316,7 +330,7 @@ If ([version]$appInstalledVersion -eq $null)
     }
 
     # Install latest version
-    Write-Log -Message "Installing $appVendor $appName x$appBitness..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing $appVendor $appName x$appBitness $appChannel..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path .\$appSetup -Parameters $appInstallParameters -PassThru
     Get-Process -Name OfficeC2RClient | Stop-Process -Force
 
@@ -331,7 +345,7 @@ If ([version]$appInstalledVersion -eq $null)
 
     # Disable updates
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\16.0\common\OfficeUpdate" -Name "EnableAutomaticUpdates" -Value "0" -Type DWord
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\ClickToRun\Configuration" -Name "UpdatesEnabled " -Value "False" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\ClickToRun\Configuration" -Name "UpdatesEnabled" -Value "False" -Type String
 
     # Configure application shortcut
     Rename-Item -Path "$envCommonStartMenuPrograms\OneNote 2016.lnk" -NewName "$envCommonStartMenuPrograms\OneNote.lnk"
@@ -343,7 +357,7 @@ If ([version]$appInstalledVersion -eq $null)
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appVendor $appName x$appBitness was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName x$appBitness $appChannel was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 ElseIf (([version]$appVersion -gt [version]$appInstalledVersion) -and (Test-Path -Path $appUpdateTool))
 {
@@ -360,20 +374,20 @@ ElseIf (([version]$appVersion -gt [version]$appInstalledVersion) -and (Test-Path
 
     # Enable updates
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\16.0\common\OfficeUpdate" -Name "EnableAutomaticUpdates" -Value "1" -Type DWord
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\ClickToRun\Configuration" -Name "UpdatesEnabled " -Value "True" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\ClickToRun\Configuration" -Name "UpdatesEnabled" -Value "True" -Type String
 
     # Install latest version
-    Write-Log -Message "Installing $appVendor $appName x$appBitness..." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Installing $appVendor $appName x$appBitness $appChannel..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path $appUpdateTool -Parameters $appUpdateParameters
     Wait-Process -Name OfficeClickToRun
-
-    #Get-Process -Name OfficeC2RClient | Stop-Process -Force
+    # Close "You're up to date!" notification window
+    Get-Process -Name OfficeC2RClient | Where-Object { $_.MainWindowTitle -eq "You're up to date!" } | Send-Keys -WindowTitle "You're up to date!" -Keys "{ENTER}" -WaitSeconds 2 | Get-Process -Name OfficeC2RClient,OfficeClickToRun | Stop-Process -Force
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Disable updates
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\16.0\common\OfficeUpdate" -Name "EnableAutomaticUpdates" -Value "0" -Type DWord
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\ClickToRun\Configuration" -Name "UpdatesEnabled " -Value "False" -Type String
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\ClickToRun\Configuration" -Name "UpdatesEnabled" -Value "False" -Type String
 
     # Configure application shortcut
     Rename-Item -Path "$envCommonStartMenuPrograms\OneNote 2016.lnk" -NewName "$envCommonStartMenuPrograms\OneNote.lnk"
@@ -382,12 +396,17 @@ ElseIf (([version]$appVersion -gt [version]$appInstalledVersion) -and (Test-Path
     Get-ScheduledTask -TaskName "Office*" | Stop-ScheduledTask
     Get-ScheduledTask -TaskName "Office*" | Disable-ScheduledTask
 
+    # Remove temp download
+    Remove-File "$appDownloadPath\*" -Recurse
+
     # Go back to the parent folder
     Set-Location ..
 
-    Write-Log -Message "$appVendor $appName x$appBitness was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName x$appBitness $appChannel was successfully installed!" -Severity 1 -LogType CMTrace -WriteHost $True
 }
 Else
 {
-    Write-Log -Message "$appVendor $appName x$appBitness is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "$appVendor $appName x$appBitness $appChannel is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
 }
+
+#endregion
