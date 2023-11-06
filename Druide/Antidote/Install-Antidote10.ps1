@@ -177,97 +177,6 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
-Function Get-DruideAntidote
-{
-    [OutputType([System.Management.Automation.PSObject])]
-    [CmdletBinding()]
-    Param ()
-    $DownloadURL = "https://www.antidote.info/fr/assistance/mises-a-jour/installation/antidote-$($appShortVersion)/windows"
-
-    Try
-    {
-        $DownloadText = (Invoke-WebRequest -Uri $DownloadURL -DisableKeepAlive -UseBasicParsing).Links
-    }
-    Catch
-    {
-        Throw "Failed to connect to URL: $DownloadURL with error $_."
-        Break
-    }
-    Finally
-    {
-        $RegExAntidote = "href\=(https.+\/Diff_Antidote_$($appShortVersion)_C_((?:\d+\.)+(?:\d+))\.msp)"
-        $VersionAntidote = ($DownloadText | Select-String -Pattern $RegExAntidote).Matches.Groups[2].Value
-        $URLAntidote = ($DownloadText | Select-String -Pattern $RegExAntidote).Matches.Groups[1].Value
-
-        $RegExAntidoteF = "href\=(https.+\/Diff_Antidote_$($appShortVersion)_Module_F_((?:\d+\.)+(?:\d+))\.msp)"
-        $VersionAntidoteF = ($DownloadText | Select-String -Pattern $RegExAntidoteF).Matches.Groups[2].Value
-        $URLAntidoteF = ($DownloadText | Select-String -Pattern $RegExAntidoteF).Matches.Groups[1].Value
-
-        $RegExAntidoteE = "href\=(https.+\/Diff_Antidote_$($appShortVersion)_Module_E_((?:\d+\.)+(?:\d+))\.msp)"
-        $VersionAntidoteE = ($DownloadText | Select-String -Pattern $RegExAntidoteE).Matches.Groups[2].Value
-        $URLAntidoteE = ($DownloadText | Select-String -Pattern $RegExAntidoteE).Matches.Groups[1].Value
-
-        $RegExConnectix = "href\=(https.+\/Diff_Connectix_$($appShortVersion)_C_((?:\d+\.)+(?:\d+).(?:\d+))\.msp)"
-        $VersionConnectix = ($DownloadText | Select-String -Pattern $RegExConnectix).Matches.Groups[2].Value
-        $URLConnectix = ($DownloadText | Select-String -Pattern $RegExConnectix).Matches.Groups[1].Value
-
-        $URLGestionnaire = "https://telechargement.druide.com/telecharger/Reseau/antidote_$($appShortVersion)/GestionnaireMultiposte_Antidote$($appShortVersion).exe"
-
-        if ($VersionAntidote -and $URLAntidote)
-        {
-            [PSCustomObject]@{
-                Name         = 'Antidote'
-                Architecture = 'x86'
-                Type         = 'Msp'
-                Version      = $VersionAntidote
-                Uri          = $URLAntidote
-            }
-        }
-
-        if ($VersionAntidoteF -and $URLAntidoteF)
-        {
-            [PSCustomObject]@{
-                Name         = 'Antidote French Module'
-                Architecture = 'x86'
-                Type         = 'Msp'
-                Version      = $VersionAntidoteF
-                Uri          = $URLAntidoteF
-            }
-        }
-
-        if ($VersionAntidoteE -and $URLAntidoteE)
-        {
-            [PSCustomObject]@{
-                Name         = 'Antidote English Module'
-                Architecture = 'x86'
-                Type         = 'Msp'
-                Version      = $VersionAntidoteE
-                Uri          = $URLAntidoteE
-            }
-        }
-
-        if ($VersionConnectix -and $URLConnectix)
-        {
-            [PSCustomObject]@{
-                Name         = 'Connectix'
-                Architecture = 'x86'
-                Type         = 'Msp'
-                Version      = $VersionConnectix
-                Uri          = $URLConnectix
-            }
-        }
-
-        if ($URLGestionnaire)
-        {
-            [PSCustomObject]@{
-                Name         = 'Gestionnaire Multiposte'
-                Architecture = 'x86'
-                Type         = 'Exe'
-                Uri          = $URLGestionnaire
-            }
-        }
-    }
-}
 
 #endregion
 
@@ -277,13 +186,15 @@ Function Get-DruideAntidote
 
 $appVendor = "Druide"
 $appName = "Antidote"
-$appProcesses = @("Antidote", "AgentAntidote", "Connectix", "AgentConnectix", "OUTLOOK", "WINWORD", "EXCEL", "POWERPNT", "CHROME", "msedge")
+$appProcesses = @("Antidote", "AgentAntidote", "Connectix", "AgentConnectix", "OUTLOOK", "WINWORD", "EXCEL", "POWERPNT", "CHROME", "msedge", "chrome")
 $appTransformAntidote = "ReseauAntidote.mst"
 $appTransformConnectix = "ReseauConnectix.mst"
-$appShortVersion = "11"
-$DownloadText = (Invoke-WebRequest -Uri "https://www.antidote.info/fr/assistance/mises-a-jour/installation/antidote-$($appShortVersion)/windows" -DisableKeepAlive -UseBasicParsing).Content
-$appVersion = ($DownloadText| Select-String -Pattern "MSI ((?:\d+\.)+(?:\d+))").Matches.Groups[1].Value
-$Nevergreen = Get-DruideAntidote
+$appShortVersion = "10"
+$appURL = "https://www.antidote.info/fr/assistance/mises-a-jour/installation/antidote-$($appShortVersion)/windows"
+$DownloadText = (Invoke-WebRequest -Uri $appURL -DisableKeepAlive -UseBasicParsing).Content
+$appVersion = (($DownloadText | Select-String -Pattern "MSI.+((?:\d+\.)+\d+)").Matches.Value)
+$appVersion = $appVersion.Trim("MSI").Trim()
+$Nevergreen = Get-NevergreenApp DruideAntidote
 $appPatchVersion = ($Nevergreen | Where-Object { $_.Name -eq $appName }).Version
 $appUrlPatchAntidote = ($Nevergreen | Where-Object { $_.Name -eq $appName }).Uri
 $appUrlPatchAntidoteF = ($Nevergreen | Where-Object { $_.Name -eq "$appName French Module" }).Uri
@@ -301,8 +212,8 @@ $appSetupAntidoteE = "Antidote$($appShortVersion)-English-module.msi"
 $appSetupConnectix = "Antidote-Connectix$($appShortVersion).msi"
 $appInstallParameters = "/QB"
 $appDestination = "${env:ProgramFiles(x86)}\$appVendor\$appName $appShortVersion\Application\Bin64"
-[boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appName \d{2}" -RegEx -Exact) | Select-Object -First 1
-$appInstalledVersion = (Get-InstalledApplication -Name "$appName \d{2}" -RegEx -Exact).DisplayVersion | Select-Object -First 1
+[boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appName $appShortVersion" -RegEx) | Select-Object -First 1
+$appInstalledVersion = (Get-InstalledApplication -Name "$appName \d{2}" -RegEx).DisplayVersion | Select-Object -First 1
 
 #endregion
 
@@ -342,7 +253,6 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Write-Log -Message "Downloading $appVendor $appName $appPatchVersion French module patch..." -Severity 1 -LogType CMTrace -WriteHost $True
         Invoke-WebRequest -UseBasicParsing -Uri $appUrlPatchAntidoteF -OutFile $appScriptPath\$appPatchVersion\$appPatchAntidoteF
     }
-
     Else
     {
         Write-Log -Message "File(s) already exists, download was skipped." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -434,12 +344,12 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         # Install latest Connectix version
         Execute-MSI -Action Install -Path $appSetupConnectix -Parameters $appInstallParameters -Transform $appTransformConnectix -Patch "$appScriptPath\$appPatchVersion\$apspPatchConnectix"
     }
-    ElseIf (($isAppInstalled) -and (Test-Path -Path "$appScriptPath\$appPatchVersion\$apspPatchConnectix"))
+    ElseIf (($isAppInstalled) -and (Test-Path -Path "$appScriptPath\$appPatchVersion\$appPatchConnectix"))
     {
         # Install latest Connectix patch
         Write-Log -Message "Setup file(s) are missing, MSP file(s) will be installed instead." -Severity 2 -LogType CMTrace -WriteHost $True
         Write-Log -Message "Installing  $appVendor $appName $appPatchVersion Connectix patch..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Execute-MSP -Path "$appScriptPath\$appPatchVersion\$apspPatchConnectix"
+        Execute-MSP -Path "$appScriptPath\$appPatchVersion\$appPatchConnectix"
     }
     Else
     {
