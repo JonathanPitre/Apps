@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <FrxProfileFolderRedirection>
   <Excludes>
-    <Exclude Copy="0">$Recycle.Bin</Exclude>
     <Exclude Copy="0">3D Objects</Exclude>
     <Exclude Copy="0">AppData\Local\Adobe\AcroCef\DC\Acrobat\Cache</Exclude>
     <Exclude Copy="0">AppData\Local\Apple</Exclude>
