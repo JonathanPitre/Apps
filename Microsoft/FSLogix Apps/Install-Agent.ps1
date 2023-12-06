@@ -178,6 +178,130 @@ Foreach ($Module in $Modules)
 
 #region Functions
 
+Function Get-Link
+{
+    <#
+    .SYNOPSIS
+        Returns a specific link from a web page.
+
+    .DESCRIPTION
+        Returns a specific link from a web page.
+
+    .NOTES
+        Site: https://packageology.com
+        Author: Dan Gough
+        Twitter: @packageologist
+
+    .LINK
+        https://github.com/DanGough/Nevergreen
+
+    .PARAMETER Uri
+        The URI to query.
+
+    .PARAMETER MatchProperty
+        Which property the RegEx pattern should be applied to, e.g. href, outerHTML, class, title.
+
+    .PARAMETER Pattern
+        The RegEx pattern to apply to the selected property. Supply an array of patterns to receive multiple links.
+
+    .PARAMETER ReturnProperty
+        Optional. Specifies which property to return from the link. Defaults to href, but 'data-filename' can also be useful to retrieve.
+
+    .PARAMETER UserAgent
+        Optional parameter to provide a user agent for Invoke-WebRequest to use. Examples are:
+
+        Googlebot: 'Googlebot/2.1 (+http://www.google.com/bot.html)'
+        Microsoft Edge: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'
+
+    .EXAMPLE
+        Get-Link -Uri 'http://somewhere.com' -MatchProperty href -Pattern '\.exe$'
+
+        Description:
+        Returns first download link matching *.exe from http://somewhere.com.
+    #>
+    [CmdletBinding(SupportsShouldProcess = $False)]
+    param (
+        [Parameter(
+            Mandatory = $true,
+            Position = 0,
+            ValueFromPipeline)]
+        [ValidatePattern('^(http|https)://')]
+        [Alias('Url')]
+        [String] $Uri,
+        [Parameter(
+            Mandatory = $true,
+            Position = 1)]
+        [ValidateNotNullOrEmpty()]
+        #[ValidateSet('href', 'outerHTML', 'innerHTML', 'outerText', 'innerText', 'class', 'title', 'tagName', 'data-filename')]
+        [String] $MatchProperty,
+        [Parameter(
+            Mandatory = $true,
+            Position = 2)]
+        [ValidateNotNullOrEmpty()]
+        [String[]] $Pattern,
+        [Parameter(
+            Mandatory = $false,
+            Position = 3)]
+        [ValidateNotNullOrEmpty()]
+        [String] $ReturnProperty = 'href',
+        [Parameter(
+            Mandatory = $false)]
+        [String] $UserAgent,
+        [System.Collections.Hashtable] $Headers,
+        [Switch] $PrefixDomain,
+        [Switch] $PrefixParent
+    )
+
+    $ProgressPreference = 'SilentlyContinue'
+
+    $ParamHash = @{
+        Uri              = $Uri
+        Method           = 'GET'
+        UseBasicParsing  = $True
+        DisableKeepAlive = $True
+        ErrorAction      = 'Stop'
+    }
+
+    if ($UserAgent)
+    {
+        $ParamHash.UserAgent = $UserAgent
+    }
+
+    if ($Headers)
+    {
+        $ParamHash.Headers = $Headers
+    }
+
+    try
+    {
+        $Response = Invoke-WebRequest @ParamHash
+
+        foreach ($CurrentPattern in $Pattern)
+        {
+            $Link = $Response.Links | Where-Object $MatchProperty -Match $CurrentPattern | Select-Object -First 1 -ExpandProperty $ReturnProperty
+
+            if ($PrefixDomain)
+            {
+                $BaseURL = ($Uri -split '/' | Select-Object -First 3) -join '/'
+                $Link = Set-UriPrefix -Uri $Link -Prefix $BaseURL
+            }
+            elseif ($PrefixParent)
+            {
+                $BaseURL = ($Uri -split '/' | Select-Object -SkipLast 1) -join '/'
+                $Link = Set-UriPrefix -Uri $Link -Prefix $BaseURL
+            }
+
+            $Link
+
+        }
+    }
+    catch
+    {
+        Write-Error "$($MyInvocation.MyCommand): $($_.Exception.Message)"
+    }
+
+}
+
 Function Get-Version
 {
     <#
@@ -282,17 +406,13 @@ Function Get-Version
 
         foreach ($CurrentString in $String)
         {
-
+            if ($ReplaceWithDot)
+            {
+                $CurrentString = $CurrentString.Replace('-', '.').Replace('+', '.').Replace('_', '.')
+            }
             if ($CurrentString -match $Pattern)
             {
-                if ($ReplaceWithDot)
-                {
-                    $matches[1].Replace('-', '.').Replace('_', '.')
-                }
-                else
-                {
-                    $matches[1]
-                }
+                $matches[1]
             }
             else
             {
@@ -305,127 +425,6 @@ Function Get-Version
 
     end
     {
-    }
-
-}
-
-Function Get-Link
-{
-    <#
-    .SYNOPSIS
-        Returns a specific link from a web page.
-
-    .DESCRIPTION
-        Returns a specific link from a web page.
-
-    .NOTES
-        Site: https://packageology.com
-        Author: Dan Gough
-        Twitter: @packageologist
-
-    .LINK
-        https://github.com/DanGough/Nevergreen
-
-    .PARAMETER Uri
-        The URI to query.
-
-    .PARAMETER MatchProperty
-        Whether the RegEx pattern should be applied to the href, outerHTML, class, title or data-filename of the link.
-
-    .PARAMETER Pattern
-        The RegEx pattern to apply to the selected property. Supply an array of patterns to receive multiple links.
-
-    .PARAMETER ReturnProperty
-        Optional. Specifies which property to return from the link. Defaults to href, but 'data-filename' can also be useful to retrieve.
-
-    .PARAMETER UserAgent
-        Optional parameter to provide a user agent for Invoke-WebRequest to use. Examples are:
-
-        Googlebot: 'Googlebot/2.1 (+http://www.google.com/bot.html)'
-        Microsoft Edge: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'
-
-    .EXAMPLE
-        Get-Link -Uri 'http://somewhere.com' -MatchProperty href -Pattern '\.exe$'
-
-        Description:
-        Returns first download link matching *.exe from http://somewhere.com.
-    #>
-    [CmdletBinding(SupportsShouldProcess = $False)]
-    param (
-        [Parameter(
-            Mandatory = $true,
-            Position = 0,
-            ValueFromPipeline)]
-        [ValidatePattern('^(http|https)://')]
-        [Alias('Url')]
-        [String] $Uri,
-        [Parameter(
-            Mandatory = $true,
-            Position = 1)]
-        [ValidateSet('href', 'outerHTML', 'innerHTML', 'outerText', 'innerText', 'class', 'title', 'tagName', 'data-filename')]
-        [String] $MatchProperty,
-        [Parameter(
-            Mandatory = $true,
-            Position = 2)]
-        [ValidateNotNullOrEmpty()]
-        [String[]] $Pattern,
-        [Parameter(
-            Mandatory = $false,
-            Position = 3)]
-        [ValidateNotNullOrEmpty()]
-        [String] $ReturnProperty = 'href',
-        [Parameter(
-            Mandatory = $false)]
-        [String] $UserAgent,
-        [System.Collections.Hashtable] $Headers,
-        [Switch] $PrefixDomain,
-        [Switch] $PrefixParent
-    )
-
-    $ParamHash = @{
-        Uri              = $Uri
-        Method           = 'GET'
-        UseBasicParsing  = $True
-        DisableKeepAlive = $True
-        ErrorAction      = 'Stop'
-    }
-
-    if ($UserAgent)
-    {
-        $ParamHash.UserAgent = $UserAgent
-    }
-
-    if ($Headers)
-    {
-        $ParamHash.Headers = $Headers
-    }
-
-    try
-    {
-        $Response = Invoke-WebRequest @ParamHash
-
-        foreach ($CurrentPattern in $Pattern)
-        {
-            $Link = $Response.Links | Where-Object $MatchProperty -Match $CurrentPattern | Select-Object -First 1 -ExpandProperty $ReturnProperty
-
-            if ($PrefixDomain)
-            {
-                $BaseURL = ($Uri -split '/' | Select-Object -First 3) -join '/'
-                $Link = Set-UriPrefix -Uri $Link -Prefix $BaseURL
-            }
-            elseif ($PrefixParent)
-            {
-                $BaseURL = ($Uri -split '/' | Select-Object -SkipLast 1) -join '/'
-                $Link = Set-UriPrefix -Uri $Link -Prefix $BaseURL
-            }
-
-            $Link
-
-        }
-    }
-    catch
-    {
-        Write-Error "$($MyInvocation.MyCommand): $($_.Exception.Message)"
     }
 
 }
@@ -444,12 +443,11 @@ Function Get-MicrosoftFSLogixApps
 
     Try
     {
-        $Pattern = "\(((?:\d+\.)+\d+)\) - Public Preview"
-        $URL = "https://learn.microsoft.com/en-us/fslogix/whats-new"
+        $Pattern = "Preview"
+        $URL = "https://learn.microsoft.com/en-us/fslogix/overview-release-notes"
         $DownloadURL = Get-Link -Uri $URL -MatchProperty outerHTML -Pattern $Pattern
         $Version = Get-Version -String $DownloadURL
         $Date = Get-Version -Uri $URL -Pattern "((?:\d+\/)+\d+)"
-
     }
     Catch
     {
@@ -464,7 +462,7 @@ Function Get-MicrosoftFSLogixApps
             [PSCustomObject]@{
                 Version = $Version
                 Date    = $Date
-                Channel = 'Public Preview'
+                Channel = 'Preview'
                 Uri     = $DownloadURL
             }
         }
@@ -483,13 +481,13 @@ $appName = "FSLogix Apps"
 $appSetup = "FSLogixAppsSetup.exe"
 $appProcesses = @("frxsvc", "frxtray", "frxshell", "frxccd")
 $appInstallParameters = "/install /quiet /norestart"
-$Evergreen = Get-MicrosoftFSLogixApps | Where-Object { $_.Channel -eq "Production" }
+$Evergreen = Get-MicrosoftFSLogixApps | Where-Object { $_.Channel -eq "Preview" }
 $appVersion = $Evergreen.Version
 $appURL = $Evergreen.URI
 $appZip = Split-Path -Path $appURL -Leaf
 $appDestination = "$env:ProgramFiles\FSLogix\Apps"
 $serviceName = "WSearch"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact) | Select-Object -First 1
+[boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName" -Exact) | Select-Object -First 1
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName" -Exact).DisplayVersion | Select-Object -First 1
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
@@ -594,24 +592,19 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     New-Folder -Path "$appDestination\en-us"
     Copy-File -Path "$envWinDir\System32\en-us\Robocopy.exe.mui" -Destination "$appDestination\en-us\frxrobocopy.exe.mui"
 
-    # Add Windows Defender exclusion(s) - https://docs.microsoft.com/en-us/azure/architecture/example-scenario/wvd/windows-virtual-desktop-fslogix
+    # Add Windows Defender exclusion(s) - https://learn.microsoft.com/en-us/fslogix/overview-prerequisites#configure-antivirus-file-and-folder-exclusions
     Add-MpPreference -ExclusionPath "%ProgramFiles%\FSLogix\Apps\frxdrv.sys" -Force
     Add-MpPreference -ExclusionPath "%ProgramFiles%\FSLogix\Apps\frxdrvvt.sys" -Force
     Add-MpPreference -ExclusionPath "%ProgramFiles%\FSLogix\Apps\frxccd.sys" -Force
-    Add-MpPreference -ExclusionPath "%TEMP%\*.VHD" -Force
-    Add-MpPreference -ExclusionPath "%TEMP%\*.VHDX" -Force
-    Add-MpPreference -ExclusionPath "%Windir%\TEMP\*.VHD" -Force
-    Add-MpPreference -ExclusionPath "%Windir%\TEMPÂ­Â­\*.VHDX" -Force
-    Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Cache\*.VHD" -Force
-    Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Cache\*.VHDX" -Force
-    Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Proxy\*.VHD" -Force
-    Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Proxy\*.VHDX" -Force
-    #Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxccd.exe" -Force # No longuer exist
+    Add-MpPreference -ExclusionPath "%TEMP%\*\*.VHD" -Force
+    Add-MpPreference -ExclusionPath "%TEMP%\*\*.VHDX" -Force
+    Add-MpPreference -ExclusionPath "%Windir%\TEMP\*\*.VHD" -Force
+    Add-MpPreference -ExclusionPath "%Windir%\TEMP\*\*.VHDX" -Force
+    Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Cache\*" -Force
+    Add-MpPreference -ExclusionPath "%ProgramData%\FSLogix\Proxy\*" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxccds.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxsvc.exe" -Force
     Add-MpPreference -ExclusionProcess "%ProgramFiles%\FSLogix\Apps\frxrobocopy.exe" -Force
-    # Avoid locked VHDX files and local_username directories at logoff
-    #Add-MpPreference -ExclusionProcess "%windir%\System32\lsass.exe" -Force
 
     # Add built-in administrators group to exclude list
     Add-LocalGroupMember -Group "FSLogix ODFC Exclude List" -Member "BUILTIN\Administrators"
