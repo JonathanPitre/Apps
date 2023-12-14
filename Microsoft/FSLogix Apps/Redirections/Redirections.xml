@@ -5,7 +5,7 @@
     <Exclude Copy="0">AppData\Local\Adobe\AcroCef\DC\Acrobat\Cache</Exclude>
     <Exclude Copy="0">AppData\Local\Apple</Exclude>
     <Exclude Copy="0">AppData\Local\Apps</Exclude>
-    <Exclude Copy="0">AppData\Local\assembly</Exclude>
+    <Exclude Copy="0">AppData\Local\Assembly</Exclude>
     <Exclude Copy="0">AppData\Local\ATT Connect</Exclude>
     <Exclude Copy="0">AppData\Local\CEF</Exclude>
     <Exclude Copy="0">AppData\Local\Citrix\Citrix Files\PartCache</Exclude>
@@ -64,6 +64,7 @@
     <Exclude Copy="0">AppData\Local\Microsoft\AzureAD\Powershell</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\CLR_v4.0_32</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\CLR_v4.0</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\Edge SxS\User Data\Default\Cache</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\Ad Blocking</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\BrowserMetrics</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Edge\User Data\CertificateRevocation</Exclude>
@@ -130,7 +131,7 @@
     <Exclude Copy="0">AppData\Local\Microsoft\Teams\current\resources\locales</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Teams\packages</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Teams\previous</Exclude>
-    <Exclude Copy="0">AppData\Local\Microsoft\Terminal Server Client\Cache</Exclude>
+    <Exclude Copy="0">AppData\Local\Microsoft\Terminal Server Client</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\TokenBroker</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\UEV</Exclude>
     <Exclude Copy="0">AppData\Local\Microsoft\Windows Live Contacts</Exclude>
@@ -175,6 +176,9 @@
     <Exclude Copy="0">AppData\Local\Packages\Microsoft.MicrosoftEdge_8wekyb3d8bbwe\AC\Temp</Exclude>
     <Exclude Copy="0">AppData\Local\Packages\Microsoft.Windows.CloudExperienceHost_cw5n1h2txyewy</Exclude>
     <Exclude Copy="0">AppData\Local\Packages\Microsoft.Windows.StartMenuExperienceHost_cw5n1h2txyewy\TempState</Exclude>
+    <Exclude Copy="0">AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams\EBWebView\WV2Profile_tfw\WebStorage</Exclude>
+    <Exclude Copy="0">AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams\Logs</Exclude>
+    <Exclude Copy="0">AppData\Local\Packages\MSTeams_8wekyb3d8bbwe\LocalCache\Microsoft\MSTeams\PerfLogs</Exclude>
     <Exclude Copy="0">AppData\Local\paint.net</Exclude>
     <Exclude Copy="0">AppData\Local\SCOM\LOGS</Exclude>
     <Exclude Copy="0">AppData\Local\Skype</Exclude>
@@ -215,8 +219,7 @@
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\logs</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\media-stack</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\meeting-addin\Cache</Exclude>
-    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Service Worker\CacheStorage</Exclude>
-    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Service Worker\ScriptCache</Exclude>
+    <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\Service Worker</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Teams\tmp</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Templates\LiveContent</Exclude>
     <Exclude Copy="0">AppData\Roaming\Microsoft\Windows\Cookies</Exclude>
