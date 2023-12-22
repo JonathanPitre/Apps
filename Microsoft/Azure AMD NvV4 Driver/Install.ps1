@@ -177,6 +177,7 @@ Foreach ($Module in $Modules)
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
 #region Functions
+
 Function Get-AMDAzureNVv4Driver
 {
     [OutputType([System.Management.Automation.PSObject])]
@@ -246,7 +247,7 @@ $EvergreenUninstaller = Get-AMDAzureNVv4Driver | Where-Object { $_.Name -eq "AMD
 $appUninstallerURL = $EvergreenUninstaller.URI
 $appUninstaller = Split-Path -Path $appUninstallerURL -Leaf
 $appUninstallParameters = "-silent"
-[boolean]$IsAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName2" -Exact)
+[boolean]$isAppInstalled = [boolean](Get-InstalledApplication -Name "$appVendor $appName2" -Exact)
 $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName2" -Exact).DisplayVersion | Select-Object -First 1
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
