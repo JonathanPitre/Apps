@@ -252,6 +252,9 @@ Function Get-SessionName
 [string]$appUninstallString = (Get-InstalledApplication -Name "$appVendor .*$appName.*" -RegEx).UninstallString
 [string]$appUninstall = ($appUninstallString).Split("/")[0].Trim().Trim("""")
 [string]$appUninstallParameters = "/removeall /quiet /noreboot"
+[bool]$enableCitrixUviProcessesExclusions = $true
+[array]$citrixUviProcessesToAdd = @("sppsvc.exe", "RAserver.exe", "SelfService.exe", "CtxWebBrowser.exe", "Receiver.exe", "msedge.exe", "msedgewebview2.exe", "AcroCef.exe", "RdrCEF.exe", "QtWebEngineProcess.exe")
+[bool]$enableCitrixVirtualSmartCard = $false # Set to $true if you need Smart Card support
 
 #endregion
 
@@ -259,12 +262,20 @@ Function Get-SessionName
 
 #region Execution
 
+# Disable automatic logon at next reboot to avoid powershell from automatically launching after the VDA installation
+$regRunOnceValue = Get-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Value "(default)"
+If ((-Not [string]::IsNullOrEmpty($regRunOnceValue)))
+{
+    Disable-AutoLogon
+}
+
 # Get current account credentials
 [bool]$isLocalCredentialStored = [bool](Find-Credential -Filter "*$envUserName")
 If ($isLocalCredentialStored)
 {
     Write-Host -Object "Stored credentials found for current account." -ForegroundColor Green
     $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Store)
+    $localCredentialsUserName = $localCredentials.UserName
     $localCredentialsPassword = $localCredentials.Password
 }
 Else
@@ -272,21 +283,22 @@ Else
     Write-Host -Object "Please enter your current account credentials." -ForegroundColor Green
     $null = BetterCredentials\Get-Credential -UserName $env:USERNAME -Store
     $localCredentials = (BetterCredentials\Get-Credential -UserName $env:USERNAME -Store)
+    $localCredentialsUserName = $localCredentials.UserName
     $localCredentialsPassword = $localCredentials.Password
 }
-
 
 Set-Location -Path $appScriptPath
 If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
 Set-Location -Path $appVersion
 
+# VDA new installation
 If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersion\$appInstall") -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
 {
     # Detect if running from a Citrix session
     If ($sessionName -like "*ica*")
     {
-    	Write-Log -Message "$appVendor $appName CANNOT BE INSTALLED from a Citrix session, please run the installation from a CONSOLE SESSION!" -Severity 3 -LogType CMTrace -WriteHost $True
-	Exit-Script
+        Write-Log -Message "$appVendor $appName CANNOT BE INSTALLED from a Citrix session, please run the installation from a CONSOLE SESSION!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Exit-Script
     }
 
     # Install prerequisites
@@ -330,19 +342,15 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     }
 
     # Run Citrix VDA CleanUp Utility
-    Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+    #Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
     # Delete previous logs
-    Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
-    Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
-    Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    #Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
+    #Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
+    #Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Copy $appInstall to $envTemp\Install to avoid install issue
     Copy-File -Path ".\$appInstall" -Destination "$envTemp\Install" -Recurse
     Set-Location -Path "$envTemp\Install"
-
-    # Uninstall previous versions
-    Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-Process -Name $appProcesses | Stop-Process -Force
 
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName $appVersion..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -393,6 +401,92 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
 
     # Enable support for EDT Lossy protocol - https://docs.citrix.com/en-us/citrix-workspace-app-for-windows/ear.html
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Audio" -Name "EdtUnreliableAllowed" -Value "1" -Type "DWord"
+    # Citrix  utilises Kernel APC Hooking as a replacement of AppInit_DLLs.
+    # The KAPC Hooking DLL Injection Driver (CtxUvi) verifies that the hook DLLs configuration in the
+    # registry is not changed at runtime (i.e. HKLM\SOFTWARE\Citrix\CtxHook\AppInit_DLLs\<hook name>).
+    # If a change to the configuration is detected, the CtxUvi driver disables itself until the next
+    # reboot, resulting in none of the Citrix Hooks being properly loaded. So it is recommended NOT to
+    # use Group Policies to control these registry keys and placing them in the master PVS/MCS image.
+
+    # References:
+    # - https://support.citrix.com/article/CTX220418
+    # - https://support.citrix.com/article/CTX226605
+    # - https://support.citrix.com/article/CTX223973
+
+    If ($enableCitrixUviProcessesExclusions)
+    {
+        # Prevent the CtxUvi Driver disabling
+        Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\CtxUvi" -Name "UviStatusDisabled" -Value "0" -Type DWord
+        Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\CtxUvi" -Name "UviEnabled" -Value "1" -Type DWord
+
+        # Add a list of processes to the UviProcesExcludes registry value under the HKLM:\System\CurrentControlSet\Services\CtxUvi
+        # Add the full process here, but the code will only add the first 14 characters to the UviProcesExcludes registry value
+        try
+        {
+            If ($null -ne (Get-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\CtxUvi" -Value "UviProcessExcludes"))
+            {
+                $UviProcessExcludes = (Get-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\CtxUvi" -Value "UviProcessExcludes")
+            }
+        }
+        catch
+        {
+            #
+        }
+        [bool]$AddUviProcessExcludes = $false
+        Write-Verbose "Checking the UviProcessExcludes value..." -Verbose
+        If (-Not([string]::IsNullOrEmpty($UviProcessExcludes)))
+        {
+            Write-Verbose "- The current values are: `"$UviProcessExcludes`"" -Verbose
+            ForEach ($citrixUviProcessToAdd in $citrixUviProcessesToAdd)
+            {
+                If ($citrixUviProcessToAdd.Length -gt 14)
+                {
+                    $citrixUviProcessToAdd = $citrixUviProcessToAdd.SubString(0, 14)
+                }
+                If ($UviProcessExcludes -like "*$citrixUviProcessToAdd*")
+                {
+                    Write-Verbose "- The $citrixUviProcessToAdd process has already been added" -Verbose
+                }
+                Else
+                {
+                    Write-Verbose "- The $citrixUviProcessToAdd process is being added to the string" -Verbose
+                    $UviProcessExcludes = $UviProcessExcludes + $citrixUviProcessToAdd + ";"
+                    $AddUviProcessExcludes = $True
+                }
+            }
+        }
+        Else
+        {
+            ForEach ($citrixUviProcessToAdd in $citrixUviProcessesToAdd)
+            {
+                If ($citrixUviProcessToAdd.Length -gt 14)
+                {
+                    $citrixUviProcessToAdd = $citrixUviProcessToAdd.SubString(0, 14)
+                }
+                $AddUviProcessExcludes = $True
+                If ([String]::IsNullOrEmpty($UviProcessExcludes))
+                {
+                    $UviProcessExcludes = $citrixUviProcessToAdd + ";"
+                }
+                Else
+                {
+                    $UviProcessExcludes = $UviProcessExcludes + $citrixUviProcessToAdd + ";"
+                }
+            }
+        }
+        If ($AddUviProcessExcludes)
+        {
+            Write-Verbose "- Setting the new values: `"$UviProcessExcludes`"" -Verbose
+            Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\CtxUvi" -Name "UviProcessExcludes" -Value "$UviProcessExcludes" -Type String
+        }
+    }
+
+    # Disable Citrix Virtual Smart Card process
+    If ($enableCitrixVirtualSmartCard -eq $false)
+    {
+        # "C:\Program Files\Citrix\Virtual Smart Card\Citrix.Authentication.VirtualSmartcard.Launcher.exe"
+        Remove-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "Citrix Virtual Smart Card"
+    }
 
     # Delete logs and cache files
     Remove-File -Path "$env:ProgramData\Citrix\TelemetryService\CitrixAOT\*.etl"
@@ -407,11 +501,29 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Set-Location ..
     Remove-Folder -Path "$envTemp\Install"
 
+    # Set back previous runonce value
+    If ((-Not [string]::IsNullOrEmpty($regRunOnceValue)))
+    {
+        Enable-AutoLogon -Password $localCredentialsPassword -AsynchronousRunOnce
+        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "(Default)" -Value $regRunOnceValue
+    }
+
+    # Verify Citrix Service
+    If (Test-ServiceExists -Name "BrokerAgent")
+    {
+        Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+    Else
+    {
+        Write-Log -Message "$appVendor $appName $appVersion installation FAILLED!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Start-Sleep -Seconds 5
+    }
+
     # Reboot
-    Write-Log -Message "$appVendor $appName $appVersion was installed successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
     Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
+# VDA in-place update
 ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
 {
     # Fix an issue with Citrix Connection Quality Indicator
@@ -423,10 +535,6 @@ ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScript
         Remove-MSIApplications -Name "Citrix Connection Quality Indicator" -Exact
     }
 
-    # Copy $appInstall to $envTemp\Install to avoid install issue
-    Copy-File -Path ".\$appInstall" -Destination "$envTemp\Install" -Recurse
-    Set-Location -Path "$envTemp\Install"
-
     # Uninstall previous versions
     Write-Log -Message "$appVendor $appName $appInstalledVersion must be uninstalled first." -Severity 2 -LogType CMTrace -WriteHost $True
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
@@ -434,22 +542,56 @@ ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScript
     Execute-Process -Path $appUninstall -Parameters $appUninstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
 
     # Run Citrix VDA CleanUp Utility
-    Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+    #Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
     # Delete previous logs
-    Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
-    Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
-    Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+    #Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
+    #Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
+    #Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Reboot and relaunch script
-    Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
-    Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
+    If ([string]::IsNullOrEmpty($regRunOnceValue))
+    {
+        Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
+    }
+    Else
+    {
+        Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command $regRunOnceValue
+    }
+
+    Write-Log -Message "A reboot is required to complete $appVendor $appName $appVersion uninstallation! This script will be automatically relaunch next startup." -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
+# VDA is already installed
 ElseIf ($appVersion -eq $appInstalledVersion)
 {
-    # Disable autologon
-    Disable-AutoLogon
-    Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    # Test Citrix Service
+    If (Test-ServiceExists -Name "BrokerAgent")
+    {
+        Write-Log -Message "$appVendor $appName $appInstalledVersion is already installed." -Severity 1 -LogType CMTrace -WriteHost $True
+    }
+    Else
+    {
+        Write-Log -Message "$appVendor $appName $appVersion installation FAILLED!" -Severity 3 -LogType CMTrace -WriteHost $True
+        Start-Sleep -Seconds 5
+        # Run Citrix VDA CleanUp Utility
+        Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
+        # Delete previous logs
+        Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
+        Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
+        Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
+        # Reboot and relaunch script
+        If ([string]::IsNullOrEmpty($regRunOnceValue))
+        {
+            Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command "$($PSHome)\powershell.exe -NoLogo -NoExit -NoProfile -WindowStyle Maximized -File `"$appScriptPath\$appScriptName`" -ExecutionPolicy ByPass"
+        }
+        Else
+        {
+            Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command $regRunOnceValue
+        }
+
+        Write-Log -Message "A reboot is required to relaunch $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
+        Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
+    }
 }
 Else
 {
@@ -457,10 +599,6 @@ Else
     Start-Process -FilePath "https://www.citrix.com/downloads/citrix-virtual-apps-and-desktops"
     Start-Sleep -Seconds 2
     Start-Process -FilePath "https://support.citrix.com/article/CTX209255/vda-cleanup-utility"
-
-    # Disable autologon
-    Disable-AutoLogon
-    Exit-Script
 }
 
 #endregion

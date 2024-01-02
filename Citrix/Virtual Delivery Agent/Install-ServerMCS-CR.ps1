@@ -594,10 +594,10 @@ ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScript
     }
     Else
     {
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "(Default)" -Value $regRunOnceValue
+        Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command $regRunOnceValue
     }
 
-    Write-Log -Message "A reboot is required after $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "A reboot is required to complete $appVendor $appName $appVersion uninstallation! This script will be automatically relaunch next startup." -Severity 2 -LogType CMTrace -WriteHost $True
     Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
 # VDA is already installed
@@ -625,7 +625,7 @@ ElseIf ($appVersion -eq $appInstalledVersion)
         }
         Else
         {
-            Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce" -Name "(Default)" -Value $regRunOnceValue
+            Enable-AutoLogon -Password $localCredentialsPassword -LogonCount "1" -AsynchronousRunOnce -Command $regRunOnceValue
         }
 
         Write-Log -Message "A reboot is required to relaunch $appVendor $appName $appVersion installation!" -Severity 2 -LogType CMTrace -WriteHost $True
