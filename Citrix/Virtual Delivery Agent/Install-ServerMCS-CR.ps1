@@ -407,6 +407,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Execute-Process -Path .\$appInstall -Parameters $appInstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
+
     # Stop and disable unneeded services
     Get-Service -Name $appServices[0] | Stop-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest
     Get-Service -Name $appServices[0] | Set-ServiceStartMode -Name $appServices[0] -StartMode "Disabled" -ContinueOnError $True
@@ -489,7 +490,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
                 Else
                 {
                     Write-Verbose "- The $citrixUviProcessToAdd process is being added to the string" -Verbose
-                    $UviProcessExcludes = $UviProcessExcludes + $citrixUviProcessToAdd + ";"
+                    $UviProcessExcludes = ($UviProcessExcludes + $citrixUviProcessToAdd + ";").TrimEnd(";")
                     $AddUviProcessExcludes = $True
                 }
             }
@@ -505,11 +506,11 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
                 $AddUviProcessExcludes = $True
                 If ([String]::IsNullOrEmpty($UviProcessExcludes))
                 {
-                    $UviProcessExcludes = $citrixUviProcessToAdd + ";"
+                    $UviProcessExcludes = ($citrixUviProcessToAdd + ";").TrimEnd(";")
                 }
                 Else
                 {
-                    $UviProcessExcludes = $UviProcessExcludes + $citrixUviProcessToAdd + ";"
+                    $UviProcessExcludes = ($UviProcessExcludes + $citrixUviProcessToAdd + ";").TrimEnd(";")
                 }
             }
         }

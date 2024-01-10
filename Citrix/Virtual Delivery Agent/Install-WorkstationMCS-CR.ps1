@@ -401,6 +401,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
 
     # Enable support for EDT Lossy protocol - https://docs.citrix.com/en-us/citrix-workspace-app-for-windows/ear.html
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Citrix\Audio" -Name "EdtUnreliableAllowed" -Value "1" -Type "DWord"
+
     # Citrix  utilises Kernel APC Hooking as a replacement of AppInit_DLLs.
     # The KAPC Hooking DLL Injection Driver (CtxUvi) verifies that the hook DLLs configuration in the
     # registry is not changed at runtime (i.e. HKLM\SOFTWARE\Citrix\CtxHook\AppInit_DLLs\<hook name>).
@@ -450,7 +451,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
                 Else
                 {
                     Write-Verbose "- The $citrixUviProcessToAdd process is being added to the string" -Verbose
-                    $UviProcessExcludes = $UviProcessExcludes + $citrixUviProcessToAdd + ";"
+                    $UviProcessExcludes = ($UviProcessExcludes + $citrixUviProcessToAdd + ";").TrimEnd(";")
                     $AddUviProcessExcludes = $True
                 }
             }
@@ -466,11 +467,11 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
                 $AddUviProcessExcludes = $True
                 If ([String]::IsNullOrEmpty($UviProcessExcludes))
                 {
-                    $UviProcessExcludes = $citrixUviProcessToAdd + ";"
+                    $UviProcessExcludes = ($citrixUviProcessToAdd + ";").TrimEnd(";")
                 }
                 Else
                 {
-                    $UviProcessExcludes = $UviProcessExcludes + $citrixUviProcessToAdd + ";"
+                    $UviProcessExcludes = ($UviProcessExcludes + $citrixUviProcessToAdd + ";").TrimEnd(";")
                 }
             }
         }
