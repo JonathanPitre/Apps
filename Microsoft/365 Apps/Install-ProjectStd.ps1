@@ -267,6 +267,7 @@ $appConfig = Split-Path -Path $appConfigURL -Leaf # Download required config fil
 Get-MicrosoftOfficeConfig -ConfigURL $appConfigURL
 $appSetup = "setup.exe"
 $appProcesses = @("WINPROJ", "OfficeC2RClient", "OfficeClickToRun")
+$appServices = @("ClickToRunSvc")
 $appBitness = ([xml](Get-Content -Path $appScriptPath\$appConfig)).SelectNodes("//Add/@OfficeClientEdition").Value
 $appChannel = ([xml](Get-Content -Path $appScriptPath\$appConfig)).SelectNodes("//@Channel").Value
 $appDownloadParameters = "/download .\$appConfig"
@@ -376,12 +377,18 @@ ElseIf (([version]$appVersion -gt [version]$appInstalledVersion) -and (Test-Path
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\16.0\common\OfficeUpdate" -Name "EnableAutomaticUpdates" -Value "1" -Type DWord
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Office\ClickToRun\Configuration" -Name "UpdatesEnabled" -Value "True" -Type String
 
+    # Enable and start require services
+    Set-ServiceStartMode -Name $appServices[0] -StartMode "Automatic" -ContinueOnError $True
+    Start-ServiceAndDependencies -Name $appServices[0] -SkipServiceExistsTest -ContinueOnError $True
+
     # Install latest version
     Write-Log -Message "Installing $appVendor $appName x$appBitness $appChannel..." -Severity 1 -LogType CMTrace -WriteHost $True
     Execute-Process -Path $appUpdateTool -Parameters $appUpdateParameters
-    Wait-Process -Name OfficeClickToRun
+
     # Close "You're up to date!" notification window
-    Get-Process -Name OfficeC2RClient | Where-Object { $_.MainWindowTitle -eq "You're up to date!" } | Send-Keys -WindowTitle "You're up to date!" -Keys "{ENTER}" -WaitSeconds 2 | Get-Process -Name OfficeC2RClient,OfficeClickToRun | Stop-Process -Force
+    Wait-Process -Name OfficeClickToRun -Timeout 2
+    Send-Keys -WindowTitle "You're up to date!" -Keys "{ENTER}" -WaitSeconds 2
+    Get-Process -Name OfficeC2RClient, OfficeClickToRun | Stop-Process -Force
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
 
