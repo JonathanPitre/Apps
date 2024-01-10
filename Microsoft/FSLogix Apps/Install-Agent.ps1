@@ -479,7 +479,7 @@ Function Get-MicrosoftFSLogixApps
 $appVendor = "Microsoft"
 $appName = "FSLogix Apps"
 $appSetup = "FSLogixAppsSetup.exe"
-$appProcesses = @("frxsvc", "frxtray", "frxshell", "frxccd")
+$appProcesses = @("frxsvc", "frxtray", "frxshell", "frxccds")
 $appInstallParameters = "/install /quiet /norestart"
 $Evergreen = Get-MicrosoftFSLogixApps | Where-Object { $_.Channel -eq "Preview" }
 $appVersion = $Evergreen.Version
@@ -571,7 +571,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     If ((Get-ServiceStartMode -Name $serviceName) -ne "Automatic") { Set-ServiceStartMode -Name $serviceName -StartMode "Automatic" }
     Start-ServiceAndDependencies -Name $serviceName
 
-    # Fix for Citrix App Layering and FSLogix integration, must be done in the platform layer - https://support.citrix.com/article/CTX249873
+    # Fix: FSLogix Profile Disk not created or used in Citrix App Layering when Elastic Layers are enabled - https://support.citrix.com/article/CTX249873
     # https://social.msdn.microsoft.com/Forums/windows/en-US/660959a4-f9a9-486b-8a0d-dec3eba549e3/using-citrix-app-layering-unidesk-with-fslogix?forum=FSLogix
     If ((Test-Path -Path "HKLM:\SYSTEM\CurrentControlSet\Services\unifltr") -and (Get-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\frxdrvvt\Instances\frxdrvvt" -Value "Altitude") -ne 138010)
     {
@@ -579,11 +579,46 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
         Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\frxdrvvt\Instances\frxdrvvt" -Name "Altitude" -Value "138010" -Type String
     }
 
-    # Disable Citrix Profile Management if detected
-    If ((Test-Path -Path "HKLM:\SYSTEM\CurrentControlSet\Services\ctxProfile") -and (Get-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Value "PSEnabled") -ne "0")
+    # Detect if Citrix Virtual Delivery Agent is installed
+    [boolean]$isCitrixVdaInstalled = [boolean](Get-InstalledApplication -Name "Citrix .*Virtual Delivery Agent.*" -RegEx)
+    $UviProcessExcludes = $null
+
+    If ($isCitrixVdaInstalled)
     {
-        Write-Log -Message "Disabling Citrix Profile Management..." -Severity 1 -LogType CMTrace -WriteHost $True
-        Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Name "PSEnabled" -Value "0" -Type DWord
+        # Disable Citrix Profile Management if detected
+        If ((Test-Path -Path "HKLM:\SYSTEM\CurrentControlSet\Services\ctxProfile") -and (Get-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Value "PSEnabled") -ne "0")
+        {
+            Write-Log -Message "Disabling Citrix Profile Management..." -Severity 1 -LogType CMTrace -WriteHost $True
+            Set-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Citrix\UserProfileManager" -Name "PSEnabled" -Value "0" -Type DWord
+        }
+
+        # Fix: After a Windows update, The "FSLogix Apps Services" used in VDI profiles often stops - https://support.citrix.com/article/CTX585692
+        If ($null -ne (Get-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\CtxUvi" -Value "UviProcessExcludes"))
+        {
+            # Get the excluded processes list from UviProcessExcludes
+            $UviProcessExcludes = (Get-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\CtxUvi" -Value "UviProcessExcludes")
+        }
+        $UviProcessesToAdd = @("frxsvc.exe")
+        Write-Log -Message "Checking the UviProcessExcludes value..." -Severity 1 -LogType CMTrace -WriteHost $True
+
+        Write-Log -Message "The current values is: `"$UviProcessExcludes`"" -Severity 1 -LogType CMTrace -WriteHost $True
+        ForEach ($UviProcessToAdd in $UviProcessesToAdd)
+        {
+            If ($UviProcessToAdd.Length -gt 14)
+            {
+                $UviProcessToAdd = $UviProcessToAdd.SubString(0, 14)
+            }
+            If ($UviProcessExcludes -like "*$UviProcessToAdd*")
+            {
+                Write-Log -Message "The $UviProcessToAdd process has already been added" -Severity 1 -LogType CMTrace -WriteHost $True
+            }
+            Else
+            {
+                $UviProcessExcludes = $UviProcessExcludes.TrimEnd(";") + ";" + $UviProcessToAdd
+                Set-RegistryKey -Key "HKLM:\SYSTEM\CurrentControlSet\Services\CtxUvi" -Name "UviProcessExcludes" -Value "$UviProcessExcludes" -Type String
+                Write-Log -Message "The $UviProcessToAdd process was added to the UviProcessExcludes list" -Severity 1 -LogType CMTrace -WriteHost $True
+            }
+        }
     }
 
     # Enable frxrobocopy - https://docs.microsoft.com/en-us/fslogix/fslogix-installed-components-functions-reference
