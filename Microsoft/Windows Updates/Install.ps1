@@ -208,13 +208,13 @@ Set-ServiceStartMode -Name $appService -StartMode "Automatic"
 Start-ServiceAndDependencies -Name $appService
 
 Write-Log -Message "Gettings available $appVendor $appName..." -Severity 1 -LogType CMTrace -WriteHost $True
-$WinUpdates = Get-WindowsUpdate -NotCategory "Drivers", "Upgrade" -NotTitle "Preview" -MicrosoftUpdate
+$WinUpdates = Get-WindowsUpdate -NotCategory "Drivers", "Upgrades" -NotTitle "Preview" -MicrosoftUpdate
 $WinUpdates = $WinUpdates | Select-Object KB, Size, Title
 
 If ($null -ne $WinUpdates)
 {
     Write-Log -Message "Installing $appVendor $appName...`n $($WinUpdates | Out-String)" -Severity 1 -LogType CMTrace -WriteHost $True
-    Get-WindowsUpdate -NotCategory "Drivers", "Upgrade" -NotTitle "Preview" -MicrosoftUpdate -Install -AcceptAll -UpdateType Software -IgnoreReboot -IgnoreUserInput | Out-File $appLog -Append
+    Get-WindowsUpdate -NotCategory "Drivers", "Upgrades" -NotTitle "Preview" -MicrosoftUpdate -Install -AcceptAll -UpdateType Software -IgnoreReboot -IgnoreUserInput | Out-File $appLog -Append
 }
 ElseIf (-Not[bool](Get-InstalledModule -Name PSWindowsUpdate))
 {
