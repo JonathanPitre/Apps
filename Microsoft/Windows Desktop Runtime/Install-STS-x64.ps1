@@ -184,9 +184,9 @@ Foreach ($Module in $Modules)
 $appVendor = "Microsoft"
 $appName = "Windows Desktop Runtime"
 $appName2 = "Microsoft.NET"
-$appArchitecture = "x86"
-$appInstaller = "windowsdesktop" # or runtime or sdk
-$appChannel = "Current" # or LTS
+$appArchitecture = "x64"
+$appInstaller = "windowsdesktop" # # or runtime, aspnetcore-runtime, sdk
+$appChannel = "STS" # or 6.X, LTS (8.X)
 $appInstallParameters = " /install /quiet /norestart"
 $Evergreen = Get-EvergreenApp -Name $appName2 | Where-Object { $_.Architecture -eq $appArchitecture -and $_.Installer -eq $appInstaller -and $_.Channel -eq $appChannel }
 $appVersion = $Evergreen.Version
