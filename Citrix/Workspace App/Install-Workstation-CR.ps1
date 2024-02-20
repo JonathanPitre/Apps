@@ -206,7 +206,7 @@ $appInstalledVersion = (Get-InstalledApplication -Name "$appVendor $appName \d+"
 If ([version]$appVersion -gt [version]$appInstalledVersion)
 {
     Set-Location -Path $appScriptPath
-    If (-Not(Test-Path -Path $appVersion)) {New-Folder -Path $appVersion}
+    If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
     Set-Location -Path $appVersion
 
     If (-Not(Test-Path -Path $appScriptPath\$appVersion\$appSetup))
@@ -274,8 +274,8 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     # Fix AutoCAD slow mouse performance - https://support.citrix.com/article/CTX235943
     Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channels\Mouse" -Name "MouseTimer" -Type "String" -Value "25"
 
-    # Enable support for EDT Lossy protocol - https://docs.citrix.com/en-us/citrix-workspace-app-for-windows/about-this-release/features-in-technical-preview
-    Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Citrix\ICA Client\Engine\Configuration\Advanced\Modules\ClientAudio" -Name "EdtUnreliableAllowed" -Type "String" -Value "1"
+    # Enable support for TLS protocol version 1.3 - https://docs.citrix.com/en-us/citrix-workspace-app-for-windows/about-this-release/features-in-technical-preview
+    Set-RegistryKey -Key "HKLM:\SOFTWARE\WOW6432Node\Citrix\ICA Client\TLS1.3" -Name "EnableTLS1.3 " -Type "DWord" -Value "1"
 
     # Don't sync keyboard layout
     #Set-RegistryKey -Key "HKLM:\SOFTWARE\Wow6432Node\Citrix\ICA Client\Engine\Lockdown Profiles\All Regions\Lockdown\Virtual Channel s\Keyboard" -Name "LocalIME" -Type "String" -Value "0"
