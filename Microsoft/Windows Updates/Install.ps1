@@ -197,6 +197,10 @@ Stop-ServiceAndDependencies -Name $appService
 # Clear Windows Update policies
 Remove-RegistryKey -Key "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Recurse -ContinueOnError $True
 
+# Enable Automatically Download Updates over Metered Connections
+# https://www.tenforums.com/tutorials/139722-turn-off-download-updates-over-metered-connections-windows-10-a.html
+Set-RegistryKey -Key "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" -Name "AllowAutoWindowsUpdateDownloadOverMeteredNetwork" -Value "1" -Type DWord
+
 # Get updates for other Microsoft products
 $null = Add-WUServiceManager -ServiceID 7971f918-a847-4430-9279-4a52d1efe18d -Confirm:$False
 
