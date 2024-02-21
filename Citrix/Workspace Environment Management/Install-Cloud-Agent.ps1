@@ -307,7 +307,7 @@ Function Get-CitrixDownload
 [string]$appInstallParameters = "/quiet Cloud=1" # OnPrem 0 Cloud 1
 [int]$appDlNumber = "16122"
 [array]$Evergreen = Get-CitrixWEMAgent
-$appVersion = $Evergreen.Version
+$appVersion = "2312.1.0.1"
 [string]$appURL = $Evergreen.URI
 [string]$appZip = Split-Path -Path $appURL -Leaf
 [string]$appSetup = "Citrix Workspace Environment Management Agent.exe"
