@@ -292,7 +292,7 @@ If (-Not(Test-Path -Path $appVersion)) { New-Folder -Path $appVersion }
 Set-Location -Path $appVersion
 
 # VDA new installation
-If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersion\$appInstall") -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
+If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersion\$appInstall"))
 {
     # Detect if running from a Citrix session
     If ($sessionName -like "*ica*")
@@ -340,13 +340,6 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
         Write-Log -Message "Uninstalling Citrix Connection Quality Indicator..." -Severity 1 -LogType CMTrace -WriteHost $True
         Remove-MSIApplications -Name "Citrix Connection Quality Indicator" -Exact
     }
-
-    # Run Citrix VDA CleanUp Utility
-    #Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
-    # Delete previous logs
-    #Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
-    #Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
-    #Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Copy $appInstall to $envTemp\Install to avoid install issue
     Copy-File -Path ".\$appInstall" -Destination "$envTemp\Install" -Recurse
@@ -525,7 +518,7 @@ If (($isAppInstalled -eq $false) -and (Test-Path -Path "$appScriptPath\$appVersi
     Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
 }
 # VDA in-place update
-ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScriptPath\$appCleanupTool"))
+ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScriptPath\$appVersion\$appInstall"))
 {
     # Fix an issue with Citrix Connection Quality Indicator
     If (Test-Path -Path "${env:ProgramFiles(x86)}\Citrix\HDX\bin\Connection Quality Indicator\Citrix.CQI.exe")
@@ -541,13 +534,6 @@ ElseIf (($appVersion -gt $appInstalledVersion) -and (Test-Path -Path "$appScript
     Write-Log -Message "Uninstalling previous versions..." -Severity 1 -LogType CMTrace -WriteHost $True
     Get-Process -Name $appProcesses | Stop-Process -Force
     Execute-Process -Path $appUninstall -Parameters $appUninstallParameters -WaitForMsiExec -IgnoreExitCodes "3"
-
-    # Run Citrix VDA CleanUp Utility
-    #Write-Log -Message "Running $appVendor VDA Cleanup Utility..." -Severity 1 -LogType CMTrace -WriteHost $True
-    # Delete previous logs
-    #Remove-Folder -Path "$env:Temp\Citrix\VdaCleanup" -Recurse
-    #Execute-Process -Path "$appScriptPath\$appCleanupTool" -Parameters "$appCleanupToolParameters" -IgnoreExitCodes 1
-    #Write-Log -Message "$appVendor $appName $appVersion was uninstalled successfully!" -Severity 1 -LogType CMTrace -WriteHost $True
 
     # Reboot and relaunch script
     If ([string]::IsNullOrEmpty($regRunOnceValue))
@@ -594,12 +580,22 @@ ElseIf ($appVersion -eq $appInstalledVersion)
         Show-InstallationRestartPrompt -CountdownSeconds 10 -CountdownNoHideSeconds 10
     }
 }
+ElseIf (($appVersion -gt $appInstalledVersion) -and (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appInstall")))
+{
+    Write-Log -Message "A new release of the Single-session OS $appName $appVersion is available!" -Severity 2 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Single-session OS $appVendor $appName $appVersion stand alone EXE file cannot be found!" -Severity 2 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Download it manually from the vendor website and run this script once more!" -Severity 2 -LogType CMTrace -WriteHost $True
+    Start-Process -FilePath "https://www.citrix.com/downloads/citrix-virtual-apps-and-desktops"
+}
+ElseIf (($isAppInstalled -eq $false) -and (-Not(Test-Path -Path "$appScriptPath\$appVersion\$appInstall")))
+{
+    Write-Log -Message "Single-session OS $appVendor $appName $appVersion stand alone EXE file cannot be found!" -Severity 3 -LogType CMTrace -WriteHost $True
+    Write-Log -Message "Download it manually from the vendor website and run this script once more!" -Severity 3 -LogType CMTrace -WriteHost $True
+    Start-Process -FilePath "https://www.citrix.com/downloads/citrix-virtual-apps-and-desktops"
+}
 Else
 {
-    Write-Log -Message "$appVendor $appName $appVersion EXE file and $appCleanupTool MUST BE DOWNLOADED MANUALLY FIRST!" -Severity 3 -LogType CMTrace -WriteHost $True
-    Start-Process -FilePath "https://www.citrix.com/downloads/citrix-virtual-apps-and-desktops"
-    Start-Sleep -Seconds 2
-    Start-Process -FilePath "https://support.citrix.com/article/CTX209255/vda-cleanup-utility"
+    Write-Log -Message "An unknown error has occured!" -Severity 3 -LogType CMTrace -WriteHost $True
 }
 
 #endregion
