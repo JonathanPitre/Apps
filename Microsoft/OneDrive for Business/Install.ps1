@@ -293,7 +293,7 @@ If ([version]$appVersion -gt [version]$appInstalledVersion)
     Remove-File -Path "$envWinDir\ServiceProfiles\LocalService\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\OneDrive.lnk" -ContinueOnError $True
     Remove-File -Path "$envWinDir\ServiceProfiles\NetworkService\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\OneDrive.lnk" -ContinueOnError $True
     Get-Process -Name $appProcesses | Stop-Process -Force
-    Remove-Folder -Path "$appDestination" -ContinueOnError $True
+    #Remove-Folder -Path "$appDestination" -ContinueOnError $True #Can't delete old version since they're stuck in memory
     Remove-Folder -Path "$envProgramData\Microsoft\OneDrive" -ContinueOnError $True
     Remove-Folder -Path "$envSystemDrive\OneDriveTemp" -ContinueOnError $True
 
