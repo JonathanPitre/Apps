@@ -387,8 +387,8 @@ ElseIf (([version]$appVersion -gt [version]$appInstalledVersion) -and (Test-Path
     Execute-Process -Path $appUpdateTool -Parameters $appUpdateParameters
 
     # Close "You're up to date!" notification window
-    Wait-Process -Name OfficeClickToRun -Timeout 2
-    Send-Keys -WindowTitle "You're up to date!" -Keys "{ENTER}" -WaitSeconds 2
+    Wait-Process -Name OfficeClickToRun
+    Send-Keys -WindowTitle "Updates were installed" -Keys "{ENTER}" -WaitSeconds 2
     Get-Process -Name OfficeC2RClient, OfficeClickToRun | Stop-Process -Force
 
     Write-Log -Message "Applying customizations..." -Severity 1 -LogType CMTrace -WriteHost $True
